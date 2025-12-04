@@ -1,18 +1,18 @@
-package com.fusion.adapter.example.ktx
+package com.fusion.example.kotlin.ktx
 
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
-import com.fusion.adapter.example.databinding.ItemMsgImageBinding
-import com.fusion.adapter.example.databinding.ItemMsgSystemBinding
-import com.fusion.adapter.example.databinding.ItemMsgTextBinding
-import com.fusion.adapter.example.fullStatusBar
-import com.fusion.adapter.example.model.FusionMessage
-import com.fusion.adapter.example.utils.MockDataGenerator
+import com.fusion.example.kotlin.fullStatusBar
+import com.fusion.example.model.FusionMessage
+import com.fusion.example.utils.MockDataGenerator
 import com.fusion.adapter.ktx.registerRoute
 import com.fusion.adapter.ktx.setupFusion
+import com.fusion.example.databinding.ActivityRecyclerBinding
+import com.fusion.example.databinding.ItemMsgImageBinding
+import com.fusion.example.databinding.ItemMsgSystemBinding
+import com.fusion.example.databinding.ItemMsgTextBinding
 
 class KtxRouterActivity : AppCompatActivity() {
 
@@ -38,7 +38,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 match { item -> item.msgType }
 
                 // 1. 注册文本消息 (Type = 1)
-                map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+                map(FusionMessage.Companion.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content // ItemMsgTextBinding 的控件
                     }
@@ -49,7 +49,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 }
 
                 // 2. 注册图片消息 (Type = 2)
-                map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                map(FusionMessage.Companion.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         tvDesc.text = "图片描述: ${item.content}"
                         // ivImage.setImageResource(...)
@@ -61,7 +61,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 }
 
                 // 3. 注册系统通知 (Type = 3)
-                map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                map(FusionMessage.Companion.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item ->
                         tvSystemMsg.text = "--- ${item.content} ---"
                     }

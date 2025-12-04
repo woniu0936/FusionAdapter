@@ -1,22 +1,19 @@
-package com.fusion.adapter.example.ktx
+package com.fusion.example.kotlin.ktx
 
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
-import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
-import com.fusion.adapter.example.databinding.ItemImageBinding
-import com.fusion.adapter.example.databinding.ItemTextBinding
-import com.fusion.adapter.example.fullStatusBar
-import com.fusion.adapter.example.model.ImageItem
-import com.fusion.adapter.example.model.TextItem
-import com.fusion.adapter.example.utils.MockDataGenerator
+import com.fusion.example.kotlin.fullStatusBar
+import com.fusion.example.model.ImageItem
+import com.fusion.example.model.TextItem
+import com.fusion.example.utils.MockDataGenerator
 import com.fusion.adapter.ktx.autoScrollToBottom
 import com.fusion.adapter.ktx.register
+import com.fusion.example.databinding.ActivityRecyclerBinding
+import com.fusion.example.databinding.ItemImageBinding
+import com.fusion.example.databinding.ItemTextBinding
 
 class KtxManualActivity : AppCompatActivity() {
     // 依然使用手动挡 Adapter

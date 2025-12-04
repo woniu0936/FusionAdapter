@@ -1,9 +1,9 @@
-package com.fusion.adapter.example.delegate
+package com.fusion.example.kotlin.delegate
 
 import android.widget.Toast
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.example.databinding.ItemImageBinding
-import com.fusion.adapter.example.model.ImageItem
+import com.fusion.example.databinding.ItemImageBinding
+import com.fusion.example.model.ImageItem
 
 /**
  * [Core 演示专用] 图片委托类

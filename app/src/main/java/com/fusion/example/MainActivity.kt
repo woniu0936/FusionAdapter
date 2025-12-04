@@ -1,18 +1,20 @@
-package com.fusion.adapter.example
+package com.fusion.example
 
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.fusion.adapter.example.core.CoreDiffActivity
-import com.fusion.adapter.example.core.CoreManualActivity
-import com.fusion.adapter.example.core.CoreRouterActivity
-import com.fusion.adapter.example.databinding.ActivityMainBinding
-import com.fusion.adapter.example.ktx.KtxManualActivity
-import com.fusion.adapter.example.ktx.KtxRouterActivity
+import com.fusion.example.databinding.ActivityMainBinding
+import com.fusion.example.java.JavaDemoActivity
+import com.fusion.example.kotlin.core.CoreDiffActivity
+import com.fusion.example.kotlin.core.CoreManualActivity
+import com.fusion.example.kotlin.core.CoreRouterActivity
+import com.fusion.example.kotlin.fullStatusBar
+import com.fusion.example.kotlin.ktx.KtxManualActivity
+import com.fusion.example.kotlin.ktx.KtxRouterActivity
 
 /**
- * com.fusion.adapter.example
+ * com.fusion.example
  * ├── model                    // [公共] 数据模型
  * │   ├── DemoItems.kt         // 定义 TextItem, ImageItem 等
  * │
@@ -61,6 +63,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnKtxRouter.setOnClickListener {
             startActivity<KtxRouterActivity>()
+        }
+
+        binding.btnJavaDemo.setOnClickListener {
+            startActivity<JavaDemoActivity>()
         }
     }
 

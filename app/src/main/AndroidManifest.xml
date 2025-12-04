@@ -19,12 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".core.CoreDiffActivity" />
-        <activity android:name=".core.CoreManualActivity" />
-        <activity android:name=".core.CoreRouterActivity" />
-        <activity android:name=".ktx.KtxDiffActivity" />
-        <activity android:name=".ktx.KtxManualActivity" />
-        <activity android:name=".ktx.KtxRouterActivity" />
+        <activity android:name=".kotlin.core.CoreDiffActivity" />
+        <activity android:name=".kotlin.core.CoreManualActivity" />
+        <activity android:name=".kotlin.core.CoreRouterActivity" />
+        <activity android:name=".kotlin.ktx.KtxDiffActivity" />
+        <activity android:name=".kotlin.ktx.KtxManualActivity" />
+        <activity android:name=".kotlin.ktx.KtxRouterActivity" />
+        <activity android:name=".java.JavaDemoActivity" />
     </application>
 
 </manifest>

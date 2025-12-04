@@ -1,4 +1,4 @@
-package com.fusion.adapter.example
+package com.fusion.example.kotlin
 
 import android.view.View
 import androidx.activity.enableEdgeToEdge

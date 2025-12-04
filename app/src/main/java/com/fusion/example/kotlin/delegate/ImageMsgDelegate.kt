@@ -1,10 +1,11 @@
-package com.fusion.adapter.example.delegate
+package com.fusion.example.kotlin.delegate
 
 
+import android.R
 import android.widget.Toast
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.example.databinding.ItemMsgImageBinding
-import com.fusion.adapter.example.model.FusionMessage
+import com.fusion.example.databinding.ItemMsgImageBinding
+import com.fusion.example.model.FusionMessage
 
 class ImageMsgDelegate : BindingDelegate<FusionMessage, ItemMsgImageBinding>(ItemMsgImageBinding::inflate) {
 
@@ -23,6 +24,6 @@ class ImageMsgDelegate : BindingDelegate<FusionMessage, ItemMsgImageBinding>(Ite
         // 例如: Coil.load(binding.ivImage, item.imageUrl)
 
         // 这里仅做演示，模拟设置一个占位图
-        binding.ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+        binding.ivImage.setImageResource(R.drawable.ic_menu_gallery)
     }
 }

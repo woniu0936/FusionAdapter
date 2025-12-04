@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context="com.fusion.example.MainActivity">
 
     <Button
         android:id="@+id/btn_core_manual"
@@ -49,6 +49,13 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:text="KtxRouterActivity" />
+
+    <Button
+        android:id="@+id/btn_java_demo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:text="JavaDemoActivity" />
 
 
 </androidx.appcompat.widget.LinearLayoutCompat>

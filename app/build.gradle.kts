@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.fusion.adapter.example"
+    namespace = "com.fusion.example"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.fusion.adapter.example"
+        applicationId = "com.fusion.example"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -1,19 +1,16 @@
-package com.fusion.adapter.example.core
+package com.fusion.example.kotlin.core
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
-import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
-import com.fusion.adapter.example.delegate.CoreImageDelegate
-import com.fusion.adapter.example.delegate.CoreTextDelegate
-import com.fusion.adapter.example.fullStatusBar
-import com.fusion.adapter.example.model.ImageItem
-import com.fusion.adapter.example.model.TextItem
-import com.fusion.adapter.example.utils.MockDataGenerator
+import com.fusion.example.databinding.ActivityRecyclerBinding
+import com.fusion.example.kotlin.delegate.CoreImageDelegate
+import com.fusion.example.kotlin.delegate.CoreTextDelegate
+import com.fusion.example.kotlin.fullStatusBar
+import com.fusion.example.model.ImageItem
+import com.fusion.example.model.TextItem
+import com.fusion.example.utils.MockDataGenerator
 
 class CoreManualActivity : AppCompatActivity() {
     // 使用 FusionAdapter (手动挡)

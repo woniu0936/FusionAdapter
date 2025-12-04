@@ -1,9 +1,9 @@
-package com.fusion.adapter.example.delegate
+package com.fusion.example.kotlin.delegate
 
 import android.widget.Toast
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.example.databinding.ItemMsgTextBinding
-import com.fusion.adapter.example.model.FusionMessage
+import com.fusion.example.databinding.ItemMsgTextBinding
+import com.fusion.example.model.FusionMessage
 
 class TextMsgDelegate : BindingDelegate<FusionMessage, ItemMsgTextBinding>(ItemMsgTextBinding::inflate) {
 

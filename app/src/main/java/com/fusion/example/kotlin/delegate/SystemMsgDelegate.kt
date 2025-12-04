@@ -1,8 +1,8 @@
-package com.fusion.adapter.example.delegate
+package com.fusion.example.kotlin.delegate
 
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.example.databinding.ItemMsgSystemBinding
-import com.fusion.adapter.example.model.FusionMessage
+import com.fusion.example.databinding.ItemMsgSystemBinding
+import com.fusion.example.model.FusionMessage
 
 class SystemMsgDelegate : BindingDelegate<FusionMessage, ItemMsgSystemBinding>(ItemMsgSystemBinding::inflate) {
 

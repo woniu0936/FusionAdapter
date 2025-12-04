@@ -1,4 +1,4 @@
-package com.fusion.adapter.example.model
+package com.fusion.example.model
 
 import com.fusion.adapter.interfaces.FusionStableId
 

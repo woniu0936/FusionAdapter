@@ -1,8 +1,8 @@
-package com.fusion.adapter.example.delegate
+package com.fusion.example.kotlin.delegate
 
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.example.databinding.ItemTextBinding
-import com.fusion.adapter.example.model.TextItem
+import com.fusion.example.databinding.ItemTextBinding
+import com.fusion.example.model.TextItem
 
 /**
  * 标准的 Delegate 写法。

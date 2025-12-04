@@ -1,4 +1,4 @@
-package com.fusion.adapter.example.core
+package com.fusion.example.kotlin.core
 
 import android.os.Bundle
 import android.view.View
@@ -6,13 +6,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.core.FusionLinker
-import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
-import com.fusion.adapter.example.delegate.ImageMsgDelegate
-import com.fusion.adapter.example.delegate.SystemMsgDelegate
-import com.fusion.adapter.example.delegate.TextMsgDelegate
-import com.fusion.adapter.example.fullStatusBar
-import com.fusion.adapter.example.model.FusionMessage
-import com.fusion.adapter.example.utils.MockDataGenerator
+import com.fusion.example.databinding.ActivityRecyclerBinding
+import com.fusion.example.kotlin.delegate.ImageMsgDelegate
+import com.fusion.example.kotlin.delegate.SystemMsgDelegate
+import com.fusion.example.kotlin.delegate.TextMsgDelegate
+import com.fusion.example.kotlin.fullStatusBar
+import com.fusion.example.model.FusionMessage
+import com.fusion.example.utils.MockDataGenerator
 
 class CoreRouterActivity : AppCompatActivity() {
 
@@ -28,9 +28,9 @@ class CoreRouterActivity : AppCompatActivity() {
 
         val fusionLinker = FusionLinker<FusionMessage>()
             .match { it.msgType }
-            .map(FusionMessage.TYPE_TEXT, TextMsgDelegate())
-            .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate())
-            .map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate())
+            .map(FusionMessage.Companion.TYPE_TEXT, TextMsgDelegate())
+            .map(FusionMessage.Companion.TYPE_IMAGE, ImageMsgDelegate())
+            .map(FusionMessage.Companion.TYPE_SYSTEM, SystemMsgDelegate())
         adapter.registerLinker(FusionMessage::class.java, fusionLinker)
 
         binding.recyclerView.adapter = adapter
