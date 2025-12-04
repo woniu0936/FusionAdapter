@@ -27,10 +27,10 @@ class CoreRouterActivity : AppCompatActivity() {
         binding.fabAdd.visibility = View.GONE
 
         val fusionLinker = FusionLinker<FusionMessage>()
-        fusionLinker.match { it.msgType }
-        fusionLinker.map(FusionMessage.TYPE_TEXT, TextMsgDelegate())
-        fusionLinker.map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate())
-        fusionLinker.map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate())
+            .match { it.msgType }
+            .map(FusionMessage.TYPE_TEXT, TextMsgDelegate())
+            .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate())
+            .map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate())
         adapter.registerLinker(FusionMessage::class.java, fusionLinker)
 
         binding.recyclerView.adapter = adapter

@@ -1,11 +1,14 @@
 package com.fusion.adapter.core
 
-
 import com.fusion.adapter.delegate.FusionItemDelegate
 
 /**
  * [FusionLinker]
  * 路由连接器。定义了 "数据 -> Key" 和 "Key -> Delegate" 的双重映射规则。
+ *
+ * 特性：
+ * 1. O(1) 路由查找
+ * 2. 支持链式调用 (Fluent API)
  *
  * @param T 数据类型
  */
@@ -20,18 +23,27 @@ class FusionLinker<T : Any> {
 
     /**
      * 配置 Key 提取规则 (Match)
-     * 例如: linker.match { it.type }
+     * 支持链式调用。
+     *
+     * @param mapper Key 提取函数，例如 { it.type }
+     * @return this
      */
-    fun match(mapper: (T) -> Any?) {
+    fun match(mapper: (T) -> Any?): FusionLinker<T> {
         this.keyMapper = mapper
+        return this
     }
 
     /**
      * 建立映射关系 (Map)
-     * 例如: linker.map(1, textDelegate)
+     * 支持链式调用。
+     *
+     * @param key 路由 Key，例如 1, "header", Enum.TYPE
+     * @param delegate 对应的委托实例
+     * @return this
      */
-    fun map(key: Any?, delegate: FusionItemDelegate<T, *>) {
+    fun map(key: Any?, delegate: FusionItemDelegate<T, *>): FusionLinker<T> {
         keyToDelegate[key] = delegate
+        return this
     }
 
     /**
