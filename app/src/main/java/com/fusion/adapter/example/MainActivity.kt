@@ -3,14 +3,12 @@ package com.fusion.adapter.example
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.fusion.adapter.example.core.CoreDiffActivity
 import com.fusion.adapter.example.core.CoreManualActivity
 import com.fusion.adapter.example.databinding.ActivityMainBinding
 import com.fusion.adapter.example.ktx.KtxManualActivity
+import com.fusion.adapter.example.ktx.OneToManyActivity
 
 /**
  * com.fusion.adapter.example
@@ -37,14 +35,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        fullStatusBar(binding.root)
 
         binding.btnCoreManual.setOnClickListener {
             startActivity<CoreManualActivity>()
@@ -60,6 +53,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnKtxDiff.setOnClickListener {
             startActivity<KtxManualActivity>()
+        }
+
+        binding.btnKtxOneToMany.setOnClickListener {
+            startActivity<OneToManyActivity>()
         }
     }
 

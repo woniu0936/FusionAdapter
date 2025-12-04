@@ -1,15 +1,13 @@
 package com.fusion.adapter.example.core
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
 import com.fusion.adapter.example.delegate.CoreImageDelegate
 import com.fusion.adapter.example.delegate.CoreTextDelegate
+import com.fusion.adapter.example.fullStatusBar
 import com.fusion.adapter.example.model.ImageItem
 import com.fusion.adapter.example.model.TextItem
 import com.fusion.adapter.example.utils.MockDataGenerator
@@ -21,14 +19,9 @@ class CoreDiffActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         binding = ActivityRecyclerBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        fullStatusBar(binding.root)
 
         // 1. 注册 (Core 模式)
         // 依然复用上面的 CoreTextDelegate

@@ -11,6 +11,7 @@ import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
 import com.fusion.adapter.example.databinding.ItemImageBinding
 import com.fusion.adapter.example.databinding.ItemTextBinding
+import com.fusion.adapter.example.fullStatusBar
 import com.fusion.adapter.example.model.ImageItem
 import com.fusion.adapter.example.model.TextItem
 import com.fusion.adapter.example.utils.MockDataGenerator
@@ -24,14 +25,9 @@ class KtxManualActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         binding = ActivityRecyclerBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        fullStatusBar(binding.root)
 
         // 1. 注册 (KTX DSL 模式)
         // 使用 fusionDelegate 快速创建，无需新建文件

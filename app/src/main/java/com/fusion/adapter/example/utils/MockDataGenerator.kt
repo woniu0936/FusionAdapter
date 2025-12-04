@@ -1,5 +1,6 @@
 package com.fusion.adapter.example.utils
 
+import com.fusion.adapter.example.model.FusionMessage
 import com.fusion.adapter.example.model.ImageItem
 import com.fusion.adapter.example.model.TextItem
 import kotlin.random.Random
@@ -45,5 +46,59 @@ object MockDataGenerator {
         val height = (300..600).random() // 随机高度
         val url = "https://picsum.photos/$width/$height?random=$index"
         return ImageItem(id, url)
+    }
+
+    /**
+     * [新增] 生成聊天列表数据 (IsFor Demo 专用)
+     * 包含：文本、图片、系统消息
+     *
+     * @param count 生成数量
+     * @param startIndex 起始 ID
+     */
+    fun createChatList(count: Int, startIndex: Int = 0): List<FusionMessage> {
+        val list = ArrayList<FusionMessage>()
+
+        for (i in 0 until count) {
+            val realIndex = startIndex + i
+            val id = "msg_$realIndex"
+
+            // 随机生成类型 (模拟真实聊天分布)
+            val randomVal = Random.nextInt(100)
+            val message = when {
+                randomVal < 10 -> createSystemMsg(id) // 10% 系统消息
+                randomVal < 30 -> createImageMsg(id, realIndex)  // 20% 图片消息
+                else -> createTextMsg(id)             // 70% 文本消息
+            }
+            list.add(message)
+        }
+        return list
+    }
+
+    private fun createTextMsg(id: String): FusionMessage {
+        val contents = listOf(
+            "Hi there!",
+            "FusionAdapter 真的很好用，强烈推荐给 Android 开发者。",
+            "Could you please review my code? I think there is a bug in the MockDataGenerator.",
+            "OK.",
+            "这是一条比较长的文本消息，用于测试气泡的自适应高度。KTX DSL 让代码变得非常简洁，配合 FusionCore 的高性能，简直是开发利器！",
+            "哈哈哈哈哈哈",
+            "Tonight?"
+        )
+        val content = contents.random()
+        return FusionMessage(id, FusionMessage.TYPE_TEXT, content)
+    }
+
+    private fun createImageMsg(id: String, index: Int): FusionMessage {
+        // 模拟图片文件名
+        return FusionMessage(id, FusionMessage.TYPE_IMAGE, "photo_${index}.jpg")
+    }
+
+    private fun createSystemMsg(id: String): FusionMessage {
+        val notices = listOf(
+            "User joined the chat",
+            "User left the chat",
+            "You recalled a message",
+        )
+        return FusionMessage(id, FusionMessage.TYPE_SYSTEM, notices.random())
     }
 }

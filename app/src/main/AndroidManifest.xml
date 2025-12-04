@@ -23,6 +23,7 @@
         <activity android:name=".core.CoreManualActivity" />
         <activity android:name=".ktx.KtxDiffActivity" />
         <activity android:name=".ktx.KtxManualActivity" />
+        <activity android:name=".ktx.OneToManyActivity" />
     </application>
 
 </manifest>
