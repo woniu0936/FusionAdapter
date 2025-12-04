@@ -1,5 +1,6 @@
 package com.fusion.adapter.diff
 
+import android.annotation.SuppressLint
 import androidx.recyclerview.widget.DiffUtil
 import com.fusion.adapter.interfaces.FusionStableId
 
@@ -22,6 +23,7 @@ object FusionDiffCallback : DiffUtil.ItemCallback<Any>() {
         return oldItem == newItem
     }
 
+    @SuppressLint("DiffUtilEquals")
     override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
         // 内容比对，直接使用 Data Class 的 equals
         return oldItem == newItem
