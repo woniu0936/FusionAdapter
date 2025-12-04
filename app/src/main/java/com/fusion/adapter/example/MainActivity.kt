@@ -19,6 +19,7 @@ import com.fusion.adapter.example.ktx.KtxManualActivity
  * │
  * ├── delegate                 // [公共] 传统的 Class 形式 Delegate
  * │   └── CoreTextDelegate.kt  // 供 Core 演示使用
+ * │   └── CoreImageDelegate.kt // 供 Core 演示使用
  * │
  * ├── core                     // [演示 1 & 2] 纯 Core 库演示
  * │   ├── CoreManualActivity.kt // 1. Core + 手动挡 (无 Diff)

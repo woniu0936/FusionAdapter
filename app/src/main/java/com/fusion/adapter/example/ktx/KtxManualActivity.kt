@@ -8,17 +8,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
-import com.fusion.adapter.FusionListAdapter
-import com.fusion.adapter.example.R
 import com.fusion.adapter.example.databinding.ActivityRecyclerBinding
 import com.fusion.adapter.example.databinding.ItemImageBinding
 import com.fusion.adapter.example.databinding.ItemTextBinding
-import com.fusion.adapter.example.delegate.CoreTextDelegate
 import com.fusion.adapter.example.model.ImageItem
 import com.fusion.adapter.example.model.TextItem
 import com.fusion.adapter.example.utils.MockDataGenerator
 import com.fusion.adapter.ktx.autoScrollToBottom
-import com.fusion.adapter.ktx.fusionDelegate
+import com.fusion.adapter.ktx.register
 
 class KtxManualActivity : AppCompatActivity() {
     // 依然使用手动挡 Adapter
@@ -38,21 +35,21 @@ class KtxManualActivity : AppCompatActivity() {
 
         // 1. 注册 (KTX DSL 模式)
         // 使用 fusionDelegate 快速创建，无需新建文件
-        adapter.register(fusionDelegate<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
+        adapter.register<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
             onBind { item ->
                 tvContent.text = "[KTX Manual] ${item.content}"
             }
             onClick { item ->
                 Toast.makeText(this@KtxManualActivity, "Clicked: ${item.id}", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
 
         // 2. 注册另一种类型
-        adapter.register(fusionDelegate<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+        adapter.register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
             onBind { item ->
                 // binding.ivImage.load(item.url)
             }
-        })
+        }
 
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)

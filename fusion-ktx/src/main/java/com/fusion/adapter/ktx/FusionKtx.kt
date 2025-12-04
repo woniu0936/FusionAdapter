@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.delegate.BindingDelegate
 
@@ -30,6 +31,25 @@ fun RecyclerView.setupFusion(
 ): FusionListAdapter {
     this.layoutManager = layoutManager
     val adapter = FusionListAdapter()
+    adapter.block()
+    this.adapter = adapter
+    return adapter
+}
+
+/**
+ * [手动挡] 快速配置 FusionAdapter (无 DiffUtil)。
+ * 适用于数据量极小、静态列表、或者需要绝对控制刷新逻辑（notifyItemChanged）的场景。
+ *
+ * @param layoutManager 可选，默认垂直线性布局
+ * @param block Adapter 配置代码块
+ * @return 配置好的 FusionAdapter
+ */
+fun RecyclerView.setupFusionManual(
+    layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
+    block: FusionAdapter.() -> Unit
+): FusionAdapter {
+    this.layoutManager = layoutManager
+    val adapter = FusionAdapter()
     adapter.block()
     this.adapter = adapter
     return adapter
@@ -185,4 +205,39 @@ operator fun FusionListAdapter.plusAssign(item: Any) {
     val newList = ArrayList(this.currentList)
     newList.add(item)
     this.submitList(newList)
+}
+
+// ============================================================================================
+// 4. 极致 DSL 注册入口 (Syntactic Sugar)
+// ============================================================================================
+
+/**
+ * [DSL 注册] 自动挡 Adapter
+ * 直接在 register 中编写逻辑，无需显式调用 fusionDelegate。
+ *
+ * @sample
+ * adapter.register<User, ItemUserBinding>(ItemUserBinding::inflate) {
+ *     onBind { user -> ... }
+ * }
+ */
+inline fun <reified T : Any, VB : ViewBinding> FusionListAdapter.register(
+    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+    crossinline block: DelegateDsl<T, VB>.() -> Unit
+) {
+    // 复用 fusionDelegate 的逻辑创建对象
+    val delegate = fusionDelegate(inflate, block)
+    // 调用核心注册方法
+    this.register(delegate)
+}
+
+/**
+ * [DSL 注册] 手动挡 Adapter
+ * 直接在 register 中编写逻辑，无需显式调用 fusionDelegate。
+ */
+inline fun <reified T : Any, VB : ViewBinding> FusionAdapter.register(
+    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+    crossinline block: DelegateDsl<T, VB>.() -> Unit
+) {
+    val delegate = fusionDelegate(inflate, block)
+    this.register(delegate)
 }

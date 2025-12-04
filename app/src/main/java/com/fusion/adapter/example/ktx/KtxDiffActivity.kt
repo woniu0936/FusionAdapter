@@ -13,8 +13,8 @@ import com.fusion.adapter.example.model.ImageItem
 import com.fusion.adapter.example.model.TextItem
 import com.fusion.adapter.example.utils.MockDataGenerator
 import com.fusion.adapter.ktx.autoScrollToBottom
-import com.fusion.adapter.ktx.fusionDelegate
 import com.fusion.adapter.ktx.plusAssign
+import com.fusion.adapter.ktx.register
 import com.fusion.adapter.ktx.setupFusion
 
 class KtxDiffActivity : AppCompatActivity() {
@@ -36,18 +36,18 @@ class KtxDiffActivity : AppCompatActivity() {
         val adapter = binding.recyclerView.setupFusion {
 
             // 使用 DSL 注册 TextItem
-            register(fusionDelegate<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
+            register<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
                 onBind { item ->
                     tvContent.text = "[KTX Diff] ${item.content}"
                 }
-            })
+            }
 
             // 使用 DSL 注册 ImageItem
-            register(fusionDelegate<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+            register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
                 onBind { item ->
                     tvDesc.text = "Image ID: ${item.id}"
                 }
-            })
+            }
         }
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
