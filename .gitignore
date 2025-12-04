@@ -1,5 +1,5 @@
  # Gradle files
- .gradle/
+ .gradle
  build/
 
  # Local configuration file (sdk path, etc)
@@ -11,19 +11,21 @@
 
  # Android Studio generated files and folders
  captures/
- .externalNativeBuild/
- .cxx/
+ .externalNativeBuild
+ .cxx
  *.aab
  *.apk
  output-metadata.json
 
  # IntelliJ
  *.iml
- .idea/
+ /.idea
  misc.xml
  deploymentTargetDropDown.xml
  render.experimental.xml
 
-
  # Android Profiling
  *.hprof
+
+ /.kotlin
+ /captures
