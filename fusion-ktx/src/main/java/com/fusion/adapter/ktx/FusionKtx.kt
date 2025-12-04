@@ -1,5 +1,6 @@
 package com.fusion.adapter.ktx
 
+
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -7,23 +8,239 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.FusionListAdapter
+import com.fusion.adapter.core.FusionLinker
 import com.fusion.adapter.delegate.BindingDelegate
 
+// ============================================================================================
+// 1. DSL 配置容器 (Delegate Configuration)
+// ============================================================================================
+
 /**
- * [Fusion KTX] - 极致开发效率套件
+ * [DelegateDsl]
+ * 用于配置匿名 Delegate 的 DSL 接收者。
+ * 用户在 register { ... } 闭包中接触到的就是这个类。
  */
+class DelegateDsl<T : Any, VB : ViewBinding> {
+
+    // 使用 @PublishedApi internal 隐藏实现细节，同时允许 inline 函数访问
+    @PublishedApi
+    internal var bindBlock: (VB.(item: T, position: Int) -> Unit)? = null
+    @PublishedApi
+    internal var bindPayloadBlock: (VB.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
+    @PublishedApi
+    internal var clickAction: ((view: VB, item: T, position: Int) -> Unit)? = null
+    @PublishedApi
+    internal var longClickAction: ((view: VB, item: T, position: Int) -> Boolean)? = null
+    @PublishedApi
+    internal var contentSameBlock: ((old: T, new: T) -> Boolean)? = null
+
+    /** 定义数据绑定逻辑 (简易版，不带 position) */
+    fun onBind(block: VB.(item: T) -> Unit) {
+        bindBlock = { item, _ -> block(item) }
+    }
+
+    /** 定义数据绑定逻辑 (带 position) */
+    fun onBindIndexed(block: VB.(item: T, position: Int) -> Unit) {
+        bindBlock = block
+    }
+
+    /** 定义局部刷新逻辑 (Payload) */
+    fun onBindPayload(block: VB.(item: T, payloads: List<Any>) -> Unit) {
+        bindPayloadBlock = { item, _, payloads -> block(item, payloads) }
+    }
+
+    /** 定义点击事件 */
+    fun onClick(block: (item: T) -> Unit) {
+        clickAction = { _, item, _ -> block(item) }
+    }
+
+    /** 定义长按事件 */
+    fun onLongClick(block: (item: T) -> Boolean) {
+        longClickAction = { _, item, _ -> block(item) }
+    }
+
+    /** 定义高性能 Diff 内容比对 (return true 表示内容未变) */
+    fun areContentsTheSame(block: (old: T, new: T) -> Boolean) {
+        contentSameBlock = block
+    }
+}
+
+/**
+ * [FusionBuilder]
+ * 统一注册 DSL 容器。处理 "一对一" 绑定和 "一对多" 路由配置。
+ */
+class FusionBuilder<T : Any> {
+
+    // 内部持有 Core 层的 Linker
+    @PublishedApi
+    internal val linker = FusionLinker<T>()
+
+    // -----------------------------------------------------------------------
+    // 模式 A: 一对一 (Bind)
+    // -----------------------------------------------------------------------
+
+    /** 绑定现有的 Delegate 实例 */
+    fun bind(delegate: BindingDelegate<T, *>) {
+        linker.map(Unit, delegate)
+    }
+
+    /** [DSL] 快速创建匿名 Delegate 并绑定 */
+    inline fun <reified VB : ViewBinding> bind(
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline block: DelegateDsl<T, VB>.() -> Unit
+    ) {
+        val delegate = createAnonymousDelegate(inflate, block)
+        bind(delegate)
+    }
+
+    // -----------------------------------------------------------------------
+    // 模式 B: 一对多 (Match & Map)
+    // -----------------------------------------------------------------------
+
+    /** 定义路由规则：从 Item 中提取 Key (O(1) 查找的关键) */
+    fun match(mapper: (item: T) -> Any?) {
+        linker.match(mapper)
+    }
+
+    /** 映射 Key -> 现有的 Delegate 实例 */
+    fun map(key: Any?, delegate: BindingDelegate<T, *>) {
+        linker.map(key, delegate)
+    }
+
+    /** [DSL] 映射 Key -> 匿名 Delegate */
+    inline fun <reified VB : ViewBinding> map(
+        key: Any?,
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline block: DelegateDsl<T, VB>.() -> Unit
+    ) {
+        val delegate = createAnonymousDelegate(inflate, block)
+        map(key, delegate)
+    }
+
+    // -----------------------------------------------------------------------
+    // 内部工厂方法 (Factory)
+    // -----------------------------------------------------------------------
+
+    @PublishedApi
+    internal inline fun <reified VB : ViewBinding> createAnonymousDelegate(
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline block: DelegateDsl<T, VB>.() -> Unit
+    ): BindingDelegate<T, VB> {
+        val dsl = DelegateDsl<T, VB>().apply(block)
+        return object : BindingDelegate<T, VB>(inflate) {
+            init {
+                onItemClick = dsl.clickAction
+                onItemLongClick = dsl.longClickAction
+            }
+
+            override fun onBind(binding: VB, item: T, position: Int) {
+                dsl.bindBlock?.invoke(binding, item, position)
+            }
+
+            override fun onBindPayload(binding: VB, item: T, position: Int, payloads: List<Any>) {
+                dsl.bindPayloadBlock?.invoke(binding, item, position, payloads)
+                    ?: super.onBindPayload(binding, item, position, payloads)
+            }
+
+            override fun areContentsTheSame(oldItem: T, newItem: T): Boolean {
+                return dsl.contentSameBlock?.invoke(oldItem, newItem)
+                    ?: super.areContentsTheSame(oldItem, newItem)
+            }
+        }
+    }
+}
 
 // ============================================================================================
-// 1. RecyclerView 快速启动 DSL
+// 2. 作用域隔离 (Scope Isolation) - 关键设计
 // ============================================================================================
 
 /**
- * 快速配置 FusionListAdapter 并绑定到 RecyclerView。
- * 默认使用 LinearLayoutManager (垂直)，也可手动指定。
+ * [RouteScope]
+ * 仅用于 registerRoute。只暴露 match 和 map，隐藏 bind，防止歧义。
+ */
+class RouteScope<T : Any> {
+    // 【关键修复】加上 @PublishedApi，允许 inline 函数访问 internal 属性
+    @PublishedApi
+    internal val builder = FusionBuilder<T>()
+
+    fun match(mapper: (item: T) -> Any?) = builder.match(mapper)
+
+    inline fun <reified VB : ViewBinding> map(
+        key: Any?,
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline block: DelegateDsl<T, VB>.() -> Unit
+    ) = builder.map(key, inflate, block)
+
+    // 重载 map 支持直接传 Delegate 实例
+    fun map(key: Any?, delegate: BindingDelegate<T, *>) = builder.map(key, delegate)
+}
+
+// ============================================================================================
+// 3. Adapter 扩展入口 (API Surface)
+// ============================================================================================
+
+/**
+ * [路由注册] - 适用于复杂场景 (一对多)
+ * 需要在 block 中配置 match 规则和 map 映射。
  *
- * @param layoutManager 可选，默认垂直线性布局
- * @param block Adapter 配置代码块
- * @return 配置好的 FusionListAdapter
+ * @sample
+ * adapter.registerRoute<Message> {
+ *     match { it.type }
+ *     map(TYPE_TEXT, ItemTextBinding::inflate) { ... }
+ *     map(TYPE_IMAGE, ItemImageBinding::inflate) { ... }
+ * }
+ */
+inline fun <reified T : Any> FusionListAdapter.registerRoute(
+    block: RouteScope<T>.() -> Unit
+) {
+    val scope = RouteScope<T>()
+    scope.block()
+    this.registerLinker(T::class.java, scope.builder.linker)
+}
+
+inline fun <reified T : Any> FusionAdapter.registerRoute(
+    block: RouteScope<T>.() -> Unit
+) {
+    val scope = RouteScope<T>()
+    scope.block()
+    this.registerLinker(T::class.java, scope.builder.linker)
+}
+
+/**
+ * [极简注册] - 适用于简单场景 (一对一)
+ * 直接绑定布局和逻辑，无需配置路由。
+ *
+ * @sample
+ * adapter.register(ItemUserBinding::inflate) {
+ *     onBind { user -> ... }
+ * }
+ */
+inline fun <reified T : Any, reified VB : ViewBinding> FusionListAdapter.register(
+    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+    crossinline block: DelegateDsl<T, VB>.() -> Unit
+) {
+    val builder = FusionBuilder<T>()
+    builder.bind(inflate, block)
+    this.registerLinker(T::class.java, builder.linker)
+}
+
+/** [极简注册] 手动挡 Adapter 版本 */
+inline fun <reified T : Any, reified VB : ViewBinding> FusionAdapter.register(
+    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+    crossinline block: DelegateDsl<T, VB>.() -> Unit
+) {
+    val builder = FusionBuilder<T>()
+    builder.bind(inflate, block)
+    this.registerLinker(T::class.java, builder.linker)
+}
+
+// ============================================================================================
+// 4. 快速启动 (Setup)
+// ============================================================================================
+
+/**
+ * [快速启动] 初始化 FusionListAdapter (自动挡) 并绑定到 RecyclerView。
+ * 推荐用于 MVVM + DiffUtil 场景。
  */
 fun RecyclerView.setupFusion(
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
@@ -37,12 +254,8 @@ fun RecyclerView.setupFusion(
 }
 
 /**
- * [手动挡] 快速配置 FusionAdapter (无 DiffUtil)。
- * 适用于数据量极小、静态列表、或者需要绝对控制刷新逻辑（notifyItemChanged）的场景。
- *
- * @param layoutManager 可选，默认垂直线性布局
- * @param block Adapter 配置代码块
- * @return 配置好的 FusionAdapter
+ * [快速启动] 初始化 FusionAdapter (手动挡) 并绑定到 RecyclerView。
+ * 推荐用于静态列表或需要绝对控制刷新的场景。
  */
 fun RecyclerView.setupFusionManual(
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
@@ -55,145 +268,13 @@ fun RecyclerView.setupFusionManual(
     return adapter
 }
 
-/**
- * [功能增强] 让 RecyclerView 自动跟随 Adapter 数据变化滚动到底部。
- * 适合聊天页面或日志页面。
- */
-fun RecyclerView.autoScrollToBottom(adapter: RecyclerView.Adapter<*>) {
-    adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-            // 只有当插入位置在列表末尾时才滚动 (可选逻辑)
-            // 或者简单粗暴：只要有插入就滚
-            if (itemCount > 0) {
-                // post 一下确保 LayoutManager 已经完成布局
-                this@autoScrollToBottom.post {
-                    // 检查 adapter.itemCount 是否有效
-                    if (adapter.itemCount > 0) {
-                        this@autoScrollToBottom.smoothScrollToPosition(adapter.itemCount - 1)
-                    }
-                }
-            }
-        }
-    })
-}
-
 // ============================================================================================
-// 2. 匿名委托 DSL (Boilerplate Killer)
+// 5. 实用工具 (Utilities)
 // ============================================================================================
 
 /**
- * [神器] 快速创建 Delegate，无需定义 class 文件。
- * 适合简单的 Item 或者原型开发。
- *
- * @param inflate ViewBinding 的 inflate 方法引用
- * @param builder DSL 配置块
- */
-inline fun <reified T : Any, VB : ViewBinding> fusionDelegate(
-    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline builder: DelegateDsl<T, VB>.() -> Unit
-): BindingDelegate<T, VB> {
-
-    val dsl = DelegateDsl<T, VB>().apply(builder)
-
-    return object : BindingDelegate<T, VB>(inflate) {
-
-        init {
-            // 绑定点击事件
-            dsl.clickAction?.let { action ->
-                onItemClick = { view, item, position -> action(view, item, position) }
-            }
-            dsl.longClickAction?.let { action ->
-                onItemLongClick = { view, item, position -> action(view, item, position) }
-            }
-        }
-
-        // 绑定 isFor
-        override fun isFor(item: T, position: Int): Boolean {
-            return dsl.isForBlock?.invoke(item, position) ?: super.isFor(item, position)
-        }
-
-        // 绑定 onBind
-        override fun onBind(binding: VB, item: T, position: Int) {
-            dsl.bindBlock?.invoke(binding, item, position)
-        }
-
-        // 绑定 Payload
-        override fun onBindPayload(binding: VB, item: T, position: Int, payloads: List<Any>) {
-            if (dsl.bindPayloadBlock != null) {
-                dsl.bindPayloadBlock?.invoke(binding, item, position, payloads)
-            } else {
-                super.onBindPayload(binding, item, position, payloads)
-            }
-        }
-
-        // 绑定 Diff
-        override fun areContentsTheSame(oldItem: T, newItem: T): Boolean {
-            return dsl.contentSameBlock?.invoke(oldItem, newItem) ?: super.areContentsTheSame(oldItem, newItem)
-        }
-    }
-}
-
-/** DSL 配置容器 */
-class DelegateDsl<T : Any, VB : ViewBinding> {
-
-    // 加上 @PublishedApi
-    @PublishedApi
-    internal var bindBlock: (VB.(item: T, position: Int) -> Unit)? = null
-
-    @PublishedApi
-    internal var bindPayloadBlock: (VB.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
-
-    @PublishedApi
-    internal var isForBlock: ((item: T, position: Int) -> Boolean)? = null
-
-    @PublishedApi
-    internal var clickAction: ((view: VB, item: T, position: Int) -> Unit)? = null
-
-    @PublishedApi
-    internal var longClickAction: ((view: VB, item: T, position: Int) -> Boolean)? = null
-
-    @PublishedApi
-    internal var contentSameBlock: ((old: T, new: T) -> Boolean)? = null
-
-    /** 定义数据绑定逻辑 */
-    fun onBind(block: VB.(item: T) -> Unit) {
-        // 简化版 API，不带 position
-        bindBlock = { item, _ -> block(item) }
-    }
-
-    /** 定义数据绑定逻辑 (带 position) */
-    fun onBindIndexed(block: VB.(item: T, position: Int) -> Unit) {
-        bindBlock = block
-    }
-
-    /** 定义局部刷新逻辑 */
-    fun onBindPayload(block: VB.(item: T, payloads: List<Any>) -> Unit) {
-        bindPayloadBlock = { item, _, payloads -> block(item, payloads) }
-    }
-
-    /** 定义多类型匹配逻辑 */
-    fun isFor(block: (item: T) -> Boolean) {
-        isForBlock = { item, _ -> block(item) }
-    }
-
-    /** 定义点击事件 */
-    fun onClick(block: (item: T) -> Unit) {
-        clickAction = { _, item, _ -> block(item) }
-    }
-
-    /** 定义内容比对逻辑 (Diff) */
-    fun areContentsTheSame(block: (old: T, new: T) -> Boolean) {
-        contentSameBlock = block
-    }
-}
-
-// ============================================================================================
-// 3. 操作符重载 (Syntactic Sugar)
-// ============================================================================================
-
-/**
- * 支持使用 `+=` 添加数据。
- * 注意：由于 AsyncListDiffer 是不可变的，这会创建一个新列表，适合小量数据追加。
+ * [操作符重载] 支持使用 `+=` 追加列表数据。
+ * 注意：对于 FusionListAdapter，这会创建新集合并提交 Diff。
  */
 operator fun FusionListAdapter.plusAssign(items: List<Any>) {
     val newList = ArrayList(this.currentList)
@@ -201,43 +282,30 @@ operator fun FusionListAdapter.plusAssign(items: List<Any>) {
     this.submitList(newList)
 }
 
+/**
+ * [操作符重载] 支持使用 `+=` 追加单个 Item。
+ */
 operator fun FusionListAdapter.plusAssign(item: Any) {
     val newList = ArrayList(this.currentList)
     newList.add(item)
     this.submitList(newList)
 }
 
-// ============================================================================================
-// 4. 极致 DSL 注册入口 (Syntactic Sugar)
-// ============================================================================================
-
 /**
- * [DSL 注册] 自动挡 Adapter
- * 直接在 register 中编写逻辑，无需显式调用 fusionDelegate。
- *
- * @sample
- * adapter.register<User, ItemUserBinding>(ItemUserBinding::inflate) {
- *     onBind { user -> ... }
- * }
+ * [自动滚动] 监听数据插入并自动滚动到底部。
+ * 适用于聊天、日志、控制台等场景。
  */
-inline fun <reified T : Any, VB : ViewBinding> FusionListAdapter.register(
-    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: DelegateDsl<T, VB>.() -> Unit
-) {
-    // 复用 fusionDelegate 的逻辑创建对象
-    val delegate = fusionDelegate(inflate, block)
-    // 调用核心注册方法
-    this.register(delegate)
-}
-
-/**
- * [DSL 注册] 手动挡 Adapter
- * 直接在 register 中编写逻辑，无需显式调用 fusionDelegate。
- */
-inline fun <reified T : Any, VB : ViewBinding> FusionAdapter.register(
-    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: DelegateDsl<T, VB>.() -> Unit
-) {
-    val delegate = fusionDelegate(inflate, block)
-    this.register(delegate)
+fun RecyclerView.autoScrollToBottom(adapter: RecyclerView.Adapter<*>) {
+    adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+            if (itemCount > 0) {
+                // post 确保 LayoutManager 布局完成
+                this@autoScrollToBottom.post {
+                    if (adapter.itemCount > 0) {
+                        this@autoScrollToBottom.smoothScrollToPosition(adapter.itemCount - 1)
+                    }
+                }
+            }
+        }
+    })
 }

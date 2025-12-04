@@ -23,6 +23,13 @@
         android:text="CoreDiffActivity" />
 
     <Button
+        android:id="@+id/btn_core_router"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:text="CoreRouterActivity" />
+
+    <Button
         android:id="@+id/btn_ktx_manual"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -37,11 +44,11 @@
         android:text="KtxDiffActivity" />
 
     <Button
-        android:id="@+id/btn_ktx_one_to_many"
+        android:id="@+id/btn_ktx_router"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:text="OneToManyActivity" />
+        android:text="KtxRouterActivity" />
 
 
 </androidx.appcompat.widget.LinearLayoutCompat>

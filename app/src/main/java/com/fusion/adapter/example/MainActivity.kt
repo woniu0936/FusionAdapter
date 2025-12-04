@@ -6,9 +6,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.fusion.adapter.example.core.CoreDiffActivity
 import com.fusion.adapter.example.core.CoreManualActivity
+import com.fusion.adapter.example.core.CoreRouterActivity
 import com.fusion.adapter.example.databinding.ActivityMainBinding
 import com.fusion.adapter.example.ktx.KtxManualActivity
-import com.fusion.adapter.example.ktx.OneToManyActivity
+import com.fusion.adapter.example.ktx.KtxRouterActivity
 
 /**
  * com.fusion.adapter.example
@@ -46,6 +47,9 @@ class MainActivity : AppCompatActivity() {
         binding.btnCoreDiff.setOnClickListener {
             startActivity<CoreDiffActivity>()
         }
+        binding.btnCoreRouter.setOnClickListener {
+            startActivity<CoreRouterActivity>()
+        }
 
         binding.btnKtxManual.setOnClickListener {
             startActivity<KtxManualActivity>()
@@ -55,8 +59,8 @@ class MainActivity : AppCompatActivity() {
             startActivity<KtxManualActivity>()
         }
 
-        binding.btnKtxOneToMany.setOnClickListener {
-            startActivity<OneToManyActivity>()
+        binding.btnKtxRouter.setOnClickListener {
+            startActivity<KtxRouterActivity>()
         }
     }
 

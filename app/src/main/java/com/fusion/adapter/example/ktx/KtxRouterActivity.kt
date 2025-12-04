@@ -11,10 +11,10 @@ import com.fusion.adapter.example.databinding.ItemMsgTextBinding
 import com.fusion.adapter.example.fullStatusBar
 import com.fusion.adapter.example.model.FusionMessage
 import com.fusion.adapter.example.utils.MockDataGenerator
-import com.fusion.adapter.ktx.register
+import com.fusion.adapter.ktx.registerRoute
 import com.fusion.adapter.ktx.setupFusion
 
-class OneToManyActivity : AppCompatActivity() {
+class KtxRouterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRecyclerBinding
 
@@ -33,48 +33,42 @@ class OneToManyActivity : AppCompatActivity() {
             // FusionAdapter 会根据 isFor 的返回值，自动分发给正确的 Delegate
             // =================================================================
 
-            // 1. 注册文本消息 (Type = 1)
-            register<FusionMessage, ItemMsgTextBinding>(ItemMsgTextBinding::inflate) {
 
-                // 【核心】匹配逻辑：只有 type == 1 才由我处理
-                isFor { item -> item.msgType == FusionMessage.TYPE_TEXT }
+            registerRoute<FusionMessage> {
+                match { item -> item.msgType }
 
-                onBind { item ->
-                    tvContent.text = item.content // ItemMsgTextBinding 的控件
+                // 1. 注册文本消息 (Type = 1)
+                map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+                    onBind { item ->
+                        tvContent.text = item.content // ItemMsgTextBinding 的控件
+                    }
+
+                    onClick { item ->
+                        toast("点击了文本: ${item.content}")
+                    }
                 }
 
-                onClick { item ->
-                    toast("点击了文本: ${item.content}")
+                // 2. 注册图片消息 (Type = 2)
+                map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                    onBind { item ->
+                        tvDesc.text = "图片描述: ${item.content}"
+                        // ivImage.setImageResource(...)
+                    }
+
+                    onClick { item ->
+                        toast("查看大图: ${item.id}")
+                    }
+                }
+
+                // 3. 注册系统通知 (Type = 3)
+                map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                    onBind { item ->
+                        tvSystemMsg.text = "--- ${item.content} ---"
+                    }
+                    // 系统消息通常不可点击，所以不写 onClick
                 }
             }
 
-            // 2. 注册图片消息 (Type = 2)
-            register<FusionMessage, ItemMsgImageBinding>(ItemMsgImageBinding::inflate) {
-
-                // 【核心】匹配逻辑：只有 type == 2 才由我处理
-                isFor { item -> item.msgType == FusionMessage.TYPE_IMAGE }
-
-                onBind { item ->
-                    tvDesc.text = "图片描述: ${item.content}"
-                    // ivImage.setImageResource(...)
-                }
-
-                onClick { item ->
-                    toast("查看大图: ${item.id}")
-                }
-            }
-
-            // 3. 注册系统通知 (Type = 3)
-            register<FusionMessage, ItemMsgSystemBinding>(ItemMsgSystemBinding::inflate) {
-
-                // 【核心】匹配逻辑
-                isFor { item -> item.msgType == FusionMessage.TYPE_SYSTEM }
-
-                onBind { item ->
-                    tvSystemMsg.text = "--- ${item.content} ---"
-                }
-                // 系统消息通常不可点击，所以不写 onClick
-            }
         }
 
         val list = MockDataGenerator.createChatList(50)

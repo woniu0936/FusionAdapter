@@ -21,9 +21,10 @@
         </activity>
         <activity android:name=".core.CoreDiffActivity" />
         <activity android:name=".core.CoreManualActivity" />
+        <activity android:name=".core.CoreRouterActivity" />
         <activity android:name=".ktx.KtxDiffActivity" />
         <activity android:name=".ktx.KtxManualActivity" />
-        <activity android:name=".ktx.OneToManyActivity" />
+        <activity android:name=".ktx.KtxRouterActivity" />
     </application>
 
 </manifest>
