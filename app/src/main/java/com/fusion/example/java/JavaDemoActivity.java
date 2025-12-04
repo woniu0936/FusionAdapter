@@ -61,7 +61,7 @@ public class JavaDemoActivity extends AppCompatActivity {
         // ========================================================================
         // 语法：register(Class).dispatch(KeyMapper).map(Key, Delegate)...register()
         adapter.registerLinker(FusionMessage.class, new FusionLinker<FusionMessage>()
-                .match(item -> item.getMsgType())
+                .match(FusionMessage::getMsgType)
                 .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
                 .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate()) // 显式调用 register 完成构建);
                 .map(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())); // 显式调用 register 完成构建);

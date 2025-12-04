@@ -1,6 +1,7 @@
 package com.fusion.adapter.core
 
 import com.fusion.adapter.delegate.FusionItemDelegate
+import com.fusion.adapter.interfaces.FusionKeyMapper
 
 /**
  * [FusionLinker]
@@ -16,7 +17,7 @@ class FusionLinker<T : Any> {
 
     // Key 生成器：从 Item 中提取特征 Key
     // 默认实现：返回 Unit (适用于一对一场景)
-    private var keyMapper: (T) -> Any? = { Unit }
+    private var keyMapper: FusionKeyMapper<T> = FusionKeyMapper { Unit }
 
     // 映射表: Key -> Delegate
     private val keyToDelegate = HashMap<Any?, FusionItemDelegate<T, *>>()
@@ -28,7 +29,7 @@ class FusionLinker<T : Any> {
      * @param mapper Key 提取函数，例如 { it.type }
      * @return this
      */
-    fun match(mapper: (T) -> Any?): FusionLinker<T> {
+    fun match(mapper: FusionKeyMapper<T>): FusionLinker<T> {
         this.keyMapper = mapper
         return this
     }
@@ -50,7 +51,7 @@ class FusionLinker<T : Any> {
      * [Core 内部调用] 解析 Item 对应的 Delegate
      */
     internal fun resolve(item: T): FusionItemDelegate<T, *>? {
-        val key = keyMapper(item)
+        val key = keyMapper.map(item)
         return keyToDelegate[key]
     }
 
