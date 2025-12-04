@@ -48,7 +48,7 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
         return registry.getDelegate(viewType).onCreateViewHolder(parent)
     }
 
-    fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: List<Any>) {
+    fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any>) {
         val delegate = registry.getDelegate(holder.itemViewType)
         delegate.onBindViewHolder(holder, item, position, payloads)
     }

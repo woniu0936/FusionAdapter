@@ -30,7 +30,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         return holder
     }
 
-    final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: List<Any>) {
+    final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
         // 动态绑定监听器，确保获取最新的 AdapterPosition
         // 注意：这种方式在 onBind 中设置监听器虽然会重复 set，但保证了 item 的正确性。
         // 如需极致性能优化，可在 onCreate 中 set，通过 tag 获取 item，但代码复杂度会上升。

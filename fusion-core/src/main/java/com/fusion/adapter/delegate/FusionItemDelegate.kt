@@ -17,7 +17,7 @@ abstract class FusionItemDelegate<T : Any, VH : RecyclerView.ViewHolder> {
 
     // UI 相关
     abstract fun onCreateViewHolder(parent: ViewGroup): VH
-    abstract fun onBindViewHolder(holder: VH, item: T, position: Int, payloads: List<Any>)
+    abstract fun onBindViewHolder(holder: VH, item: T, position: Int, payloads: MutableList<Any>)
 
     // 生命周期
     open fun onViewRecycled(holder: VH) {}
