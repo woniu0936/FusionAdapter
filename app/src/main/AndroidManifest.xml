@@ -27,6 +27,7 @@
         <activity android:name=".kotlin.ktx.KtxManualActivity" />
         <activity android:name=".kotlin.ktx.KtxRouterActivity" />
         <activity android:name=".java.JavaDemoActivity" />
+        <activity android:name=".paging.PagingDemoActivity" />
     </application>
 
 </manifest>
