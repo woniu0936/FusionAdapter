@@ -3,6 +3,7 @@ package com.fusion.adapter.core
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionItemDelegate
+import com.fusion.adapter.diff.FusionDiffCallback
 
 /**
  * [FusionCore]
@@ -56,6 +57,25 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
     // ========================================================================================
     // DiffUtil 代理 (Smart Diff 支持)
     // ========================================================================================
+
+    /**
+     * [关键修复] 代理 DiffUtil.areItemsTheSame
+     * 必须确保 ViewType 相同，否则不能复用 ViewHolder
+     */
+    fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+        // 1. 先获取两个 Item 的 ViewType
+        val oldType = registry.getItemViewType(oldItem)
+        val newType = registry.getItemViewType(newItem)
+
+        // 2. 如果类型变了（比如从 Text 变 Image），绝对不是同一个 Item
+        // 即使 ID 一样，也必须销毁重建
+        if (oldType != newType) {
+            return false
+        }
+
+        // 3. 类型一样，再交给静态策略去比对 ID
+        return FusionDiffCallback.areItemsTheSame(oldItem, newItem)
+    }
 
     /**
      * 代理 DiffUtil.Callback.areContentsTheSame

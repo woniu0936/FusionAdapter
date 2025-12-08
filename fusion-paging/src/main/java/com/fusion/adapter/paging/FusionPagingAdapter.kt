@@ -125,7 +125,8 @@ open class FusionPagingAdapter <T : Any> private constructor(
 
         override fun areItemsTheSame(oldItem: T, newItem: T): Boolean {
             // ID 判断是无状态的，直接调用静态策略
-            return FusionDiffCallback.areItemsTheSame(oldItem, newItem)
+            return core?.areItemsTheSame(oldItem, newItem)
+                ?: FusionDiffCallback.areItemsTheSame(oldItem, newItem)
         }
 
         @SuppressLint("DiffUtilEquals")

@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.core.FusionCore
 import com.fusion.adapter.core.FusionLinker
 import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.diff.FusionDiffCallback
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -39,7 +38,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val diffCallback = object : DiffUtil.ItemCallback<Any>() {
         override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-            return FusionDiffCallback.areItemsTheSame(oldItem, newItem)
+            return core.areItemsTheSame(oldItem, newItem)
         }
 
         override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
