@@ -97,7 +97,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     override fun getItemCount(): Int = differ.currentList.size
 
     override fun getItemViewType(position: Int): Int {
-        return core.getItemViewType(differ.currentList[position], position)
+        return core.getItemViewType(differ.currentList[position])
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

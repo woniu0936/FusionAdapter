@@ -39,7 +39,7 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
     // RecyclerView 核心代理
     // ========================================================================================
 
-    fun getItemViewType(item: Any, position: Int): Int {
+    fun getItemViewType(item: Any): Int {
         // 路由不再依赖 position，只依赖 item 内容 (O(1) Key 映射)
         return registry.getItemViewType(item)
     }

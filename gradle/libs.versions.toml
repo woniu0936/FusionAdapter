@@ -11,7 +11,7 @@ activity = "1.8.0"
 constraintlayout = "2.1.4"
 recyclerview = "1.4.0"
 collection = "1.4.5"
-viewbinding = "8.13.1"
+paging = "3.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,7 +24,9 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 androidx-collection = { group = "androidx.collection", name = "collection", version.ref = "collection" }
-androidx-viewbinding = { group = "androidx.databinding", name = "viewbinding", version.ref = "viewbinding" }
+androidx-paging-common-ktx = { module = "androidx.paging:paging-common-ktx", version.ref = "paging" }
+androidx-paging-runtime-ktx = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
