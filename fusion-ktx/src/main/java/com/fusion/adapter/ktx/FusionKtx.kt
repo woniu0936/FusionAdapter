@@ -1,12 +1,13 @@
 package com.fusion.adapter.ktx
 
-
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionAdapter
+import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.core.FusionLinker
 import com.fusion.adapter.delegate.BindingDelegate
@@ -308,4 +309,8 @@ fun RecyclerView.autoScrollToBottom(adapter: RecyclerView.Adapter<*>) {
             }
         }
     })
+}
+
+inline fun Fusion.initialize(block: FusionConfig.Builder.() -> Unit) {
+    initialize(FusionConfig.Builder().apply(block).build())
 }
