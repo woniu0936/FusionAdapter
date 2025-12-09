@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
+import com.fusion.adapter.register
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.kotlin.delegate.CoreImageDelegate
 import com.fusion.example.kotlin.delegate.CoreTextDelegate
@@ -25,8 +26,8 @@ class CoreDiffActivity : AppCompatActivity() {
 
         // 1. 注册 (Core 模式)
         // 依然复用上面的 CoreTextDelegate
-        adapter.register(TextItem::class.java, CoreTextDelegate())
-        adapter.register(ImageItem::class.java, CoreImageDelegate())
+        adapter.attachDelegate(TextItem::class.java, CoreTextDelegate())
+        adapter.attachDelegate(ImageItem::class.java, CoreImageDelegate())
 
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)

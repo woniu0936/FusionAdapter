@@ -5,10 +5,11 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.core.FusionCore
-import com.fusion.adapter.core.FusionLinker
-import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.diff.FusionDiffCallback
+import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.TypeRouter
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.diff.SmartDiffCallback
+import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.internal.logD
 
 /**
@@ -24,17 +25,41 @@ import com.fusion.adapter.internal.logD
  */
 open class FusionPagingAdapter<T : Any> private constructor(
     private val diffProxy: DiffCallbackProxy<T>
-) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy) {
+) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy) , RegistryOwner {
 
     constructor() : this(DiffCallbackProxy())
 
     // 核心引擎
-    private val core = FusionCore(this)
+    private val core = AdapterController(this)
 
     init {
         // [关键步骤] 构造完成后，将 Core 注入到 DiffCallbackProxy 中
         // 此时 Core 已初始化完毕，可以安全进行 Diff 计算
         diffProxy.attachCore(core)
+    }
+
+    // -----------------------------------------------------------------------
+    // [底层 API] - 供 Java 用户使用，或供 Kotlin 扩展函数内部调用
+    // -----------------------------------------------------------------------
+
+    /**
+     * [Low-Level API] 挂载路由连接器
+     * 原名: registerLinker
+     * 语义: 将构建好的 Linker 挂载到 Core 引擎中
+     */
+    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
+        core.register(clazz, linker)
+    }
+
+    /**
+     * [Low-Level API] 挂载单一委托
+     * 原名: register
+     * 语义: 将单一 Delegate 挂载到 Core 引擎中
+     */
+    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val linker = TypeRouter<T>()
+        linker.map(Unit, delegate)
+        core.register(clazz, linker)
     }
 
     // ========================================================================================
@@ -44,15 +69,15 @@ open class FusionPagingAdapter<T : Any> private constructor(
     /**
      * [KTX 底层接口] 注册路由连接器
      */
-    fun <T : Any> registerLinker(clazz: Class<T>, linker: FusionLinker<T>) {
+    fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
         core.register(clazz, linker)
     }
 
     /**
      * [Java 快捷接口] 注册单类型委托
      */
-    fun <T : Any> register(clazz: Class<T>, delegate: FusionItemDelegate<T, *>) {
-        val linker = FusionLinker<T>()
+    fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val linker = TypeRouter<T>()
         linker.map(Unit, delegate)
         core.register(clazz, linker)
     }
@@ -122,9 +147,9 @@ open class FusionPagingAdapter<T : Any> private constructor(
      */
     private class DiffCallbackProxy<T : Any> : DiffUtil.ItemCallback<T>() {
 
-        private var core: FusionCore? = null
+        private var core: AdapterController? = null
 
-        fun attachCore(core: FusionCore) {
+        fun attachCore(core: AdapterController) {
             this.core = core
         }
 
@@ -132,7 +157,7 @@ open class FusionPagingAdapter<T : Any> private constructor(
             // ID 判断是无状态的，直接调用静态策略
             logD("Paging") { "🔥🔥🔥 [Diff Fatal] Core is NULL! Fallback to legacy check." }
             return core?.areItemsTheSame(oldItem, newItem)
-                ?: FusionDiffCallback.areItemsTheSame(oldItem, newItem)
+                ?: SmartDiffCallback.areItemsTheSame(oldItem, newItem)
         }
 
         @SuppressLint("DiffUtilEquals")

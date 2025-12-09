@@ -7,9 +7,9 @@ import androidx.annotation.NonNull;
 
 import com.fusion.example.databinding.ItemMsgSystemBinding;
 import com.fusion.example.model.FusionMessage;
-import com.fusion.adapter.java.FusionJavaDelegate;
+import com.fusion.adapter.delegate.JavaDelegate;
 
-public class JavaMsgSystemDelegate extends FusionJavaDelegate<FusionMessage, ItemMsgSystemBinding> {
+public class JavaMsgSystemDelegate extends JavaDelegate<FusionMessage, ItemMsgSystemBinding> {
 
     @NonNull
     @Override

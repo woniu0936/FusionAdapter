@@ -44,7 +44,6 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(projects.fusionCore)
-    implementation(projects.fusionKtx)
     implementation(projects.fusionPaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

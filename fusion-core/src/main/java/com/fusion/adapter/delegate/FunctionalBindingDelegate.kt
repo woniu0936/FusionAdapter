@@ -1,7 +1,6 @@
 package com.fusion.adapter.delegate
 
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.interfaces.FusionBindingInflater
 
 /**
  * [功能性委托]
@@ -14,7 +13,7 @@ import com.fusion.adapter.interfaces.FusionBindingInflater
  */
 @PublishedApi
 internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
-    inflater: FusionBindingInflater<VB>
+    inflater: BindingInflater<VB>
 ) : BindingDelegate<T, VB>(inflater) {
 
     // 1. 数据绑定 Lambda

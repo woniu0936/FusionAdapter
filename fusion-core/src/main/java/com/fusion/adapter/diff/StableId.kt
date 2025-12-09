@@ -1,7 +1,7 @@
-package com.fusion.adapter.interfaces
+package com.fusion.adapter.diff
 
 /**
- * [FusionStableId]
+ * [StableId]
  * 唯一 ID 接口。建议所有用于 FusionAdapter 的数据模型实现此接口。
  *
  * 作用：
@@ -13,6 +13,6 @@ package com.fusion.adapter.interfaces
  *     override val stableId: Any = uid
  * }
  */
-interface FusionStableId {
+interface StableId {
     val stableId: Any
 }

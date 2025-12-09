@@ -5,7 +5,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
-import com.fusion.adapter.core.FusionLinker
+import com.fusion.adapter.internal.TypeRouter
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.kotlin.delegate.ImageMsgDelegate
 import com.fusion.example.kotlin.delegate.SystemMsgDelegate
@@ -26,12 +26,12 @@ class CoreRouterActivity : AppCompatActivity() {
         fullStatusBar(binding.root)
         binding.fabAdd.visibility = View.GONE
 
-        val fusionLinker = FusionLinker<FusionMessage>()
+        val typeRouter = TypeRouter<FusionMessage>()
             .match { it.msgType }
             .map(FusionMessage.Companion.TYPE_TEXT, TextMsgDelegate())
             .map(FusionMessage.Companion.TYPE_IMAGE, ImageMsgDelegate())
             .map(FusionMessage.Companion.TYPE_SYSTEM, SystemMsgDelegate())
-        adapter.registerLinker(FusionMessage::class.java, fusionLinker)
+        adapter.attachLinker(FusionMessage::class.java, typeRouter)
 
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)

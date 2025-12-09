@@ -1,6 +1,6 @@
 package com.fusion.example.model
 
-import com.fusion.adapter.interfaces.FusionStableId
+import com.fusion.adapter.diff.StableId
 
 /**
  * [通用消息实体]
@@ -10,7 +10,7 @@ data class FusionMessage(
     val id: String,
     val msgType: Int, // 1: 文本, 2: 图片, 3: 系统提示
     val content: String
-) : FusionStableId {
+) : StableId {
 
     override val stableId: Any = id
 

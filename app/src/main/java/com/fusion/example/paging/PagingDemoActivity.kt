@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.paging.ktx.registerRoute
-import com.fusion.adapter.paging.ktx.setupFusionPaging
+import com.fusion.adapter.paging.register
+import com.fusion.adapter.paging.setupFusionPaging
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.databinding.ItemMsgSystemBinding
@@ -38,7 +38,7 @@ class PagingDemoActivity : AppCompatActivity() {
         val pagingAdapter = binding.recyclerView.setupFusionPaging<FusionMessage> {
 
             // --- 注册多类型路由 (复用之前的逻辑) ---
-            registerRoute<FusionMessage> {
+            register<FusionMessage> {
                 match { it.msgType }
 
                 // 文本消息

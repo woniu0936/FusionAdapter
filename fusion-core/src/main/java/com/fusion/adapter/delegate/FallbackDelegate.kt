@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
  * 当 Fusion 在生产环境遇到未注册的类型时，使用此委托。
  * 它的作用是创建一个高度为 0 的 View (GONE)，让该 Item 在列表中“消失”，从而避免 Crash。
  */
-class FusionFallbackDelegate : FusionItemDelegate<Any, RecyclerView.ViewHolder>() {
+class FallbackDelegate : FusionDelegate<Any, RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup): RecyclerView.ViewHolder {
         val view = View(parent.context)

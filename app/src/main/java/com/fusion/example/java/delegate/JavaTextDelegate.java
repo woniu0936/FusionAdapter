@@ -6,7 +6,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.fusion.adapter.java.FusionJavaDelegate;
+import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.example.databinding.ItemTextBinding;
 import com.fusion.example.model.TextItem;
 
@@ -14,7 +14,7 @@ import com.fusion.example.model.TextItem;
  * [Java Delegate]
  * 继承 FusionJavaDelegate，体验类似 Activity/Fragment 的写法。
  */
-public class JavaTextDelegate extends FusionJavaDelegate<TextItem, ItemTextBinding> {
+public class JavaTextDelegate extends JavaDelegate<TextItem, ItemTextBinding> {
 
     public JavaTextDelegate() {
         // 在构造时配置监听，支持 Lambda

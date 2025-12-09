@@ -7,9 +7,9 @@ import androidx.annotation.NonNull;
 
 import com.fusion.example.databinding.ItemMsgImageBinding;
 import com.fusion.example.model.FusionMessage;
-import com.fusion.adapter.java.FusionJavaDelegate;
+import com.fusion.adapter.delegate.JavaDelegate;
 
-public class JavaMsgImageDelegate extends FusionJavaDelegate<FusionMessage, ItemMsgImageBinding> {
+public class JavaMsgImageDelegate extends JavaDelegate<FusionMessage, ItemMsgImageBinding> {
 
     @NonNull
     @Override

@@ -1,29 +1,28 @@
-package com.fusion.adapter.core
+package com.fusion.adapter.internal
 
 import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.internal.logD
+import com.fusion.adapter.delegate.FusionDelegate
 
 /**
- * [DelegateRegistry]
+ * [ViewTypeRegistry]
  * 负责管理所有类型的映射关系。
  *
  */
-class DelegateRegistry {
+class ViewTypeRegistry {
 
     // 全局 ViewType 池
     // 索引 (int) -> Delegate 实例
     // 这里的索引就是 RecyclerView 需要的 viewType
-    private val viewTypeToDelegate = SparseArrayCompat<FusionItemDelegate<Any, RecyclerView.ViewHolder>>()
+    private val viewTypeToDelegate = SparseArrayCompat<FusionDelegate<Any, RecyclerView.ViewHolder>>()
 
     // 反向查找表: Delegate -> viewType (int)
     // 用于快速获取 Delegate 对应的 ID
-    private val delegateToViewType = HashMap<FusionItemDelegate<*, *>, Int>()
+    private val delegateToViewType = HashMap<FusionDelegate<*, *>, Int>()
 
     // 核心路由表: 数据类型 Class -> 路由连接器 Linker
-    private val classToLinker = HashMap<Class<*>, FusionLinker<Any>>()
+    private val classToLinker = HashMap<Class<*>, TypeRouter<Any>>()
 
     // ViewType 计数器 (自增)
     private var nextViewType = 0
@@ -36,8 +35,8 @@ class DelegateRegistry {
      * 注册 Linker
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> register(clazz: Class<T>, linker: FusionLinker<T>) {
-        classToLinker[clazz] = linker as FusionLinker<Any>
+    fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
+        classToLinker[clazz] = linker as TypeRouter<Any>
 
         // 扁平化注册：将 Linker 内部持有的所有 Delegate 注册到全局 ViewType 池中
         linker.getAllDelegates().forEach { delegate ->
@@ -48,9 +47,9 @@ class DelegateRegistry {
     /**
      * 将 Delegate 注册到全局池，分配 ViewType
      */
-    private fun registerDelegateGlobal(delegate: FusionItemDelegate<*, *>) {
+    private fun registerDelegateGlobal(delegate: FusionDelegate<*, *>) {
         @Suppress("UNCHECKED_CAST")
-        val castedDelegate = delegate as FusionItemDelegate<Any, RecyclerView.ViewHolder>
+        val castedDelegate = delegate as FusionDelegate<Any, RecyclerView.ViewHolder>
 
         // 如果这个 Delegate 还没注册过，分配一个新的 ViewType
         if (!delegateToViewType.containsKey(castedDelegate)) {
@@ -106,7 +105,7 @@ class DelegateRegistry {
             // 只有第一次发生错误时才会执行注册，后续直接复用
             if (viewTypeToDelegate.indexOfKey(FALLBACK_VIEW_TYPE) < 0) {
                 @Suppress("UNCHECKED_CAST")
-                val castedFallback = fallback as FusionItemDelegate<Any, RecyclerView.ViewHolder>
+                val castedFallback = fallback as FusionDelegate<Any, RecyclerView.ViewHolder>
 
                 // 将兜底 Delegate 放入池中，使用固定的 ID
                 viewTypeToDelegate.put(FALLBACK_VIEW_TYPE, castedFallback)
@@ -123,7 +122,7 @@ class DelegateRegistry {
      * [严苛模式] 获取 Delegate
      * 用于 onCreateViewHolder。如果此时找不到 Delegate，说明逻辑严重错误，必须抛异常。
      */
-    fun getDelegate(viewType: Int): FusionItemDelegate<Any, RecyclerView.ViewHolder> {
+    fun getDelegate(viewType: Int): FusionDelegate<Any, RecyclerView.ViewHolder> {
         return viewTypeToDelegate[viewType]
             ?: throw IllegalStateException("Fusion: Critical - Unknown ViewType -> $viewType. " +
                     "This usually means the Registry is desynchronized.")
@@ -135,7 +134,7 @@ class DelegateRegistry {
      * 在 ConcatAdapter 混用场景下，可能会收到不属于 Fusion 的 ViewType (如 Footer 的 0)，
      * 此时应返回 null，由 Core 层忽略处理。
      */
-    fun getDelegateOrNull(viewType: Int): FusionItemDelegate<Any, RecyclerView.ViewHolder>? {
+    fun getDelegateOrNull(viewType: Int): FusionDelegate<Any, RecyclerView.ViewHolder>? {
         return viewTypeToDelegate[viewType]
     }
 

@@ -3,10 +3,10 @@ package com.fusion.example.kotlin.ktx
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.ktx.autoScrollToBottom
-import com.fusion.adapter.ktx.plusAssign
-import com.fusion.adapter.ktx.register
-import com.fusion.adapter.ktx.setupFusion
+import com.fusion.adapter.autoScrollToBottom
+import com.fusion.adapter.plusAssign
+import com.fusion.adapter.register
+import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
 import com.fusion.example.databinding.ItemTextBinding

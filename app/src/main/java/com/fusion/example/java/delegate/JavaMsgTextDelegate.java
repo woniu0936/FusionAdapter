@@ -6,11 +6,11 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
-import com.fusion.adapter.java.FusionJavaDelegate;
+import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.example.databinding.ItemMsgTextBinding;
 import com.fusion.example.model.FusionMessage;
 
-public class JavaMsgTextDelegate extends FusionJavaDelegate<FusionMessage, ItemMsgTextBinding> {
+public class JavaMsgTextDelegate extends JavaDelegate<FusionMessage, ItemMsgTextBinding> {
 
     @NonNull
     @Override

@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.fusion.adapter.register
+import com.fusion.adapter.setupFusion
 import com.fusion.example.kotlin.fullStatusBar
 import com.fusion.example.model.FusionMessage
 import com.fusion.example.utils.MockDataGenerator
-import com.fusion.adapter.ktx.registerRoute
-import com.fusion.adapter.ktx.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.databinding.ItemMsgSystemBinding
@@ -34,7 +34,7 @@ class KtxRouterActivity : AppCompatActivity() {
             // =================================================================
 
 
-            registerRoute<FusionMessage> {
+            register<FusionMessage> {
                 match { item -> item.msgType }
 
                 // 1. 注册文本消息 (Type = 1)

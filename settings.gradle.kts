@@ -23,5 +23,4 @@ rootProject.name = "FusionAdapter"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":app")
 include(":fusion-core")
-include(":fusion-ktx")
 include(":fusion-paging")

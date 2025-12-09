@@ -1,4 +1,4 @@
-package com.fusion.adapter.ktx
+package com.fusion.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -10,8 +10,9 @@ import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.dsl.DelegateDsl
-import com.fusion.adapter.dsl.FusionBuilder
+import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
+import com.fusion.adapter.RegistryOwner
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
@@ -22,26 +23,18 @@ import com.fusion.adapter.dsl.RouteScope
  * 需要在 block 中配置 match 规则和 map 映射。
  *
  * @sample
- * adapter.registerRoute<Message> {
+ * adapter.register<Message> {
  *     match { it.type }
  *     map(TYPE_TEXT, ItemTextBinding::inflate) { ... }
  *     map(TYPE_IMAGE, ItemImageBinding::inflate) { ... }
  * }
  */
-inline fun <reified T : Any> FusionListAdapter.registerRoute(
+inline fun <reified T : Any> RegistryOwner.register(
     block: RouteScope<T>.() -> Unit
 ) {
     val scope = RouteScope<T>()
     scope.block()
-    this.registerLinker(T::class.java, scope.builder.linker)
-}
-
-inline fun <reified T : Any> FusionAdapter.registerRoute(
-    block: RouteScope<T>.() -> Unit
-) {
-    val scope = RouteScope<T>()
-    scope.block()
-    this.registerLinker(T::class.java, scope.builder.linker)
+    this.attachLinker(T::class.java, scope.builder.linker)
 }
 
 /**
@@ -53,23 +46,13 @@ inline fun <reified T : Any> FusionAdapter.registerRoute(
  *     onBind { user -> ... }
  * }
  */
-inline fun <reified T : Any, reified VB : ViewBinding> FusionListAdapter.register(
+inline fun <reified T : Any, reified VB : ViewBinding> RegistryOwner.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
     crossinline block: DelegateDsl<T, VB>.() -> Unit
 ) {
-    val builder = FusionBuilder<T>()
+    val builder = RegistrationBuilder<T>()
     builder.bind(inflate, block)
-    this.registerLinker(T::class.java, builder.linker)
-}
-
-/** [极简注册] 手动挡 Adapter 版本 */
-inline fun <reified T : Any, reified VB : ViewBinding> FusionAdapter.register(
-    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: DelegateDsl<T, VB>.() -> Unit
-) {
-    val builder = FusionBuilder<T>()
-    builder.bind(inflate, block)
-    this.registerLinker(T::class.java, builder.linker)
+    this.attachLinker(T::class.java, builder.linker)
 }
 
 // ============================================================================================
@@ -77,33 +60,36 @@ inline fun <reified T : Any, reified VB : ViewBinding> FusionAdapter.register(
 // ============================================================================================
 
 /**
- * [快速启动] 初始化 FusionListAdapter (自动挡) 并绑定到 RecyclerView。
- * 推荐用于 MVVM + DiffUtil 场景。
+ * [快速启动 - 推荐]
+ * 初始化自动挡 FusionListAdapter (基于 AsyncListDiffer)。
+ * 适用于 MVVM、DiffUtil、自动计算差异的场景。
  */
-fun RecyclerView.setupFusion(
+inline fun RecyclerView.setupFusion(
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
     block: FusionListAdapter.() -> Unit
 ): FusionListAdapter {
     this.layoutManager = layoutManager
-    val adapter = FusionListAdapter()
-    adapter.block()
-    this.adapter = adapter
-    return adapter
+    // 使用 apply 链式调用，代码更紧凑，不产生临时变量
+    return FusionListAdapter().apply {
+        block()
+        this@setupFusion.adapter = this
+    }
 }
 
 /**
- * [快速启动] 初始化 FusionAdapter (手动挡) 并绑定到 RecyclerView。
- * 推荐用于静态列表或需要绝对控制刷新的场景。
+ * [快速启动 - 手动挡]
+ * 初始化手动挡 FusionAdapter。
+ * 适用于静态列表、需要绝对控制刷新动画、或不需要 Diff 的简单场景。
  */
-fun RecyclerView.setupFusionManual(
+inline fun RecyclerView.setupFusionManual(
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
     block: FusionAdapter.() -> Unit
 ): FusionAdapter {
     this.layoutManager = layoutManager
-    val adapter = FusionAdapter()
-    adapter.block()
-    this.adapter = adapter
-    return adapter
+    return FusionAdapter().apply {
+        block()
+        this@setupFusionManual.adapter = this
+    }
 }
 
 // ============================================================================================

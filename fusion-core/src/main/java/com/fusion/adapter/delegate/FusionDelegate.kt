@@ -4,10 +4,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 
 /**
- * [FusionItemDelegate]
+ * [FusionDelegate]
  * 纯粹的 UI 渲染器。移除了 isFor，不再关心数据匹配逻辑。
  */
-abstract class FusionItemDelegate<T : Any, VH : RecyclerView.ViewHolder> {
+abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
 
     lateinit var adapter: RecyclerView.Adapter<*>
 

@@ -2,20 +2,20 @@ package com.fusion.adapter.diff
 
 import android.annotation.SuppressLint
 import androidx.recyclerview.widget.DiffUtil
-import com.fusion.adapter.interfaces.FusionStableId
+import com.fusion.adapter.diff.StableId
 
 /**
- * [FusionDiffCallback]
+ * [SmartDiffCallback]
  * 通用 Diff 策略，无需为每个页面单独写 DiffCallback。
  */
-object FusionDiffCallback : DiffUtil.ItemCallback<Any>() {
+object SmartDiffCallback : DiffUtil.ItemCallback<Any>() {
 
     override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
         // 1. 类型不同，绝对不是同一个 Item
         if (oldItem::class.java != newItem::class.java) return false
 
         // 2. 如果实现了 FusionStableId，使用 ID 判断 (推荐)
-        if (oldItem is FusionStableId && newItem is FusionStableId) {
+        if (oldItem is StableId && newItem is StableId) {
             return oldItem.stableId == newItem.stableId
         }
 

@@ -1,4 +1,4 @@
-package com.fusion.adapter.interfaces;
+package com.fusion.adapter.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -10,7 +10,7 @@ import androidx.viewbinding.ViewBinding;
  * 作用：解耦 ViewBinding 的创建方式，支持 Java 方法引用 (::inflate)。
  */
 @FunctionalInterface
-public interface FusionBindingInflater<VB extends ViewBinding> {
+public interface BindingInflater<VB extends ViewBinding> {
     @NonNull
     VB inflate(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent, boolean attachToParent);
 }

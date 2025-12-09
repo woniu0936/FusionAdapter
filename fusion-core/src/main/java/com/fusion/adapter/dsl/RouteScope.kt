@@ -8,12 +8,12 @@ import com.fusion.adapter.delegate.BindingDelegate
 
 /**
  * [RouteScope]
- * 仅用于 registerRoute。只暴露 match 和 map，隐藏 bind，防止歧义。
+ * 仅用于 register。只暴露 match 和 map，隐藏 bind，防止歧义。
  */
 class RouteScope<T : Any> {
     // 【关键修复】加上 @PublishedApi，允许 inline 函数访问 internal 属性
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    val builder = FusionBuilder<T>()
+    val builder = RegistrationBuilder<T>()
 
     fun match(mapper: (item: T) -> Any?) = builder.match(mapper)
 

@@ -3,7 +3,7 @@ package com.fusion.example
 import android.app.Application
 import android.util.Log
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.ktx.initialize
+import com.fusion.adapter.initialize
 
 class DemoApp : Application() {
 

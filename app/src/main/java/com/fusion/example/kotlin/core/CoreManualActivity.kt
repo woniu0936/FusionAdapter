@@ -14,7 +14,7 @@ import com.fusion.example.utils.MockDataGenerator
 
 class CoreManualActivity : AppCompatActivity() {
     // 使用 FusionAdapter (手动挡)
-    private val adapter = FusionAdapter()
+    private val fusionAdapter = FusionAdapter()
     private lateinit var binding: ActivityRecyclerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,22 +25,22 @@ class CoreManualActivity : AppCompatActivity() {
 
         // 1. 注册 (Core 模式需要实例化 Delegate 类)
         // 注意：这里调用的是 FusionAdapter 的 register
-        adapter.register(TextItem::class.java, CoreTextDelegate())
-        adapter.register(ImageItem::class.java, CoreImageDelegate())
+        fusionAdapter.attachDelegate(TextItem::class.java, CoreTextDelegate())
+        fusionAdapter.attachDelegate(ImageItem::class.java, CoreImageDelegate())
 
-        binding.recyclerView.adapter = adapter
+        binding.recyclerView.adapter = fusionAdapter
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
         // 2. 设置数据 (无 Diff，直接替换)
         val initData = MockDataGenerator.createMixedList(50)
-        adapter.setItems(initData)
+        fusionAdapter.setItems(initData)
 
         // 3. 模拟插入 (手动通知)
         binding.fabAdd.setOnClickListener {
             val newItem = TextItem("${System.currentTimeMillis()}", "新增 Item")
             // FusionAdapter 的 addItems 内部封装了 notifyItemRangeInserted
-            adapter.addItems(listOf(newItem))
-            binding.recyclerView.scrollToPosition(adapter.itemCount - 1)
+            fusionAdapter.addItems(listOf(newItem))
+            binding.recyclerView.scrollToPosition(fusionAdapter.itemCount - 1)
         }
     }
 }

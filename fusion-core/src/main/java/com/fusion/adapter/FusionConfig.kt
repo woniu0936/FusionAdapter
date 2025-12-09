@@ -1,8 +1,8 @@
 package com.fusion.adapter
 
-import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.delegate.FusionFallbackDelegate // 假设这是默认兜底
-import com.fusion.adapter.interfaces.FusionErrorListener
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.delegate.FallbackDelegate // 假设这是默认兜底
+import com.fusion.adapter.exception.ErrorListener
 
 /**
  * [全局配置]
@@ -11,8 +11,8 @@ import com.fusion.adapter.interfaces.FusionErrorListener
 class FusionConfig private constructor(builder: Builder) {
 
     @JvmField val isDebug: Boolean = builder.isDebug
-    @JvmField val errorListener: FusionErrorListener? = builder.errorListener
-    @JvmField val globalFallbackDelegate: FusionItemDelegate<Any, *>? = builder.globalFallbackDelegate
+    @JvmField val errorListener: ErrorListener? = builder.errorListener
+    @JvmField val globalFallbackDelegate: FusionDelegate<Any, *>? = builder.globalFallbackDelegate
 
     /**
      * [Builder 模式]
@@ -20,8 +20,8 @@ class FusionConfig private constructor(builder: Builder) {
      */
     class Builder {
         internal var isDebug: Boolean = false
-        internal var errorListener: FusionErrorListener? = null
-        internal var globalFallbackDelegate: FusionItemDelegate<Any, *>? = FusionFallbackDelegate()
+        internal var errorListener: ErrorListener? = null
+        internal var globalFallbackDelegate: FusionDelegate<Any, *>? = FallbackDelegate()
 
         /**
          * 设置调试模式
@@ -36,7 +36,7 @@ class FusionConfig private constructor(builder: Builder) {
         /**
          * 设置异常监听器 (线上监控)
          */
-        fun setErrorListener(listener: FusionErrorListener): Builder {
+        fun setErrorListener(listener: ErrorListener): Builder {
             this.errorListener = listener
             return this
         }
@@ -45,9 +45,9 @@ class FusionConfig private constructor(builder: Builder) {
          * 设置自定义全局兜底 Delegate
          * 默认为隐藏 Item (高度为0)
          */
-        fun setGlobalFallback(delegate: FusionItemDelegate<*, *>): Builder {
+        fun setGlobalFallback(delegate: FusionDelegate<*, *>): Builder {
             @Suppress("UNCHECKED_CAST")
-            this.globalFallbackDelegate = delegate as? FusionItemDelegate<Any, *>
+            this.globalFallbackDelegate = delegate as? FusionDelegate<Any, *>
             return this
         }
 

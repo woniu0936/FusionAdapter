@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.fusion.adapter.FusionListAdapter;
-import com.fusion.adapter.core.FusionLinker;
+import com.fusion.adapter.internal.TypeRouter;
 import com.fusion.example.databinding.ActivityRecyclerBinding;
 import com.fusion.example.java.delegate.JavaMsgImageDelegate;
 import com.fusion.example.java.delegate.JavaMsgSystemDelegate;
@@ -54,13 +54,13 @@ public class JavaDemoActivity extends AppCompatActivity {
         // 场景 1: 一对一注册 (Simple Registration)
         // ========================================================================
         // 语法：register(Class).to(Delegate)
-        adapter.register(TextItem.class, new JavaTextDelegate());
+        adapter.attachDelegate(TextItem.class, new JavaTextDelegate());
 
         // ========================================================================
         // 场景 2: 一对多路由注册 (Complex Routing)
         // ========================================================================
         // 语法：register(Class).dispatch(KeyMapper).map(Key, Delegate)...register()
-        adapter.registerLinker(FusionMessage.class, new FusionLinker<FusionMessage>()
+        adapter.attachLinker(FusionMessage.class, new TypeRouter<FusionMessage>()
                 .match(FusionMessage::getMsgType)
                 .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
                 .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate()) // 显式调用 register 完成构建);

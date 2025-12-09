@@ -1,16 +1,14 @@
-package com.fusion.adapter.core
+package com.fusion.adapter.internal
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.diff.FusionDiffCallback
-import com.fusion.adapter.interfaces.FusionStableId
-import com.fusion.adapter.internal.logD
-import com.fusion.adapter.internal.logE
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.diff.SmartDiffCallback
+import com.fusion.adapter.diff.StableId
 import java.util.Collections
 
 /**
- * [FusionCore]
+ * [AdapterController]
  * 核心引擎门面。负责连接 Adapter 与 Registry，并处理生命周期分发。
  *
  * 特性：
@@ -18,21 +16,21 @@ import java.util.Collections
  * 2. 注入 Adapter 引用到 Delegate
  * 3. 代理 DiffUtil 的内容比对逻辑
  */
-class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
+class AdapterController(private val adapter: RecyclerView.Adapter<*>) {
 
-    private val registry = DelegateRegistry()
+    private val registry = ViewTypeRegistry()
 
     /**
      * 注册路由连接器 (核心入口)
      * @param clazz 数据类型 Class
      * @param linker 包含路由规则和 Delegate 集合的连接器
      */
-    fun <T : Any> register(clazz: Class<T>, linker: FusionLinker<T>) {
+    fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
         // 1. 依赖注入：将 adapter 引用注入到 Linker 包含的所有 Delegate 中
         // 这样 Delegate 内部才能通过 adapter.context 获取上下文
         linker.getAllDelegates().forEach { delegate ->
             @Suppress("UNCHECKED_CAST")
-            val casted = delegate as FusionItemDelegate<Any, RecyclerView.ViewHolder>
+            val casted = delegate as FusionDelegate<Any, RecyclerView.ViewHolder>
             casted.adapter = adapter
         }
 
@@ -90,15 +88,15 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
         // 即使 ID 一样，也必须销毁重建
         if (oldType != newType) {
             logE("Diff") {
-                val oldId = (oldItem as? FusionStableId)?.stableId
-                val newId = (newItem as? FusionStableId)?.stableId
+                val oldId = (oldItem as? StableId)?.stableId
+                val newId = (newItem as? StableId)?.stableId
                 "🔥🔥 [Diff Mismatch] ID相同但类型不同! Old: ${oldItem.javaClass.simpleName}($oldId) vs New: ${newItem.javaClass.simpleName}($newId)"
             }
             return false
         }
 
         // 3. 类型一样，再交给静态策略去比对 ID
-        return FusionDiffCallback.areItemsTheSame(oldItem, newItem)
+        return SmartDiffCallback.areItemsTheSame(oldItem, newItem)
     }
 
     /**

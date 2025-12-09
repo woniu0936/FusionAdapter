@@ -2,9 +2,10 @@ package com.fusion.adapter
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.core.FusionCore
-import com.fusion.adapter.core.FusionLinker
-import com.fusion.adapter.delegate.FusionItemDelegate
+import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.TypeRouter
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.RegistryOwner
 
 /**
  * [FusionAdapter] - 手动挡
@@ -15,10 +16,10 @@ import com.fusion.adapter.delegate.FusionItemDelegate
  * 2. 追求极致性能的简单列表
  * 3. 需要精确控制 notifyItemMoved 等动画的场景 (拖拽排序)
  */
-open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
 
     // 核心引擎
-    private val core = FusionCore(this)
+    private val core = AdapterController(this)
 
     // 内部数据持有
     private val items = ArrayList<Any>()
@@ -28,13 +29,13 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     // ========================================================================================
 
     /** [KTX 专用接口] 注册路由连接器 */
-    fun <T : Any> registerLinker(clazz: Class<T>, linker: FusionLinker<T>) {
+    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
         core.register(clazz, linker)
     }
 
     /** [Java/普通接口] 注册单类型委托 (一对一) */
-    fun <T : Any> register(clazz: Class<T>, delegate: FusionItemDelegate<T, *>) {
-        val linker = FusionLinker<T>()
+    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val linker = TypeRouter<T>()
         linker.map(Unit, delegate)
         core.register(clazz, linker)
     }

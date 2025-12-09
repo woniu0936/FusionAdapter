@@ -1,4 +1,4 @@
-package com.fusion.adapter.java;
+package com.fusion.adapter.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -6,8 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
-
-import com.fusion.adapter.delegate.FusionItemDelegate;
 
 import java.util.List;
 
@@ -21,8 +19,8 @@ import java.util.List;
  * @param <T>  数据类型
  * @param <VB> ViewBinding 类型
  */
-public abstract class FusionJavaDelegate<T, VB extends ViewBinding>
-        extends FusionItemDelegate<T, FusionJavaDelegate.JavaBindingHolder<VB>> {
+public abstract class JavaDelegate<T, VB extends ViewBinding>
+        extends FusionDelegate<T, JavaDelegate.JavaBindingHolder<VB>> {
 
     private OnItemClickListener<T, VB> clickListener;
     private OnItemLongClickListener<T, VB> longClickListener;
@@ -104,7 +102,7 @@ public abstract class FusionJavaDelegate<T, VB extends ViewBinding>
     /**
      * 设置点击事件
      */
-    public FusionJavaDelegate<T, VB> setOnItemClick(@Nullable OnItemClickListener<T, VB> listener) {
+    public JavaDelegate<T, VB> setOnItemClick(@Nullable OnItemClickListener<T, VB> listener) {
         this.clickListener = listener;
         return this;
     }
@@ -112,7 +110,7 @@ public abstract class FusionJavaDelegate<T, VB extends ViewBinding>
     /**
      * 设置长按事件
      */
-    public FusionJavaDelegate<T, VB> setOnItemLongClick(@Nullable OnItemLongClickListener<T, VB> listener) {
+    public JavaDelegate<T, VB> setOnItemLongClick(@Nullable OnItemLongClickListener<T, VB> listener) {
         this.longClickListener = listener;
         return this;
     }

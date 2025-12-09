@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.interfaces.FusionBindingInflater
 
 /**
  * [BindingDelegate]
@@ -18,8 +17,8 @@ import com.fusion.adapter.interfaces.FusionBindingInflater
  * }
  */
 abstract class BindingDelegate<T : Any, VB : ViewBinding>(
-    private val inflater: FusionBindingInflater<VB>
-) : FusionItemDelegate<T, BindingDelegate.BindingHolder<VB>>() {
+    private val inflater: BindingInflater<VB>
+) : FusionDelegate<T, BindingDelegate.BindingHolder<VB>>() {
 
     // 点击事件回调 (View, Item, Position)
     var onItemClick: ((view: VB, item: T, position: Int) -> Unit)? = null

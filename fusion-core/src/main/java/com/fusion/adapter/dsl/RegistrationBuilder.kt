@@ -4,19 +4,19 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.core.FusionLinker
+import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.FunctionalBindingDelegate
 
 /**
- * [FusionBuilder]
+ * [RegistrationBuilder]
  * 统一注册 DSL 容器。处理 "一对一" 绑定和 "一对多" 路由配置。
  */
-class FusionBuilder<T : Any> {
+class RegistrationBuilder<T : Any> {
 
     // 内部持有 Core 层的 Linker
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    val linker = FusionLinker<T>()
+    val linker = TypeRouter<T>()
 
     // -----------------------------------------------------------------------
     // 模式 A: 一对一 (Bind)

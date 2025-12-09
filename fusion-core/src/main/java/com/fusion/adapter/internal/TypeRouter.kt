@@ -1,10 +1,10 @@
-package com.fusion.adapter.core
+package com.fusion.adapter.internal
 
-import com.fusion.adapter.delegate.FusionItemDelegate
-import com.fusion.adapter.interfaces.FusionKeyMapper
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.DiffKeyProvider
 
 /**
- * [FusionLinker]
+ * [TypeRouter]
  * 路由连接器。定义了 "数据 -> Key" 和 "Key -> Delegate" 的双重映射规则。
  *
  * 特性：
@@ -13,14 +13,14 @@ import com.fusion.adapter.interfaces.FusionKeyMapper
  *
  * @param T 数据类型
  */
-class FusionLinker<T : Any> {
+class TypeRouter<T : Any> {
 
     // Key 生成器：从 Item 中提取特征 Key
     // 默认实现：返回 Unit (适用于一对一场景)
-    private var keyMapper: FusionKeyMapper<T> = FusionKeyMapper { Unit }
+    private var keyMapper: DiffKeyProvider<T> = DiffKeyProvider { Unit }
 
     // 映射表: Key -> Delegate
-    private val keyToDelegate = HashMap<Any?, FusionItemDelegate<T, *>>()
+    private val keyToDelegate = HashMap<Any?, FusionDelegate<T, *>>()
 
     /**
      * 配置 Key 提取规则 (Match)
@@ -29,7 +29,7 @@ class FusionLinker<T : Any> {
      * @param mapper Key 提取函数，例如 { it.type }
      * @return this
      */
-    fun match(mapper: FusionKeyMapper<T>): FusionLinker<T> {
+    fun match(mapper: DiffKeyProvider<T>): TypeRouter<T> {
         this.keyMapper = mapper
         return this
     }
@@ -42,7 +42,7 @@ class FusionLinker<T : Any> {
      * @param delegate 对应的委托实例
      * @return this
      */
-    fun map(key: Any?, delegate: FusionItemDelegate<T, *>): FusionLinker<T> {
+    fun map(key: Any?, delegate: FusionDelegate<T, *>): TypeRouter<T> {
         keyToDelegate[key] = delegate
         return this
     }
@@ -50,7 +50,7 @@ class FusionLinker<T : Any> {
     /**
      * [Core 内部调用] 解析 Item 对应的 Delegate
      */
-    internal fun resolve(item: T): FusionItemDelegate<T, *>? {
+    internal fun resolve(item: T): FusionDelegate<T, *>? {
         val key = keyMapper.map(item)
         return keyToDelegate[key]
     }
@@ -58,7 +58,7 @@ class FusionLinker<T : Any> {
     /**
      * [Core 内部调用] 获取所有持有的 Delegate (用于全局注册)
      */
-    internal fun getAllDelegates(): Collection<FusionItemDelegate<T, *>> {
+    internal fun getAllDelegates(): Collection<FusionDelegate<T, *>> {
         return keyToDelegate.values
     }
 }

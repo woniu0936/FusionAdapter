@@ -4,9 +4,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.core.FusionCore
-import com.fusion.adapter.core.FusionLinker
-import com.fusion.adapter.delegate.FusionItemDelegate
+import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.TypeRouter
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.RegistryOwner
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -25,10 +26,10 @@ import com.fusion.adapter.delegate.FusionItemDelegate
  * adapter.register(UserDelegate())
  * adapter.submitList(users)
  */
-open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() , RegistryOwner {
 
     // 核心引擎
-    private val core = FusionCore(this)
+    private val core = AdapterController(this)
 
     // ========================================================================================
     // DiffUtil 策略配置
@@ -60,7 +61,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
      * [KTX 专用接口] 注册路由连接器
      * KTX DSL 通过此方法注入配置好的 FusionLinker。
      */
-    fun <T : Any> registerLinker(clazz: Class<T>, linker: FusionLinker<T>) {
+    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
         core.register(clazz, linker)
     }
 
@@ -68,8 +69,8 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
      * [Java/普通接口] 注册单类型委托 (一对一)
      * 内部会自动创建一个默认的 Linker，简化非 DSL 场景的使用。
      */
-    fun <T : Any> register(clazz: Class<T>, delegate: FusionItemDelegate<T, *>) {
-        val linker = FusionLinker<T>()
+    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val linker = TypeRouter<T>()
         linker.map(Unit, delegate) // 默认 Key 为 Unit
         core.register(clazz, linker)
     }
