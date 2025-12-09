@@ -20,8 +20,6 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     // 核心引擎
     private val core = FusionCore(this)
 
-    private val EMPTY_PAYLOADS = mutableListOf<Any>()
-
     // 内部数据持有
     private val items = ArrayList<Any>()
 
@@ -86,12 +84,15 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        core.onBindViewHolder(holder, items[position], position, EMPTY_PAYLOADS)
+        core.onBindViewHolder(holder, items[position], position)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
-        val actualPayloads = if (payloads.isEmpty()) EMPTY_PAYLOADS else payloads
-        core.onBindViewHolder(holder, items[position], position, actualPayloads)
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            core.onBindViewHolder(holder, items[position], position, payloads)
+        }
     }
 
     // --- 生命周期分发 ---

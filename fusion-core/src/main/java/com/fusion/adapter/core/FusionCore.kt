@@ -7,6 +7,7 @@ import com.fusion.adapter.diff.FusionDiffCallback
 import com.fusion.adapter.interfaces.FusionStableId
 import com.fusion.adapter.internal.logD
 import com.fusion.adapter.internal.logE
+import java.util.Collections
 
 /**
  * [FusionCore]
@@ -52,7 +53,7 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
         return registry.getDelegate(viewType).onCreateViewHolder(parent)
     }
 
-    fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any>) {
+    fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any> = Collections.emptyList()) {
         val viewType = registry.getItemViewType(item)
         // [核心修复] 兼容 ConcatAdapter / ViewPool 共享场景
         // 如果收到了外部 Adapter 的 ViewType (例如 Paging 的 Footer 0)，直接忽略。

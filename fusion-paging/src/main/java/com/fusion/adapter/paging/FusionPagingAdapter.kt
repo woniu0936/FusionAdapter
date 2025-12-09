@@ -86,14 +86,18 @@ open class FusionPagingAdapter<T : Any> private constructor(
         val item = getItem(position)
         if (item != null) {
             // 使用空列表避免对象分配
-            core.onBindViewHolder(holder, item, position, mutableListOf())
+            core.onBindViewHolder(holder, item, position)
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
-        val item = getItem(position)
-        if (item != null) {
-            core.onBindViewHolder(holder, item, position, payloads)
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            val item = getItem(position)
+            if (item != null) {
+                core.onBindViewHolder(holder, item, position, payloads)
+            }
         }
     }
 

@@ -30,8 +30,6 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     // 核心引擎
     private val core = FusionCore(this)
 
-    private val EMPTY_PAYLOADS = mutableListOf<Any>()
-
     // ========================================================================================
     // DiffUtil 策略配置
     // ========================================================================================
@@ -104,12 +102,15 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        core.onBindViewHolder(holder, differ.currentList[position], position, EMPTY_PAYLOADS)
+        core.onBindViewHolder(holder, differ.currentList[position], position)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
-        val actualPayloads = if (payloads.isEmpty()) EMPTY_PAYLOADS else payloads
-        core.onBindViewHolder(holder, differ.currentList[position], position, actualPayloads)
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            core.onBindViewHolder(holder, differ.currentList[position], position, payloads)
+        }
     }
 
     // --- 生命周期分发 (防止内存泄漏) ---
