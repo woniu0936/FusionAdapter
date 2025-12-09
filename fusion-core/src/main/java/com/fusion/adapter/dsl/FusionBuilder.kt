@@ -6,6 +6,7 @@ import androidx.annotation.RestrictTo
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.core.FusionLinker
 import com.fusion.adapter.delegate.BindingDelegate
+import com.fusion.adapter.delegate.FunctionalBindingDelegate
 
 /**
  * [FusionBuilder]
@@ -31,7 +32,7 @@ class FusionBuilder<T : Any> {
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
         crossinline block: DelegateDsl<T, VB>.() -> Unit
     ) {
-        val delegate = createAnonymousDelegate(inflate, block)
+        val delegate = createDelegate(inflate, block)
         bind(delegate)
     }
 
@@ -55,7 +56,7 @@ class FusionBuilder<T : Any> {
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
         crossinline block: DelegateDsl<T, VB>.() -> Unit
     ) {
-        val delegate = createAnonymousDelegate(inflate, block)
+        val delegate = createDelegate(inflate, block)
         map(key, delegate)
     }
 
@@ -63,31 +64,32 @@ class FusionBuilder<T : Any> {
     // 内部工厂方法 (Factory)
     // -----------------------------------------------------------------------
 
+    /**
+     * [核心工厂]
+     * 利用 reified 泛型，实例化 Core 层的 FunctionalBindingDelegate。
+     */
     @PublishedApi
-    internal inline fun <reified VB : ViewBinding> createAnonymousDelegate(
+    internal inline fun <reified VB : ViewBinding> createDelegate(
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
         crossinline block: DelegateDsl<T, VB>.() -> Unit
     ): BindingDelegate<T, VB> {
+
+        // 1. 收集 DSL 配置
         val dsl = DelegateDsl<T, VB>().apply(block)
-        return object : BindingDelegate<T, VB>(inflate) {
-            init {
-                onItemClick = dsl.clickAction
-                onItemLongClick = dsl.longClickAction
-            }
 
-            override fun onBind(binding: VB, item: T, position: Int) {
-                dsl.bindBlock?.invoke(binding, item, position)
-            }
+        // 2. 实例化具体类 (FunctionalBindingDelegate)
+        // 这里直接传入 inflate 函数引用，Kotlin 会自动做 SAM 转换，不需要 Wrapper
+        // 因为 FunctionalBindingDelegate 是泛型类，这里实例化时 T 和 VB 被具体化了
+        val delegate = FunctionalBindingDelegate<T, VB>(inflate)
 
-            override fun onBindPayload(binding: VB, item: T, position: Int, payloads: List<Any>) {
-                dsl.bindPayloadBlock?.invoke(binding, item, position, payloads)
-                    ?: super.onBindPayload(binding, item, position, payloads)
-            }
+        // 3. 注入逻辑 (属性赋值)
+        delegate.onCreate = dsl.createBlock
+        delegate.onBind = dsl.bindBlock
+        delegate.onBindPayload = dsl.bindPayloadBlock
+        delegate.onContentSame = dsl.contentSameBlock
+        delegate.onItemClick = dsl.clickAction
+        delegate.onItemLongClick = dsl.longClickAction
 
-            override fun areContentsTheSame(oldItem: T, newItem: T): Boolean {
-                return dsl.contentSameBlock?.invoke(oldItem, newItem)
-                    ?: super.areContentsTheSame(oldItem, newItem)
-            }
-        }
+        return delegate
     }
 }

@@ -9,6 +9,7 @@ import com.fusion.adapter.core.FusionCore
 import com.fusion.adapter.core.FusionLinker
 import com.fusion.adapter.delegate.FusionItemDelegate
 import com.fusion.adapter.diff.FusionDiffCallback
+import com.fusion.adapter.internal.logD
 
 /**
  * [FusionPagingAdapter]
@@ -21,7 +22,7 @@ import com.fusion.adapter.diff.FusionDiffCallback
  *
  * 注意：建议在 PagingConfig 中设置 enablePlaceholders = false，因为 Fusion 强依赖类型系统。
  */
-open class FusionPagingAdapter <T : Any> private constructor(
+open class FusionPagingAdapter<T : Any> private constructor(
     private val diffProxy: DiffCallbackProxy<T>
 ) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy) {
 
@@ -125,6 +126,7 @@ open class FusionPagingAdapter <T : Any> private constructor(
 
         override fun areItemsTheSame(oldItem: T, newItem: T): Boolean {
             // ID 判断是无状态的，直接调用静态策略
+            logD("Paging") { "🔥🔥🔥 [Diff Fatal] Core is NULL! Fallback to legacy check." }
             return core?.areItemsTheSame(oldItem, newItem)
                 ?: FusionDiffCallback.areItemsTheSame(oldItem, newItem)
         }

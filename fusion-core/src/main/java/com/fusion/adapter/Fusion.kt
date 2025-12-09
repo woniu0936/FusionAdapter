@@ -1,6 +1,7 @@
 package com.fusion.adapter
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 
 /**
  * [Fusion 核心入口]
@@ -34,7 +35,8 @@ object Fusion {
      * 如果未初始化，提供默认配置。
      */
     @JvmStatic
-    internal fun getConfig(): FusionConfig {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun getConfig(): FusionConfig {
         return config ?: synchronized(this) {
             config ?: FusionConfig.Builder().build().also { config = it }
         }

@@ -20,6 +20,8 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     internal var longClickAction: ((view: VB, item: T, position: Int) -> Boolean)? = null
     @PublishedApi
     internal var contentSameBlock: ((old: T, new: T) -> Boolean)? = null
+    @PublishedApi
+    internal var createBlock: (VB.() -> Unit)? = null
 
     /** 定义数据绑定逻辑 (简易版，不带 position) */
     fun onBind(block: VB.(item: T) -> Unit) {
@@ -49,5 +51,13 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     /** 定义高性能 Diff 内容比对 (return true 表示内容未变) */
     fun areContentsTheSame(block: (old: T, new: T) -> Boolean) {
         contentSameBlock = block
+    }
+
+    /**
+     * 定义 View 创建时的初始化逻辑 (只执行一次)
+     * 适合设置固定样式、监听器等
+     */
+    fun onCreate(block: VB.() -> Unit) {
+        createBlock = block
     }
 }

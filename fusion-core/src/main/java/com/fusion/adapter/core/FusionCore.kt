@@ -4,6 +4,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionItemDelegate
 import com.fusion.adapter.diff.FusionDiffCallback
+import com.fusion.adapter.interfaces.FusionStableId
+import com.fusion.adapter.internal.logD
+import com.fusion.adapter.internal.logE
 
 /**
  * [FusionCore]
@@ -50,8 +53,17 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
     }
 
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any>) {
-        val delegate = registry.getDelegate(holder.itemViewType)
+        val viewType = holder.itemViewType
+        val delegate = registry.getDelegate(viewType)
         delegate.onBindViewHolder(holder, item, position, payloads)
+        logD("Bind") {
+            // 这种多行字符串拼接在 Release 模式下是昂贵的，inline 完美解决了这个问题
+            """
+            >>> [OnBind] Pos=$position, ViewType=$viewType
+                Holder Delegate: ${delegate.javaClass.simpleName}
+                Actual Item:     ${item.javaClass.simpleName}
+            """.trimIndent()
+        }
     }
 
     // ========================================================================================
@@ -70,6 +82,11 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
         // 2. 如果类型变了（比如从 Text 变 Image），绝对不是同一个 Item
         // 即使 ID 一样，也必须销毁重建
         if (oldType != newType) {
+            logE("Diff") {
+                val oldId = (oldItem as? FusionStableId)?.stableId
+                val newId = (newItem as? FusionStableId)?.stableId
+                "🔥🔥 [Diff Mismatch] ID相同但类型不同! Old: ${oldItem.javaClass.simpleName}($oldId) vs New: ${newItem.javaClass.simpleName}($newId)"
+            }
             return false
         }
 

@@ -4,6 +4,7 @@ import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.delegate.FusionItemDelegate
+import com.fusion.adapter.internal.logD
 
 /**
  * [DelegateRegistry]
@@ -76,8 +77,12 @@ class DelegateRegistry {
                 ?: throw IllegalStateException("Fusion: 路由失败 (未配置 Key 映射) -> ${clazz.simpleName}, item=$item")
 
             // 3. 获取 ViewType (Map 查找)
-            return delegateToViewType[delegate]
+            val viewType = delegateToViewType[delegate]
                 ?: throw IllegalStateException("Fusion: Delegate 未注册到全局池 (System Error)")
+            logD("Registry") {
+                "[FindType] Item=${item.javaClass.simpleName} -> Delegate=${delegate.javaClass.simpleName} -> ID=$viewType"
+            }
+            return viewType
 
         } catch (e: Exception) {
             // [修改] 获取单例配置

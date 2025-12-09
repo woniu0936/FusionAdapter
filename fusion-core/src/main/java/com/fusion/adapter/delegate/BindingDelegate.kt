@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.interfaces.FusionBindingInflater
 
 /**
  * [BindingDelegate]
@@ -17,7 +18,7 @@ import androidx.viewbinding.ViewBinding
  * }
  */
 abstract class BindingDelegate<T : Any, VB : ViewBinding>(
-    private val bindingInflater: (LayoutInflater, ViewGroup, Boolean) -> VB
+    private val inflater: FusionBindingInflater<VB>
 ) : FusionItemDelegate<T, BindingDelegate.BindingHolder<VB>>() {
 
     // 点击事件回调 (View, Item, Position)
@@ -25,10 +26,14 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     var onItemLongClick: ((view: VB, item: T, position: Int) -> Boolean)? = null
 
     final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-        val binding = bindingInflater(LayoutInflater.from(parent.context), parent, false)
+        val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
         val holder = BindingHolder(binding)
+        onViewHolderCreated(holder)
         return holder
     }
+
+    /** 提供钩子函数供子类初始化点击事件等 */
+    protected open fun onViewHolderCreated(holder: BindingHolder<VB>) {}
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
         // 动态绑定监听器，确保获取最新的 AdapterPosition
@@ -59,7 +64,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     abstract fun onBind(binding: VB, item: T, position: Int)
 
     /** 子类实现：局部刷新 (可选) */
-    open fun onBindPayload(binding: VB, item: T, position: Int, payloads: List<Any>) {
+    open fun onBindPayload(binding: VB, item: T, position: Int, payloads: MutableList<Any>) {
         onBind(binding, item, position)
     }
 
