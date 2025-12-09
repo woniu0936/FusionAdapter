@@ -120,11 +120,24 @@ class DelegateRegistry {
     }
 
     /**
-     * 根据 ViewType 获取 Delegate (用于 onCreate/onBind)
+     * [严苛模式] 获取 Delegate
+     * 用于 onCreateViewHolder。如果此时找不到 Delegate，说明逻辑严重错误，必须抛异常。
      */
     fun getDelegate(viewType: Int): FusionItemDelegate<Any, RecyclerView.ViewHolder> {
         return viewTypeToDelegate[viewType]
-            ?: throw IllegalStateException("Fusion: 未知的 ViewType -> $viewType")
+            ?: throw IllegalStateException("Fusion: Critical - Unknown ViewType -> $viewType. " +
+                    "This usually means the Registry is desynchronized.")
     }
+
+    /**
+     * [安全模式] 尝试获取 Delegate (新增方法)
+     * 用于 onBind/onRecycled 等生命周期。
+     * 在 ConcatAdapter 混用场景下，可能会收到不属于 Fusion 的 ViewType (如 Footer 的 0)，
+     * 此时应返回 null，由 Core 层忽略处理。
+     */
+    fun getDelegateOrNull(viewType: Int): FusionItemDelegate<Any, RecyclerView.ViewHolder>? {
+        return viewTypeToDelegate[viewType]
+    }
+
 }
 

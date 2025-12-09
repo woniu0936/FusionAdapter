@@ -60,13 +60,13 @@ class PagingDemoActivity : AppCompatActivity() {
             }
         }
 
-        binding.recyclerView.adapter = pagingAdapter
-//        binding.recyclerView.adapter = pagingAdapter.withLoadStateFooter(
-//            footer = SimpleLoadStateAdapter {
-//                // 这里的 retry 会触发 PagingAdapter 的重试逻辑
-//                pagingAdapter.retry()
-//            }
-//        )
+//        binding.recyclerView.adapter = pagingAdapter
+        binding.recyclerView.adapter = pagingAdapter.withLoadStateFooter(
+            footer = SimpleLoadStateAdapter {
+                // 这里的 retry 会触发 PagingAdapter 的重试逻辑
+                pagingAdapter.retry()
+            }
+        )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
         // =================================================================

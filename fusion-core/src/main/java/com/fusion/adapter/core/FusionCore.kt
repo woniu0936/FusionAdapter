@@ -53,8 +53,14 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
     }
 
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any>) {
-        val viewType = holder.itemViewType
-        val delegate = registry.getDelegate(viewType)
+        val viewType = registry.getItemViewType(item)
+        // [核心修复] 兼容 ConcatAdapter / ViewPool 共享场景
+        // 如果收到了外部 Adapter 的 ViewType (例如 Paging 的 Footer 0)，直接忽略。
+        val delegate = registry.getDelegateOrNull(viewType)
+        if (delegate == null) {
+            logD("FusionCore") { "⚠️ [Ignored Bind] Pass-through foreign ViewType: $viewType" }
+            return
+        }
         delegate.onBindViewHolder(holder, item, position, payloads)
         logD("Bind") {
             // 这种多行字符串拼接在 Release 模式下是昂贵的，inline 完美解决了这个问题
@@ -128,14 +134,14 @@ class FusionCore(private val adapter: RecyclerView.Adapter<*>) {
     // ========================================================================================
 
     fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        registry.getDelegate(holder.itemViewType).onViewRecycled(holder)
+        registry.getDelegateOrNull(holder.itemViewType)?.onViewRecycled(holder)
     }
 
     fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-        registry.getDelegate(holder.itemViewType).onViewAttachedToWindow(holder)
+        registry.getDelegateOrNull(holder.itemViewType)?.onViewAttachedToWindow(holder)
     }
 
     fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        registry.getDelegate(holder.itemViewType).onViewDetachedFromWindow(holder)
+        registry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
     }
 }
