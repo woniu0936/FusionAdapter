@@ -1,0 +1,15 @@
+public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/paging/PagingDataAdapter, com/fusion/adapter/RegistryOwner {
+	public fun <init> ()V
+	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
+	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public fun getItemViewType (I)I
+	public fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;I)V
+	public fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;ILjava/util/List;)V
+	public fun onCreateViewHolder (Landroid/view/ViewGroup;I)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
+	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
+	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+}
+
