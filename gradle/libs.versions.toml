@@ -12,6 +12,7 @@ constraintlayout = "2.1.4"
 recyclerview = "1.4.0"
 collection = "1.4.5"
 paging = "3.2.1"
+publish = "0.35.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,10 +27,13 @@ androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview"
 androidx-collection = { group = "androidx.collection", name = "collection", version.ref = "collection" }
 androidx-paging-common-ktx = { module = "androidx.paging:paging-common-ktx", version.ref = "paging" }
 androidx-paging-runtime-ktx = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }
-
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+vanniktech-mavenPublish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "publish" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "publish" }
 
