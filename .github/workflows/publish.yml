@@ -1,0 +1,34 @@
+name: Publish to Maven Central
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送 v1.0.0, v0.0.1 等 tag 时触发
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # 关键步骤：从 Secrets 中恢复 GPG 密钥文件
+      - name: Decode GPG Key
+        env:
+          GPG_SECRET_KEY_RING_FILE_BASE64: ${{ secrets.GPG_SECRET_KEY_RING_FILE_BASE64 }}
+        run: |
+          echo "$GPG_SECRET_KEY_RING_FILE_BASE64" | base64 --decode > secring.gpg
+
+      # 执行发布
+      # 我们直接通过命令行 -P 参数注入凭证，这和你的 publish.sh 逻辑一致
+      - name: Publish to Maven Central
+        run: ./gradlew publishToMavenCentral -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" -Psigning.keyId="${{ secrets.GPG_KEY_ID }}" -Psigning.password="${{ secrets.GPG_PASSWORD }}" -Psigning.secretKeyRingFile="$(pwd)/secring.gpg"

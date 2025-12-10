@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # 1. 运行单元测试
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+
+      # 2. 运行 Lint 检查
+      - name: Run Lint
+        run: ./gradlew lintDebug
+
+      # 3. 检查二进制兼容性 (如果有 API 破坏性变更，这里会报错)
+      - name: Check Binary Compatibility
+        run: ./gradlew apiCheck
+
+      # 4. 尝试构建 release 包 (验证打包流程是否正常，但不签名)
+      - name: Build Release AAR
+        run: ./gradlew assembleRelease
