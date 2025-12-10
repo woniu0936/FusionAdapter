@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         fullStatusBar(binding.root)
 
+
         binding.btnCoreManual.setOnClickListener {
             startActivity<CoreManualActivity>()
         }
