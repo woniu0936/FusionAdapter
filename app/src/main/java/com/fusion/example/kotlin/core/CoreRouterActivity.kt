@@ -28,9 +28,9 @@ class CoreRouterActivity : AppCompatActivity() {
 
         val typeRouter = TypeRouter<FusionMessage>()
             .match { it.msgType }
-            .map(FusionMessage.Companion.TYPE_TEXT, TextMsgDelegate())
-            .map(FusionMessage.Companion.TYPE_IMAGE, ImageMsgDelegate())
-            .map(FusionMessage.Companion.TYPE_SYSTEM, SystemMsgDelegate())
+            .map(FusionMessage.TYPE_TEXT, TextMsgDelegate())
+            .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate())
+            .map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate())
         adapter.attachLinker(FusionMessage::class.java, typeRouter)
 
         binding.recyclerView.adapter = adapter

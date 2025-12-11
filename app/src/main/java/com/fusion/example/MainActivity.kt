@@ -1,7 +1,5 @@
 package com.fusion.example
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.fusion.example.databinding.ActivityMainBinding
@@ -12,6 +10,7 @@ import com.fusion.example.kotlin.core.CoreRouterActivity
 import com.fusion.example.kotlin.fullStatusBar
 import com.fusion.example.kotlin.ktx.KtxManualActivity
 import com.fusion.example.kotlin.ktx.KtxRouterActivity
+import com.fusion.example.kotlin.startActivity
 import com.fusion.example.paging.PagingDemoActivity
 
 class MainActivity : AppCompatActivity() {
@@ -56,8 +55,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    inline fun <reified T : Any> Context.startActivity() {
-        val intent = Intent(this, T::class.java)
-        startActivity(intent)
-    }
 }

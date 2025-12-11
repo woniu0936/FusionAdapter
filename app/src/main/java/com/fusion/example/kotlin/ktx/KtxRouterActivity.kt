@@ -38,7 +38,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 match { item -> item.msgType }
 
                 // 1. 注册文本消息 (Type = 1)
-                map(FusionMessage.Companion.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+                map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content // ItemMsgTextBinding 的控件
                     }
@@ -49,7 +49,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 }
 
                 // 2. 注册图片消息 (Type = 2)
-                map(FusionMessage.Companion.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         tvDesc.text = "图片描述: ${item.content}"
                         // ivImage.setImageResource(...)
@@ -61,7 +61,7 @@ class KtxRouterActivity : AppCompatActivity() {
                 }
 
                 // 3. 注册系统通知 (Type = 3)
-                map(FusionMessage.Companion.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item ->
                         tvSystemMsg.text = "--- ${item.content} ---"
                     }

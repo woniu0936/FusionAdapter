@@ -1,5 +1,7 @@
 package com.fusion.example.kotlin
 
+import android.content.Context
+import android.content.Intent
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -13,4 +15,9 @@ fun AppCompatActivity.fullStatusBar(rootView: View) {
         v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
         insets
     }
+}
+
+inline fun <reified T : Any> Context.startActivity() {
+    val intent = Intent(this, T::class.java)
+    startActivity(intent)
 }

@@ -85,12 +85,12 @@ object MockDataGenerator {
             "Tonight?"
         )
         val content = contents.random()
-        return FusionMessage(id, FusionMessage.Companion.TYPE_TEXT, content)
+        return FusionMessage(id, FusionMessage.TYPE_TEXT, content)
     }
 
     private fun createImageMsg(id: String, index: Int): FusionMessage {
         // 模拟图片文件名
-        return FusionMessage(id, FusionMessage.Companion.TYPE_IMAGE, "photo_${index}.jpg")
+        return FusionMessage(id, FusionMessage.TYPE_IMAGE, "photo_${index}.jpg")
     }
 
     private fun createSystemMsg(id: String): FusionMessage {
@@ -99,6 +99,6 @@ object MockDataGenerator {
             "User left the chat",
             "You recalled a message",
         )
-        return FusionMessage(id, FusionMessage.Companion.TYPE_SYSTEM, notices.random())
+        return FusionMessage(id, FusionMessage.TYPE_SYSTEM, notices.random())
     }
 }
