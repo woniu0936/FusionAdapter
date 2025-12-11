@@ -44,13 +44,13 @@ class PagingDemoActivity : AppCompatActivity() {
                 // 文本消息
                 map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item -> tvContent.text = item.content }
-                    onClick { item -> toast("Text: ${item.id}") }
+                    onClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
                 // 图片消息
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item -> tvDesc.text = item.content }
-                    onClick { item -> toast("Image: ${item.id}") }
+                    onClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
                 // 系统消息

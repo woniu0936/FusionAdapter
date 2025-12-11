@@ -14,6 +14,7 @@ class DemoApp : Application() {
             setErrorListener { item, e ->
                 Log.e("Fusion", "Unknown type: " + item.javaClass, e);
             }
+            setGlobalDebounceInterval(300)
         }
     }
 
