@@ -6,6 +6,7 @@ import androidx.annotation.RestrictTo
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.FunctionalBindingDelegate
+import com.fusion.adapter.internal.DslSignature
 import com.fusion.adapter.internal.TypeRouter
 
 /**
@@ -78,9 +79,7 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
         val dsl = DelegateDsl<T, VB>().apply(block)
 
         // 2. 实例化具体类 (FunctionalBindingDelegate)
-        // 这里直接传入 inflate 函数引用，Kotlin 会自动做 SAM 转换，不需要 Wrapper
-        // 因为 FunctionalBindingDelegate 是泛型类，这里实例化时 T 和 VB 被具体化了
-        val delegate = FunctionalBindingDelegate<T, VB>(itemClass, viewBindingClass = VB::class.java, inflate)
+        val delegate = FunctionalBindingDelegate<T, VB>(DslSignature(itemClass, VB::class.java), inflate)
 
         // 3. 注入逻辑 (属性赋值)
         delegate.onCreate = dsl.createBlock

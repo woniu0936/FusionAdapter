@@ -1,6 +1,8 @@
 package com.fusion.adapter.delegate
 
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.internal.DslSignature
+import com.fusion.adapter.internal.ViewSignature
 
 /**
  * [功能性委托]
@@ -13,8 +15,7 @@ import androidx.viewbinding.ViewBinding
  */
 @PublishedApi
 internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
-    private val itemClass: Class<T>,
-    private val viewBindingClass: Class<VB>,
+    private val dslSignature: DslSignature,
     private val inflater: BindingInflater<VB>
 ) : BindingDelegate<T, VB>(inflater) {
 
@@ -29,11 +30,7 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
 
     var onCreate: (VB.() -> Unit)? = null
 
-    private val cachedKey = DslKey(itemClass, viewBindingClass)
-
-    override fun getUniqueViewType(): Any {
-        return cachedKey
-    }
+    override val signature: ViewSignature = dslSignature
 
     override fun onBind(binding: VB, item: T, position: Int) {
         onBind?.invoke(binding, item, position)
@@ -57,8 +54,4 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
             ?: super.areContentsTheSame(oldItem, newItem)
     }
 
-    private data class DslKey(
-        val itemClass: Class<*>,
-        val inflaterClass: Class<*>
-    )
 }

@@ -2,16 +2,19 @@ package com.fusion.adapter.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
 import com.fusion.adapter.core.R;
+import com.fusion.adapter.internal.ClassSignature;
+import com.fusion.adapter.internal.ViewSignature;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-import kotlin.Suppress;
 
 /**
  * [Java 专属] ViewBinding 委托基类
@@ -28,6 +31,8 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
 
     private OnItemClickListener<T, VB> clickListener;
     private OnItemLongClickListener<T, VB> longClickListener;
+
+    private final ViewSignature signature = new ClassSignature(this.getClass());
 
     /**
      * [生命周期] 创建 ViewBinding
@@ -59,6 +64,11 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     // =======================================================================================
     // RecyclerView 适配层
     // =======================================================================================
+
+    @Override
+    public @NotNull ViewSignature getSignature() {
+        return signature;
+    }
 
     @NonNull
     @Override
@@ -137,4 +147,6 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
             this.binding = binding;
         }
     }
+
 }
+

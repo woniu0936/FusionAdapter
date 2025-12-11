@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.core.R
+import com.fusion.adapter.internal.ClassSignature
+import com.fusion.adapter.internal.ViewSignature
 
 /**
  * [BindingDelegate]
@@ -24,6 +26,15 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     // 点击事件回调 (View, Item, Position)
     var onItemClick: ((view: VB, item: T, position: Int) -> Unit)? = null
     var onItemLongClick: ((view: VB, item: T, position: Int) -> Boolean)? = null
+
+    /**
+     * [默认签名策略]
+     * 对于手动创建的 class UserDelegate : BindingDelegate...
+     * 它的签名就是 UserDelegate::class。
+     *
+     * 性能：this::class.java 是原生操作，极快。
+     */
+    override val signature: ViewSignature = ClassSignature(this::class.java)
 
     final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
         val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)

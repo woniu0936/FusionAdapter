@@ -2,6 +2,7 @@ package com.fusion.adapter.delegate
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.internal.ViewSignature
 
 /**
  * [FusionDelegate]
@@ -14,17 +15,20 @@ import androidx.recyclerview.widget.RecyclerView
 abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
 
     /**
+     * [身份签名]
+     * 必须由子类提供唯一的身份标识。
+     */
+    abstract val signature: ViewSignature
+
+    // 最终用于 Registry 的 Key
+
+
+    /**
      * [唯一标识生成器]
      * 用于生成全局唯一的 ViewType Key。
      *
-     * 默认策略: 使用 Class 对象。
-     * 适用于: 标准的 Class 继承写法 (class MyDelegate : FusionDelegate...)
-     *
-     * 注意: 如果是匿名内部类或 DSL 生成的 Delegate，必须重写此方法。
      */
-    open fun getUniqueViewType(): Any {
-        return this::class.java
-    }
+    final fun getUniqueViewType(): Any = signature
 
     // Diff 相关 (默认实现)
     open fun areContentsTheSame(oldItem: T, newItem: T): Boolean = oldItem == newItem
