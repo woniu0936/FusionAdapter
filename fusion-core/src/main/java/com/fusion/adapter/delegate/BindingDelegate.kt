@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.core.R
 
 /**
  * [BindingDelegate]
@@ -27,6 +28,32 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
         val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
         val holder = BindingHolder(binding)
+        if (onItemClick != null) {
+            holder.itemView.setOnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    @Suppress("UNCHECKED_CAST")
+                    val item = holder.itemView.getTag(R.id.fusion_item_tag) as? T
+                    if (item != null) {
+                        onItemClick?.invoke(holder.binding, item, pos)
+                    }
+                }
+            }
+        }
+
+        if (onItemLongClick != null) {
+            holder.itemView.setOnLongClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    @Suppress("UNCHECKED_CAST")
+                    val item = holder.itemView.getTag(R.id.fusion_item_tag) as? T
+                    if (item != null) {
+                        return@setOnLongClickListener onItemLongClick?.invoke(holder.binding, item, pos) == true
+                    }
+                }
+                false
+            }
+        }
         onViewHolderCreated(holder)
         return holder
     }
@@ -35,22 +62,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     protected open fun onViewHolderCreated(holder: BindingHolder<VB>) {}
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
-        // 动态绑定监听器，确保获取最新的 AdapterPosition
-        // 注意：这种方式在 onBind 中设置监听器虽然会重复 set，但保证了 item 的正确性。
-        // 如需极致性能优化，可在 onCreate 中 set，通过 tag 获取 item，但代码复杂度会上升。
-        // 对于 99% 的场景，直接 set 没有任何性能问题。
-
-        onItemClick?.let { listener ->
-            holder.itemView.setOnClickListener {
-                listener(holder.binding, item, holder.bindingAdapterPosition)
-            }
-        }
-
-        onItemLongClick?.let { listener ->
-            holder.itemView.setOnLongClickListener {
-                listener(holder.binding, item, holder.bindingAdapterPosition) ?: false
-            }
-        }
+        holder.itemView.setTag(R.id.fusion_item_tag, item)
 
         if (payloads.isNotEmpty()) {
             onBindPayload(holder.binding, item, position, payloads)
