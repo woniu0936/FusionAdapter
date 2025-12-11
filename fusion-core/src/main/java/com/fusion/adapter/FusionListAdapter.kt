@@ -29,7 +29,7 @@ import com.fusion.adapter.RegistryOwner
 open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() , RegistryOwner {
 
     // 核心引擎
-    private val core = AdapterController(this)
+    private val core = AdapterController()
 
     // ========================================================================================
     // DiffUtil 策略配置

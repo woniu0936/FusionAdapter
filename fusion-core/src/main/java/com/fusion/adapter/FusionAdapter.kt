@@ -19,7 +19,7 @@ import com.fusion.adapter.RegistryOwner
 open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
 
     // 核心引擎
-    private val core = AdapterController(this)
+    private val core = AdapterController()
 
     // 内部数据持有
     private val items = ArrayList<Any>()

@@ -38,6 +38,18 @@ inline fun logI(tag: String, message: () -> String) {
 }
 
 /**
+ * [Warn Log]
+ * 关键流程信息
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+inline fun logW(tag: String, message: () -> String) {
+    if (Fusion.getConfig().isDebug) {
+        Log.w(LIB_TAG, "[${Thread.currentThread().name}][$tag] ${message()}")
+    }
+}
+
+
+/**
  * [Error Log]
  * 错误信息 (通常 Error 即使在 Release 也可以考虑保留，但为了纯净我们这里也受 isDebug 控制，
  * 或者你可以决定 Error 始终打印)

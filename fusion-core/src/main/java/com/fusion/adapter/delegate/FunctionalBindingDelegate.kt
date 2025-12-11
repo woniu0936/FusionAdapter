@@ -13,7 +13,9 @@ import androidx.viewbinding.ViewBinding
  */
 @PublishedApi
 internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
-    inflater: BindingInflater<VB>
+    private val itemClass: Class<T>,
+    private val viewBindingClass: Class<VB>,
+    private val inflater: BindingInflater<VB>
 ) : BindingDelegate<T, VB>(inflater) {
 
     // 1. 数据绑定 Lambda
@@ -26,6 +28,12 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
     var onContentSame: ((old: T, new: T) -> Boolean)? = null
 
     var onCreate: (VB.() -> Unit)? = null
+
+    private val cachedKey = DslKey(itemClass, viewBindingClass)
+
+    override fun getUniqueViewType(): Any {
+        return cachedKey
+    }
 
     override fun onBind(binding: VB, item: T, position: Int) {
         onBind?.invoke(binding, item, position)
@@ -48,4 +56,9 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         return onContentSame?.invoke(oldItem, newItem)
             ?: super.areContentsTheSame(oldItem, newItem)
     }
+
+    private data class DslKey(
+        val itemClass: Class<*>,
+        val inflaterClass: Class<*>
+    )
 }

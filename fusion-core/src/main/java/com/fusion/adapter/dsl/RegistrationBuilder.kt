@@ -4,15 +4,15 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.FunctionalBindingDelegate
+import com.fusion.adapter.internal.TypeRouter
 
 /**
  * [RegistrationBuilder]
  * 统一注册 DSL 容器。处理 "一对一" 绑定和 "一对多" 路由配置。
  */
-class RegistrationBuilder<T : Any> {
+class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
 
     // 内部持有 Core 层的 Linker
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -80,7 +80,7 @@ class RegistrationBuilder<T : Any> {
         // 2. 实例化具体类 (FunctionalBindingDelegate)
         // 这里直接传入 inflate 函数引用，Kotlin 会自动做 SAM 转换，不需要 Wrapper
         // 因为 FunctionalBindingDelegate 是泛型类，这里实例化时 T 和 VB 被具体化了
-        val delegate = FunctionalBindingDelegate<T, VB>(inflate)
+        val delegate = FunctionalBindingDelegate<T, VB>(itemClass, viewBindingClass = VB::class.java, inflate)
 
         // 3. 注入逻辑 (属性赋值)
         delegate.onCreate = dsl.createBlock

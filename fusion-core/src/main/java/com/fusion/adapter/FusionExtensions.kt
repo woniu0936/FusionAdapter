@@ -5,14 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.Fusion
-import com.fusion.adapter.FusionAdapter
-import com.fusion.adapter.FusionConfig
-import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.dsl.DelegateDsl
 import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
-import com.fusion.adapter.RegistryOwner
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
@@ -32,7 +27,7 @@ import com.fusion.adapter.RegistryOwner
 inline fun <reified T : Any> RegistryOwner.register(
     block: RouteScope<T>.() -> Unit
 ) {
-    val scope = RouteScope<T>()
+    val scope = RouteScope(T::class.java)
     scope.block()
     this.attachLinker(T::class.java, scope.builder.linker)
 }
@@ -50,7 +45,7 @@ inline fun <reified T : Any, reified VB : ViewBinding> RegistryOwner.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
     crossinline block: DelegateDsl<T, VB>.() -> Unit
 ) {
-    val builder = RegistrationBuilder<T>()
+    val builder = RegistrationBuilder(T::class.java)
     builder.bind(inflate, block)
     this.attachLinker(T::class.java, builder.linker)
 }

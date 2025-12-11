@@ -30,7 +30,7 @@ open class FusionPagingAdapter<T : Any> private constructor(
     constructor() : this(DiffCallbackProxy())
 
     // 核心引擎
-    private val core = AdapterController(this)
+    private val core = AdapterController()
 
     init {
         // [关键步骤] 构造完成后，将 Core 注入到 DiffCallbackProxy 中

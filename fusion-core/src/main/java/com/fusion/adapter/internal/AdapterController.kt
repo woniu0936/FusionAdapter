@@ -2,7 +2,6 @@ package com.fusion.adapter.internal
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
 import java.util.Collections
@@ -16,7 +15,7 @@ import java.util.Collections
  * 2. 注入 Adapter 引用到 Delegate
  * 3. 代理 DiffUtil 的内容比对逻辑
  */
-class AdapterController(private val adapter: RecyclerView.Adapter<*>) {
+class AdapterController {
 
     private val registry = ViewTypeRegistry()
 
@@ -26,15 +25,7 @@ class AdapterController(private val adapter: RecyclerView.Adapter<*>) {
      * @param linker 包含路由规则和 Delegate 集合的连接器
      */
     fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
-        // 1. 依赖注入：将 adapter 引用注入到 Linker 包含的所有 Delegate 中
-        // 这样 Delegate 内部才能通过 adapter.context 获取上下文
-        linker.getAllDelegates().forEach { delegate ->
-            @Suppress("UNCHECKED_CAST")
-            val casted = delegate as FusionDelegate<Any, RecyclerView.ViewHolder>
-            casted.adapter = adapter
-        }
-
-        // 2. 注册到注册表
+        // 注册到注册表
         registry.register(clazz, linker)
     }
 
@@ -56,6 +47,16 @@ class AdapterController(private val adapter: RecyclerView.Adapter<*>) {
         // [核心修复] 兼容 ConcatAdapter / ViewPool 共享场景
         // 如果收到了外部 Adapter 的 ViewType (例如 Paging 的 Footer 0)，直接忽略。
         val delegate = registry.getDelegateOrNull(viewType)
+        logD("FusionTracker") {
+            """
+            ⚡ [OnBind] Executing...
+               Position: $position
+               Item Type: ${item.javaClass.name}
+               ViewType ID: $viewType
+               Found Delegate: ${delegate?.javaClass?.simpleName} @${System.identityHashCode(delegate)}
+               Delegate Key: ${delegate?.getUniqueViewType()}
+        """.trimIndent()
+        }
         if (delegate == null) {
             logD("FusionCore") { "⚠️ [Ignored Bind] Pass-through foreign ViewType: $viewType" }
             return

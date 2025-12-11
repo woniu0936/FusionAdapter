@@ -40,7 +40,7 @@ inline fun <reified T : Any, reified VB : ViewBinding> FusionPagingAdapter<*>.re
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
     crossinline block: DelegateDsl<T, VB>.() -> Unit
 ) {
-    val builder = RegistrationBuilder<T>()
+    val builder = RegistrationBuilder(T::class.java)
     builder.bind(inflate, block)
 
     // 👇 调用底层 API
@@ -54,9 +54,8 @@ inline fun <reified T : Any, reified VB : ViewBinding> FusionPagingAdapter<*>.re
 inline fun <reified T : Any> FusionPagingAdapter<*>.register(
     block: RouteScope<T>.() -> Unit
 ) {
-    val scope = RouteScope<T>()
+    val scope = RouteScope(T::class.java)
     scope.block()
 
-    // 👇 调用底层 API
     this.attachLinker(T::class.java, scope.builder.linker)
 }
