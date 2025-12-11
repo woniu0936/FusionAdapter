@@ -32,7 +32,7 @@ class KtxManualActivity : AppCompatActivity() {
             onBind { item ->
                 tvContent.text = "[KTX Manual] ${item.content}"
             }
-            onClick { item ->
+            onItemClick { item ->
                 Toast.makeText(this@KtxManualActivity, "Clicked: ${item.id}", Toast.LENGTH_SHORT).show()
             }
         }

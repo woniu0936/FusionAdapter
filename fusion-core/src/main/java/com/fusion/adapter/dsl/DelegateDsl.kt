@@ -49,13 +49,21 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     /** 定义点击事件
      * @param debounceMs 自定义防抖时间。不传则使用全局配置。
      */
-    fun onClick(debounceMs: Long? = null, block: (item: T) -> Unit) {
+    fun onItemClick(debounceMs: Long? = null, block: (item: T) -> Unit) {
         this.clickDebounce = debounceMs
         this.clickAction = { _, item, _ -> block(item) }
     }
 
+    /**
+     * [Item 点击事件 - 带 View 和 Position]
+     */
+    fun onItemClickIndexed(debounceMs: Long? = null, block: (view: VB, item: T, position: Int) -> Unit) {
+        this.clickDebounce = debounceMs
+        this.clickAction = block
+    }
+
     /** 定义长按事件 */
-    fun onLongClick(block: (item: T) -> Boolean) {
+    fun onItemLongClick(block: (item: T) -> Boolean) {
         longClickAction = { _, item, _ -> block(item) }
     }
 

@@ -43,7 +43,7 @@ class KtxRouterActivity : AppCompatActivity() {
                         tvContent.text = item.content // ItemMsgTextBinding 的控件
                     }
 
-                    onClick { item ->
+                    onItemClick { item ->
                         toast("点击了文本: ${item.content}")
                     }
                 }
@@ -55,7 +55,7 @@ class KtxRouterActivity : AppCompatActivity() {
                         // ivImage.setImageResource(...)
                     }
 
-                    onClick { item ->
+                    onItemClick { item ->
                         toast("查看大图: ${item.id}")
                     }
                 }
