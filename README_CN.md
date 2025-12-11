@@ -34,9 +34,9 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:fusion-core:0.0.1")
+    implementation("io.github.woniu0936:fusion-core:0.2.0")
     // 可选，支持paging3
-    implementation("io.github.woniu0936:fusion-paging:0.0.1")
+    implementation("io.github.woniu0936:fusion-paging:0.2.0")
 }
 ```
 
