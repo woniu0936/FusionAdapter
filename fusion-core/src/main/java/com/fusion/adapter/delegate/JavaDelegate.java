@@ -10,6 +10,7 @@ import androidx.viewbinding.ViewBinding;
 
 import com.fusion.adapter.core.R;
 import com.fusion.adapter.internal.ClassSignature;
+import com.fusion.adapter.internal.FusionViewUtil;
 import com.fusion.adapter.internal.ViewSignature;
 
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,7 @@ import java.util.List;
 public abstract class JavaDelegate<T, VB extends ViewBinding>
         extends FusionDelegate<T, JavaDelegate.JavaBindingHolder<VB>> {
 
+    private Long specificDebounceInterval = null; // null = use global
     private OnItemClickListener<T, VB> clickListener;
     private OnItemLongClickListener<T, VB> longClickListener;
 
@@ -76,7 +78,7 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
         // 调用子类实现的模板方法
         VB binding = onCreateBinding(LayoutInflater.from(parent.getContext()), parent);
         JavaBindingHolder<VB> holder = new JavaBindingHolder<>(binding);
-        holder.itemView.setOnClickListener(v -> {
+        FusionViewUtil.setOnClick(holder.itemView, specificDebounceInterval, v -> {
             int pos = holder.getBindingAdapterPosition();
             if (pos != RecyclerView.NO_POSITION && clickListener != null) {
                 T item = (T) v.getTag(R.id.fusion_item_tag);
@@ -108,12 +110,16 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     // 事件配置 (Fluent API)
     // =======================================================================================
 
-    /**
-     * 设置点击事件
-     */
-    public JavaDelegate<T, VB> setOnItemClick(@Nullable OnItemClickListener<T, VB> listener) {
+    // 1. 使用默认(全局)配置
+    public void setOnItemClick(@NonNull OnItemClickListener<T, VB> listener) {
         this.clickListener = listener;
-        return this;
+        this.specificDebounceInterval = null;
+    }
+
+    // 2. 自定义配置
+    public void setOnItemClick(long debounceMs, @NonNull OnItemClickListener<T, VB> listener) {
+        this.clickListener = listener;
+        this.specificDebounceInterval = debounceMs;
     }
 
     /**

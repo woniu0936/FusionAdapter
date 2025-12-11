@@ -7,6 +7,7 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.core.R
 import com.fusion.adapter.internal.ClassSignature
 import com.fusion.adapter.internal.ViewSignature
+import com.fusion.adapter.internal.click
 
 /**
  * [BindingDelegate]
@@ -28,6 +29,22 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     var onItemLongClick: ((view: VB, item: T, position: Int) -> Boolean)? = null
 
     /**
+     * [新增属性]
+     * 用于存储防抖时间配置。
+     * internal 修饰符允许 FunctionalBindingDelegate (子类) 访问并赋值。
+     * null = 使用全局配置。
+     */
+    internal var itemClickDebounceInterval: Long? = null
+
+    /**
+     * 自定义防抖时间
+     */
+    fun setOnItemClick(debounceMs: Long, listener: (view: VB, item: T, position: Int) -> Unit) {
+        this.onItemClick = listener
+        this.itemClickDebounceInterval = debounceMs
+    }
+
+    /**
      * [默认签名策略]
      * 对于手动创建的 class UserDelegate : BindingDelegate...
      * 它的签名就是 UserDelegate::class。
@@ -40,7 +57,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
         val holder = BindingHolder(binding)
         if (onItemClick != null) {
-            holder.itemView.setOnClickListener {
+            holder.itemView.click(itemClickDebounceInterval) {
                 val pos = holder.bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
                     @Suppress("UNCHECKED_CAST")

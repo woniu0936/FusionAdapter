@@ -75,19 +75,17 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
         crossinline block: DelegateDsl<T, VB>.() -> Unit
     ): BindingDelegate<T, VB> {
 
-        // 1. 收集 DSL 配置
+        // 1. 构建签名
+        val signature = DslSignature(itemClass, VB::class.java)
+
+        // 2. 执行 DSL 收集配置
         val dsl = DelegateDsl<T, VB>().apply(block)
 
-        // 2. 实例化具体类 (FunctionalBindingDelegate)
-        val delegate = FunctionalBindingDelegate<T, VB>(DslSignature(itemClass, VB::class.java), inflate)
+        // 3. 创建 Delegate
+        val delegate = FunctionalBindingDelegate<T, VB>(signature, inflate)
 
-        // 3. 注入逻辑 (属性赋值)
-        delegate.onCreate = dsl.createBlock
-        delegate.onBind = dsl.bindBlock
-        delegate.onBindPayload = dsl.bindPayloadBlock
-        delegate.onContentSame = dsl.contentSameBlock
-        delegate.onItemClick = dsl.clickAction
-        delegate.onItemLongClick = dsl.longClickAction
+        // 4. [核心] 一键应用配置 (替代原本的一堆赋值语句)
+        delegate.applyDsl(dsl)
 
         return delegate
     }

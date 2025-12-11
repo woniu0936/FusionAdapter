@@ -11,6 +11,7 @@ import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.LayoutHolder
+import com.fusion.adapter.internal.click
 
 // =================================================================
 // 1. 批量配置 (Batch Configuration) - 解决重复 ID 的终极方案
@@ -143,29 +144,10 @@ fun LayoutHolder.setSelected(@IdRes id: Int, isSelected: Boolean) {
 // 5. 交互事件 (Interactions)
 // =================================================================
 
-fun LayoutHolder.onClick(@IdRes id: Int, debounceMs: Long = 500L, action: (View) -> Unit) {
-    findView<View>(id).setOnClickListener(ThrottledClickListener(debounceMs, action))
+fun LayoutHolder.onClick(@IdRes id: Int, debounceMs: Long? = null, action: (View) -> Unit) {
+    findView<View>(id).click(debounceMs, action)
 }
 
 fun LayoutHolder.onLongClick(@IdRes id: Int, action: (View) -> Boolean) {
     findView<View>(id).setOnLongClickListener(action)
-}
-
-// =================================================================
-// Internal Logic
-// =================================================================
-
-private class ThrottledClickListener(
-    private val interval: Long,
-    private val action: (View) -> Unit
-) : View.OnClickListener {
-    private var lastClickTime = 0L
-
-    override fun onClick(v: View) {
-        val now = System.currentTimeMillis()
-        if (now - lastClickTime >= interval) {
-            lastClickTime = now
-            action(v)
-        }
-    }
 }

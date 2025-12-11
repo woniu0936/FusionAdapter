@@ -3,6 +3,7 @@ package com.fusion.adapter
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.FallbackDelegate // 假设这是默认兜底
 import com.fusion.adapter.exception.ErrorListener
+import com.fusion.adapter.internal.DEFAULT_DEBOUNCE_INTERVAL
 
 /**
  * [全局配置]
@@ -13,6 +14,7 @@ class FusionConfig private constructor(builder: Builder) {
     @JvmField val isDebug: Boolean = builder.isDebug
     @JvmField val errorListener: ErrorListener? = builder.errorListener
     @JvmField val globalFallbackDelegate: FusionDelegate<Any, *>? = builder.globalFallbackDelegate
+    @JvmField val globalDebounceInterval: Long = builder.globalDebounceInterval
 
     /**
      * [Builder 模式]
@@ -22,6 +24,7 @@ class FusionConfig private constructor(builder: Builder) {
         internal var isDebug: Boolean = false
         internal var errorListener: ErrorListener? = null
         internal var globalFallbackDelegate: FusionDelegate<Any, *>? = FallbackDelegate()
+        internal var globalDebounceInterval: Long = DEFAULT_DEBOUNCE_INTERVAL
 
         /**
          * 设置调试模式
@@ -48,6 +51,11 @@ class FusionConfig private constructor(builder: Builder) {
         fun setGlobalFallback(delegate: FusionDelegate<*, *>): Builder {
             @Suppress("UNCHECKED_CAST")
             this.globalFallbackDelegate = delegate as? FusionDelegate<Any, *>
+            return this
+        }
+
+        fun setGlobalDebounceInterval(interval: Long): Builder {
+            this.globalDebounceInterval = interval
             return this
         }
 
