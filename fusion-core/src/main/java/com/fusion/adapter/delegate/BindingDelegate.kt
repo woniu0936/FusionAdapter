@@ -152,12 +152,12 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     /** 1 参数 */
-    protected fun <P> registerBindingPayload(prop: KProperty1<T, P>, action: VB.(P) -> Unit) {
+    protected fun <P> bindPayload(prop: KProperty1<T, P>, action: VB.(P) -> Unit) {
         registerDataWatcher(prop) { value -> this.binding.action(value) }
     }
 
     /** 2 参数 */
-    protected fun <P1, P2> registerBindingPayload(
+    protected fun <P1, P2> bindPayload(
         p1: KProperty1<T, P1>, p2: KProperty1<T, P2>,
         action: VB.(P1, P2) -> Unit
     ) {
@@ -165,7 +165,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     /** 3 参数 */
-    protected fun <P1, P2, P3> registerBindingPayload(
+    protected fun <P1, P2, P3> bindPayload(
         p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>,
         action: VB.(P1, P2, P3) -> Unit
     ) {
@@ -173,7 +173,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     /** 4 参数 */
-    protected fun <P1, P2, P3, P4> registerBindingPayload(
+    protected fun <P1, P2, P3, P4> bindPayload(
         p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>,
         action: VB.(P1, P2, P3, P4) -> Unit
     ) {
@@ -181,7 +181,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     /** 5 参数 */
-    protected fun <P1, P2, P3, P4, P5> registerBindingPayload(
+    protected fun <P1, P2, P3, P4, P5> bindPayload(
         p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>,
         action: VB.(P1, P2, P3, P4, P5) -> Unit
     ) {
@@ -189,7 +189,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     /** 6 参数 */
-    protected fun <P1, P2, P3, P4, P5, P6> registerBindingPayload(
+    protected fun <P1, P2, P3, P4, P5, P6> bindPayload(
         p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>, p6: KProperty1<T, P6>,
         action: VB.(P1, P2, P3, P4, P5, P6) -> Unit
     ) {

@@ -80,6 +80,12 @@ public abstract interface class com/fusion/adapter/RegistryOwner {
 
 public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> (Lcom/fusion/adapter/delegate/BindingInflater;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
+	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
 	public final fun getOnItemClick ()Lkotlin/jvm/functions/Function3;
 	public final fun getOnItemLongClick ()Lkotlin/jvm/functions/Function3;
 	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
@@ -91,12 +97,6 @@ public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/a
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/BindingDelegate$BindingHolder;
 	protected fun onViewHolderCreated (Lcom/fusion/adapter/delegate/BindingDelegate$BindingHolder;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
-	protected final fun registerBindingPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
 	public final fun setOnItemClick (JLkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemClick (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemLongClick (Lkotlin/jvm/functions/Function3;)V
