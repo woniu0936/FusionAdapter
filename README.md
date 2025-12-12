@@ -10,7 +10,7 @@
 
 **FusionAdapter** is a next-generation `RecyclerView` adapter library for Android, built with Kotlin DSL and ViewBinding.
 
-It aims to **fuse** the tedious boilerplate code of traditional Adapters (ViewHolders, ViewTypes, DiffUtils) into concise, type-safe, and declarative logic. It natively supports **Paging 3** and **Smart Diff**.
+It aims to **fuse** tedious Adapter boilerplate code (ViewHolders, ViewTypes, DiffUtils) into concise, type-safe, and declarative logic. It natively supports **Paging 3** and **Smart Diff**, allowing you to build complex lists with minimal effort.
 
 🔗 **GitHub**: [https://github.com/woniu0936/FusionAdapter](https://github.com/woniu0936/FusionAdapter)
 
@@ -18,13 +18,15 @@ It aims to **fuse** the tedious boilerplate code of traditional Adapters (ViewHo
 
 ## ✨ Features
 
-*   **⚡ Minimalist DSL**: Say goodbye to repetitive Adapter classes. Initialize a list in a single line.
-*   **🔒 Type Safe**: Generic-based routing ensures type safety at compile time.
-*   **🎨 ViewBinding Integration**: Native support for `ViewBinding`, eliminating `findViewById`.
-*   **🔀 Flexible Routing**: Easily handle One-to-One (Simple) and One-to-Many (Polymorphic) lists.
-*   **🚀 Smart Diff**: Built-in intelligent diffing strategy with `StableId` support to eliminate list flickering.
-*   **📄 Paging 3 Support**: Seamless integration with Jetpack Paging 3 using the same consistent API.
-*   **🛡️ Production-Grade Safety**: Comprehensive global exception interception and fallback view mechanisms to prevent crashes.
+*   **⚡ Minimalist DSL**: Say goodbye to Adapter class explosions. Launch a list with a single line of code.
+*   **🔀 Powerful Routing**:
+    *   **Heterogeneous Lists**: Mix different data classes easily (Header + Item + Footer).
+    *   **Polymorphism**: Map the *same* data class to *different* layouts based on properties (e.g., Chat bubbles).
+*   **📐 Layout Control**: Declare `spanSize` and `fullSpan` directly in the DSL. Perfect for Grids and Staggered Layouts.
+*   **🎨 ViewBinding**: Native integration. No more `findViewById`. Type-safe and clean.
+*   **🚀 Smart Diff**: Built-in async diffing strategy with `StableId` support to eliminate screen flickering.
+*   **📄 Paging 3 Support**: Seamless integration with Jetpack Paging 3 using the exact same API.
+*   **🛡️ Production Ready**: Comprehensive global exception interception and fallback view mechanisms to prevent crashes.
 
 ---
 
@@ -42,92 +44,182 @@ dependencies {
 
 ---
 
-## 🔨 Quick Start
+## 🔨 Usage Guide
 
-### 1. Basic List (One-to-One)
+### 1. Simple List (One-to-One)
 
-The most common scenario: one data type maps to one layout.
+The simplest scenario: mapping one data type to one layout.
 
 ```kotlin
-// In Activity or Fragment
+// In Activity / Fragment
 val adapter = recyclerView.setupFusion {
     
     // Register: Data Type (String) -> Layout (ItemTextBinding)
     register(ItemTextBinding::inflate) {
         
-        // Bind Data (DSL receiver is the Binding)
+        // onBind: Bind data (Receiver is the Binding)
         onBind { item ->
             tvTitle.text = item
         }
 
-        // Handle Click
-        onClick { item ->
+        // onClick: Handle click events
+        onItemClick { item ->
             toast("Clicked: $item")
         }
     }
 }
 
-// Submit Data
+// Submit data
 adapter.submitList(listOf("Hello", "Fusion", "Adapter"))
 ```
 
-### 2. Polymorphic List (One-to-Many)
+### 2. Multi-Type List: Polymorphism (Chat Mode)
 
-Ideal for complex screens, such as a chat interface where a single `Message` type displays differently based on properties (e.g., Text vs. Image).
+**This is FusionAdapter's killer feature.**
+Ideal for scenarios where the data type is the same (e.g., `Message`), but the UI differs based on a property (e.g., Text vs. Image vs. System Notice). No more `getItemViewType`!
 
 ```kotlin
-data class Message(val type: Int, val content: String)
+data class Message(val id: String, val type: Int, val content: String)
 
 recyclerView.setupFusion {
-    
-    // Register routing rules for the Message type
+    // Enable routing mode for the Message type
     register<Message> {
-        // 1. Define Match Rule (Extract Key from Item)
+        
+        // 1. Define match rule (Extract the Key)
         match { it.type }
 
-        // 2. Map Key -> Layout & Logic
-        map(TYPE_TEXT, ItemTextBinding::inflate) {
-            onBind { msg -> tvContent.text = msg.content }
+        // 2. Map Key -> Layout: Text Message
+        map(TYPE_TEXT, ItemMsgTextBinding::inflate) {
+            onBind { msg -> 
+                tvContent.text = msg.content
+                // Apply styles dynamically (Left/Right bubble)
+                ChatStyleHelper.bindTextMsg(this, msg.isMe)
+            }
         }
 
-        map(TYPE_IMAGE, ItemImageBinding::inflate) {
-            onBind { msg -> ivImage.load(msg.content) }
+        // 3. Map Key -> Layout: Image Message
+        map(TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+            onBind { msg -> 
+                ivImage.load(msg.content)
+                ChatStyleHelper.bindImageMsg(this, msg.isMe)
+            }
         }
+
+        // 4. Map Key -> Layout: System Notice
+        map(TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+            onBind { msg -> tvSystem.text = msg.content }
+        }
+    }
+}
+```
+
+### 3. Multi-Type List: Heterogeneous (Mixed Data)
+
+Displaying mixed data entities in a single list, such as: `Header` + `Product` + `Ad` + `Footer`.
+
+```kotlin
+recyclerView.setupFusion {
+    // Register Header
+    register<HeaderItem, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+        onBind { item -> tvTitle.text = item.title }
+    }
+
+    // Register Product
+    register<ProductItem, ItemProductBinding>(ItemProductBinding::inflate) {
+        onBind { item -> tvName.text = item.name }
+    }
+    
+    // Register Ad
+    register<AdItem, ItemAdBinding>(ItemAdBinding::inflate) { ... }
+}
+
+// Submit mixed list List<Any>
+adapter.submitList(listOf(HeaderItem("Hot"), ProductItem(1), AdItem(...)))
+```
+
+### 4. Layout Control (Grid & Staggered Support)
+
+Control `GridLayoutManager` or `StaggeredGridLayoutManager` behavior directly within the DSL.
+
+```kotlin
+val layoutManager = GridLayoutManager(context, 2) // or StaggeredGridLayoutManager
+recyclerView.layoutManager = layoutManager
+
+recyclerView.setupFusion(layoutManager) { // Pass layoutManager to enable layout DSL
+
+    // Header (Full Span)
+    register<HeaderItem, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+        onBind { ... }
+        
+        // Staggered: Enable full span
+        fullSpanIf { true } 
+        // Grid: Occupy all columns
+        spanSize { item, position -> layoutManager.spanCount } 
+    }
+
+    // Grid Item (1 Span)
+    register<GridItem, ItemGridBinding>(ItemGridBinding::inflate) {
+        onBind { ... }
+        spanSize { _, _ -> 1 }
     }
 }
 ```
 
 ---
 
-## 🚀 Advanced Usage
+## 🚀 Performance Optimization
 
 ### 🔹 Smart Diff & StableId
 
-FusionAdapter encapsulates `AsyncListDiffer`. For ultimate performance and precise animations (avoiding the flicker of `notifyDataSetChanged`), implement the `StableId` interface in your data models:
+FusionAdapter wraps `AsyncListDiffer` internally. To achieve maximum performance and precise animations (avoiding the flickering of `notifyDataSetChanged`), implementation of the `StableId` interface is recommended:
 
 ```kotlin
 data class User(
     val uid: String, 
     val name: String
 ) : StableId {
-    // Return a unique identifier for DiffUtil
+    // Return a unique identifier.
+    // DiffUtil uses this to check if an item has moved or changed.
     override val stableId: Any = uid
 }
 ```
 
-### 🔹 Paging 3 Support
+### 🔹 Partial Refresh (Payloads)
 
-Fusion provides a dedicated `FusionPagingAdapter`. The API remains identical to the standard version, ensuring zero migration cost.
+Handle `notifyItemChanged(pos, payload)` easily in DSL to refresh only specific views, avoiding image reloading or full redraws.
 
 ```kotlin
-// Use the 'setupFusionPaging' extension
-val pagingAdapter = recyclerView.setupFusionPaging<MyItem> {
-    register(ItemUserBinding::inflate) {
-        onBind { user -> ... }
+register(ItemPostBinding::inflate) {
+    onBind { post -> 
+        tvContent.text = post.content
+        updateLikeState(post.isLiked) // Full bind
+    }
+    
+    // Handle partial refresh
+    bindPayload(SocialPost::isLiked, SocialPost::likeCount) { isLiked, likeCount ->
+        // Triggered ONLY when isLiked or likeCount changes
+        updateLikeState(isLiked, likeCount)
+    }
+}
+```
+
+---
+
+## 📄 Paging 3 Support
+
+Fusion provides a dedicated `FusionPagingAdapter`. The API is identical to the standard DSL version, allowing for zero-cost migration.
+
+```kotlin
+// Use the setupFusionPaging extension
+val pagingAdapter = recyclerView.setupFusionPaging<FusionMessage> {
+    register<FusionMessage> {
+        match { it.type }
+        map(TYPE_TEXT, ItemTextBinding::inflate) { ... }
+        map(TYPE_IMAGE, ItemImageBinding::inflate) { ... }
     }
 }
 
-// Collect PagingData from ViewModel
+// Submit PagingData via ViewModel
 lifecycleScope.launch {
     viewModel.flow.collectLatest { pagingData ->
         pagingAdapter.submitData(pagingData)
@@ -135,73 +227,48 @@ lifecycleScope.launch {
 }
 ```
 
-### 🔹 Partial Updates (Payloads)
-
-Handle `notifyItemChanged(pos, payload)` effortlessly within the DSL to avoid redrawing the entire Item:
-
-```kotlin
-register(ItemUserBinding::inflate) {
-    onBind { user -> 
-        tvName.text = user.name
-        tvStatus.text = user.status 
-    }
-    
-    // Handle Partial Refresh
-    onBindPayload { user, payloads ->
-        // payloads is a List<Any>
-        if (payloads.contains("STATUS_CHANGED")) {
-            tvStatus.text = user.status
-        }
-    }
-}
-```
-
 ---
 
-## ⚙️ Global Configuration (Optional)
+## ⚙️ Global Configuration
 
 It is recommended to initialize Fusion in your `Application` class to configure Debug mode and global error listeners.
 
 ```kotlin
 Fusion.initialize {
     // Debug Mode:
-    // true  -> Throw exceptions for unregistered types (Recommended for Development)
-    // false -> Show fallback View (Default GONE) to prevent Crashes (Recommended for Production)
+    // true  -> Throw exceptions for unregistered types (Recommended for Dev).
+    // false -> Render fallback View (Default GONE) to prevent Crashes (Recommended for Prod).
     setDebug(BuildConfig.DEBUG)
     
-    // Monitor exceptions in Production
+    // Global Error Listener
     setErrorListener { item, e ->
-        // Report to Bugly / Firebase / Sentry
-        CrashReport.postCatchedException(e)
+        Log.e("Fusion", "Rendering error for ${item.javaClass}", e)
+        // Report to Crashlytics / Bugly
     }
-    
-    // (Optional) Custom Global Fallback Delegate
-    setGlobalFallback(MyCustomErrorDelegate())
 }
 ```
 
 ---
 
-## ☕ Java Support
+## ☕ Java Interoperability
 
-Fusion provides a developer-friendly `JavaDelegate` class for Java users.
+FusionAdapter is Java-friendly. You can use the `JavaDelegate` class to mix Java code with Kotlin DSL.
 
 ```java
 // 1. Create a Delegate
 public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
-    @Override
-    protected ItemUserBinding onCreateBinding(LayoutInflater inflater, ViewGroup parent) {
-        return ItemUserBinding.inflate(inflater, parent, false);
-    }
-
-    @Override
-    protected void onBind(ItemUserBinding binding, User item, int position) {
-        binding.tvName.setText(item.name);
-    }
+    // Implement onCreateBinding and onBind ...
 }
 
 // 2. Register
 adapter.attachDelegate(User.class, new UserDelegate());
+
+// 3. Complex TypeRouter is also supported
+adapter.attachLinker(Message.class, new TypeRouter<Message>()
+    .match(Message::getType)
+    .map(TYPE_TEXT, new TextDelegate())
+    .map(TYPE_IMAGE, new ImageDelegate())
+);
 ```
 
 ---
