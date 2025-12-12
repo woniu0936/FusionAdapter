@@ -24,8 +24,8 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
     // 1. 数据绑定 Lambda
     var onBind: (VB.(item: T, position: Int) -> Unit)? = null
 
-    // 2. Payload Lambda (注意类型 MutableList)
-    var onBindPayload: (VB.(item: T, position: Int, payloads: MutableList<Any>) -> Unit)? = null
+    // 2. Payload Lambda
+    var onBindPayloadRaw: (VB.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
 
     // 3. Diff Lambda
     var onContentSame: ((old: T, new: T) -> Boolean)? = null
@@ -43,9 +43,27 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         onCreate?.invoke(holder.binding)
     }
 
+    override fun onBindPayload(
+        binding: VB,
+        item: T,
+        position: Int,
+        payloads: MutableList<Any>,
+        handled: Boolean
+    ) {
+        // 1. 如果用户定义了 rawPayloadBlock，无条件执行 (给予最高优先级或作为补充)
+        if (onBindPayloadRaw != null) {
+            onBindPayloadRaw?.invoke(binding, item, position, payloads)
+        }
+        // 2. 否则，如果自动逻辑也没处理，才回退到 super (通常是全量 bind)
+        else if (!handled) {
+            super.onBindPayload(binding, item, position, payloads, handled)
+        }
+    }
+
+
     override fun onBindPayload(binding: VB, item: T, position: Int, payloads: MutableList<Any>) {
-        if (onBindPayload != null) {
-            onBindPayload?.invoke(binding, item, position, payloads)
+        if (onBindPayloadRaw != null) {
+            onBindPayloadRaw?.invoke(binding, item, position, payloads)
         } else {
             super.onBindPayload(binding, item, position, payloads)
         }
@@ -62,9 +80,13 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
      */
     fun applyDsl(dsl: DelegateDsl<T, VB>) {
         this.onBind = dsl.bindBlock
-        this.onBindPayload = dsl.bindPayloadBlock
+        this.onBindPayloadRaw = dsl.rawPayloadBlock
         this.onCreate = dsl.createBlock
         this.onContentSame = dsl.contentSameBlock
+        // 注册所有 Watcher
+        dsl.pendingWatchers.forEach { watcher ->
+            registerWatcherFromDsl(watcher)
+        }
 
         // 处理点击事件
         this.onItemClick = dsl.clickAction

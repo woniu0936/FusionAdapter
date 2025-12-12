@@ -1,6 +1,14 @@
 package com.fusion.adapter.dsl
 
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.internal.PropertyWatcher1
+import com.fusion.adapter.internal.PropertyWatcher2
+import com.fusion.adapter.internal.PropertyWatcher3
+import com.fusion.adapter.internal.PropertyWatcher4
+import com.fusion.adapter.internal.PropertyWatcher5
+import com.fusion.adapter.internal.PropertyWatcher6
+import com.fusion.adapter.internal.Watcher
+import kotlin.reflect.KProperty1
 
 /**
  * [DelegateDsl]
@@ -14,7 +22,7 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     internal var bindBlock: (VB.(item: T, position: Int) -> Unit)? = null
 
     @PublishedApi
-    internal var bindPayloadBlock: (VB.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
+    internal var rawPayloadBlock: (VB.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
 
     @PublishedApi
     internal var clickAction: ((view: VB, item: T, position: Int) -> Unit)? = null
@@ -38,6 +46,9 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     @PublishedApi
     internal var fullSpanBlock: ((item: T) -> Boolean)? = null
 
+    // 暂存所有 Watcher
+    internal val pendingWatchers = ArrayList<Watcher<T>>()
+
     /** 定义数据绑定逻辑 (简易版，不带 position) */
     fun onBind(block: VB.(item: T) -> Unit) {
         bindBlock = { item, _ -> block(item) }
@@ -50,7 +61,52 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
 
     /** 定义局部刷新逻辑 (Payload) */
     fun onBindPayload(block: VB.(item: T, payloads: List<Any>) -> Unit) {
-        bindPayloadBlock = { item, _, payloads -> block(item, payloads) }
+        rawPayloadBlock = { item, _, payloads -> block(item, payloads) }
+    }
+
+    // 1 参数
+    fun <P> onBindPayload(prop: KProperty1<T, P>, action: VB.(P) -> Unit) {
+        pendingWatchers.add(PropertyWatcher1(prop, action))
+    }
+
+    // 2 参数
+    fun <P1, P2> onBindPayload(
+        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>,
+        action: VB.(P1, P2) -> Unit
+    ) {
+        pendingWatchers.add(PropertyWatcher2(p1, p2, action))
+    }
+
+    // 3 参数
+    fun <P1, P2, P3> onBindPayload(
+        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>,
+        action: VB.(P1, P2, P3) -> Unit
+    ) {
+        pendingWatchers.add(PropertyWatcher3(p1, p2, p3, action))
+    }
+
+    // 4 参数
+    fun <P1, P2, P3, P4> onBindPayload(
+        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>,
+        action: VB.(P1, P2, P3, P4) -> Unit
+    ) {
+        pendingWatchers.add(PropertyWatcher4(p1, p2, p3, p4, action))
+    }
+
+    // 5 参数
+    fun <P1, P2, P3, P4, P5> onBindPayload(
+        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>,
+        action: VB.(P1, P2, P3, P4, P5) -> Unit
+    ) {
+        pendingWatchers.add(PropertyWatcher5(p1, p2, p3, p4, p5, action))
+    }
+
+    // 6 参数
+    fun <P1, P2, P3, P4, P5, P6> onBindPayload(
+        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>, p6: KProperty1<T, P6>,
+        action: VB.(P1, P2, P3, P4, P5, P6) -> Unit
+    ) {
+        pendingWatchers.add(PropertyWatcher6(p1, p2, p3, p4, p5, p6, action))
     }
 
     /** 定义点击事件

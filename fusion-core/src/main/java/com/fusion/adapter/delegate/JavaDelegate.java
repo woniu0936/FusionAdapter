@@ -16,6 +16,9 @@ import com.fusion.adapter.internal.ViewSignature;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.function.Function;
+
+import kotlin.Unit;
 
 /**
  * [Java 专属] ViewBinding 委托基类
@@ -99,10 +102,21 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     @Override
     public final void onBindViewHolder(@NonNull JavaBindingHolder<VB> holder, @NonNull T item, int position, @NonNull List<Object> payloads) {
         holder.itemView.setTag(R.id.fusion_item_tag, item);
+        boolean handled = false;
         if (!payloads.isEmpty()) {
-            onBindPayload(holder.binding, item, position, payloads);
+            handled = dispatchHandledPayloads(holder, item, payloads);
+        }
+
+        if (!payloads.isEmpty()) {
+            onBindPayload(holder.binding, item, position, payloads, handled);
         } else {
             onBind(holder.binding, item, position);
+        }
+    }
+
+    protected void onBindPayload(@NonNull VB binding, @NonNull T item, int position, @NonNull List<Object> payloads, boolean handled) {
+        if (!handled) {
+            onBind(binding, item, position);
         }
     }
 
@@ -146,6 +160,56 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
         return false; // 默认行为
     }
 
+    /** 1 参数 */
+    protected final <P> void bindPayload(@NonNull Function<T, P> getter, @NonNull PayloadConsumer<VB, P> consumer) {
+        registerDataWatcher(getter::apply, (holder, val) -> { consumer.accept(holder.binding, val); return Unit.INSTANCE; });
+    }
+
+    /** 2 参数 */
+    protected final <P1, P2> void bindPayload(
+            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2,
+            @NonNull PayloadConsumer2<VB, P1, P2> consumer
+    ) {
+        registerDataWatcher(g1::apply, g2::apply, (holder, v1, v2) -> { consumer.accept(holder.binding, v1, v2); return Unit.INSTANCE; });
+    }
+
+    /** 3 参数 */
+    protected final <P1, P2, P3> void bindPayload(
+            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3,
+            @NonNull PayloadConsumer3<VB, P1, P2, P3> consumer
+    ) {
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, (holder, v1, v2, v3) -> { consumer.accept(holder.binding, v1, v2, v3); return Unit.INSTANCE; });
+    }
+
+    /** 4 参数 */
+    protected final <P1, P2, P3, P4> void bindPayload(
+            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4,
+            @NonNull PayloadConsumer4<VB, P1, P2, P3, P4> consumer
+    ) {
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, (holder, v1, v2, v3, v4) -> { consumer.accept(holder.binding, v1, v2, v3, v4); return Unit.INSTANCE; });
+    }
+
+    // ... 5, 6 参数以此类推 (为了节省篇幅，这里展示到 4，请按模式添加 5 和 6) ...
+    // 下面补充 5 和 6 的代码，直接复制即可
+
+    /** 5 参数 */
+    protected final <P1, P2, P3, P4, P5> void bindPayload(
+            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5,
+            @NonNull PayloadConsumer5<VB, P1, P2, P3, P4, P5> consumer
+    ) {
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply,
+                (holder, v1, v2, v3, v4, v5) -> { consumer.accept(holder.binding, v1, v2, v3, v4, v5); return Unit.INSTANCE; });
+    }
+
+    /** 6 参数 */
+    protected final <P1, P2, P3, P4, P5, P6> void bindPayload(
+            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5, @NonNull Function<T, P6> g6,
+            @NonNull PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> consumer
+    ) {
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply, g6::apply,
+                (holder, v1, v2, v3, v4, v5, v6) -> { consumer.accept(holder.binding, v1, v2, v3, v4, v5, v6); return Unit.INSTANCE; });
+    }
+
     // =======================================================================================
     // 内部类与接口
     // =======================================================================================
@@ -159,6 +223,13 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     public interface OnItemLongClickListener<T, VB extends ViewBinding> {
         boolean onLongClick(@NonNull VB binding, @NonNull T item, int position);
     }
+
+    @FunctionalInterface public interface PayloadConsumer<VB, P> { void accept(VB binding, P val); }
+    @FunctionalInterface public interface PayloadConsumer2<VB, P1, P2> { void accept(VB binding, P1 v1, P2 v2); }
+    @FunctionalInterface public interface PayloadConsumer3<VB, P1, P2, P3> { void accept(VB binding, P1 v1, P2 v2, P3 v3); }
+    @FunctionalInterface public interface PayloadConsumer4<VB, P1, P2, P3, P4> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4); }
+    @FunctionalInterface public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5); }
+    @FunctionalInterface public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6); }
 
     public static class JavaBindingHolder<VB extends ViewBinding> extends RecyclerView.ViewHolder {
         @NonNull
