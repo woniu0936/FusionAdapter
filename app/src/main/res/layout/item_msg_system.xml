@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:paddingVertical="12dp">
+    android:paddingVertical="16dp">
 
     <TextView
         android:id="@+id/tvSystemMsg"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#F0F0F0"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:textColor="#999999"
-        android:textSize="12sp"
-        tools:text="--- User joined the chat ---" />
-
-</LinearLayout>
+        android:layout_gravity="center"
+        android:background="@drawable/bg_m3_chip"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textAlignment="center"/>
+</FrameLayout>

@@ -1,0 +1,4 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="8dp"/> <!-- M3 Small Shape -->
+    <solid android:color="#1F757575"/> <!-- 模拟 Surface Variant 的半透明 -->
+</shape>

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:name=".DemoApp"
+        android:name=".app.DemoApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FusionAdapter">
         <activity
-            android:name=".MainActivity"
+            android:name=".feature.main.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,14 +20,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".kotlin.core.CoreDiffActivity" />
-        <activity android:name=".kotlin.core.CoreManualActivity" />
-        <activity android:name=".kotlin.core.CoreRouterActivity" />
-        <activity android:name=".kotlin.ktx.KtxDiffActivity" />
-        <activity android:name=".kotlin.ktx.KtxManualActivity" />
-        <activity android:name=".kotlin.ktx.KtxRouterActivity" />
-        <activity android:name=".java.JavaDemoActivity" />
-        <activity android:name=".paging.PagingDemoActivity" />
+        <activity android:name=".feature.java.JavaInteropActivity" />
+        <activity android:name=".feature.paging.PagingDemoActivity" />
+        <activity android:name=".feature.classic.ClassicManualActivity" />
+        <activity android:name=".feature.payload.PayloadPerformanceActivity" />
+        <activity android:name=".feature.dsl.DslComplexActivity" />
+        <activity android:name=".feature.layout.GridSpanSizeActivity" />
+        <activity android:name=".feature.layout.StaggeredFullSpanActivity" />
     </application>
 
 </manifest>

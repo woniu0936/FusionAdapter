@@ -1,0 +1,4 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="50dp"/>
+    <solid android:color="#1F000000"/> <!-- 或者使用 ?attr/colorSurfaceVariant 的半透明版本 -->
+</shape>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- 使用灰色作为填充，模拟头像占位符 -->
+    <solid android:color="#E0E0E0" />
+
+    <!-- 可选：如果你已经配置好了 Material3 主题，可以使用动态颜色 -->
+    <!-- <solid android:color="?attr/colorSurfaceVariant" /> -->
+
+    <size android:width="40dp" android:height="40dp"/>
+</shape>

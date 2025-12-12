@@ -9,7 +9,8 @@ import com.fusion.adapter.diff.StableId
 data class FusionMessage(
     val id: String,
     val msgType: Int, // 1: 文本, 2: 图片, 3: 系统提示
-    val content: String
+    val content: String,
+    val isMe: Boolean = false
 ) : StableId {
 
     override val stableId: Any = id

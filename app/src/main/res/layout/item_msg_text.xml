@@ -1,43 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="horizontal"
     android:paddingHorizontal="16dp"
-    android:paddingVertical="8dp">
+    android:paddingVertical="4dp"
+    android:clipToPadding="false"
+    android:baselineAligned="false">
 
-    <!-- 模拟左侧头像 -->
-    <View
-        android:id="@+id/vAvatar"
+    <!-- 左侧头像 (对方) -->
+    <ImageView
+        android:id="@+id/iv_avatar_left"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="#FF6200EE"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_marginEnd="8dp"
+        android:layout_gravity="bottom"
+        android:contentDescription="Avatar"
+        tools:src="@color/holo_purple" />
 
-    <!-- 文本气泡 -->
-    <androidx.cardview.widget.CardView
+    <!-- 消息气泡容器，使用 weight 控制最大宽度，gravity 控制对齐 -->
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="60dp"
-        app:cardBackgroundColor="#F0F0F0"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintStart_toEndOf="@id/vAvatar"
-        app:layout_constraintTop_toTopOf="@id/vAvatar">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvContent"
+        <!-- 气泡卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_bubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:textColor="#333333"
-            android:textSize="16sp"
-            tools:text="Hello! This is a text message." />
-    </androidx.cardview.widget.CardView>
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
+            app:contentPadding="12dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView
+                android:id="@+id/tvContent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:lineSpacingMultiplier="1.1"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                tools:text="Hello! strict Material Design 3." />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 时间/状态 (可选) -->
+        <TextView
+            android:id="@+id/tv_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10:30"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp"
+            android:alpha="0.7"/>
+    </LinearLayout>
+
+    <!-- 右侧头像 (我) -->
+    <ImageView
+        android:id="@+id/iv_avatar_right"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:layout_gravity="bottom"
+        android:contentDescription="My Avatar"
+        tools:src="@color/holo_blue_light" />
+
+</LinearLayout>

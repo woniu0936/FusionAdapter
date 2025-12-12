@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="4dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:rippleColor="?attr/colorControlHighlight">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:minHeight="56dp">
+
+        <!-- 左侧彩色指示条 (将在代码中随机变色) -->
+        <View
+            android:id="@+id/v_indicator"
+            android:layout_width="6dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
+
+        <!-- 标题文本 -->
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Simple Item Title" />
+
+        <!-- 右侧箭头图标 -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="16dp"
+            android:src="@android:drawable/ic_media_play"
+            android:rotation="0"
+            app:tint="?attr/colorOnSurfaceVariant"
+            android:alpha="0.5"
+            tools:ignore="ContentDescription" />
+        <!-- 注意：如果想用标准的右箭头，推荐使用 Material 图标库的 ic_chevron_right -->
+        <!-- 这里暂时用 ic_media_play 做演示，或者你可以删掉这个 ImageView -->
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
