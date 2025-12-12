@@ -20,15 +20,60 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
      */
     abstract val signature: ViewSignature
 
-    // 最终用于 Registry 的 Key
-
-
     /**
      * [唯一标识生成器]
      * 用于生成全局唯一的 ViewType Key。
      *
      */
     final fun getUniqueViewType(): Any = signature
+
+    // ============================================================================================
+    // Layout Strategy (核心布局策略)
+    // ============================================================================================
+
+    /**
+     * [Java/Kotlin Override]
+     * 子类重写此方法以定义 Grid 布局中占用的列数。
+     * 默认返回 1。
+     */
+    open fun onSpanSize(item: T, position: Int, totalSpans: Int): Int {
+        return 1
+    }
+
+    /**
+     * [Java/Kotlin Override]
+     * 子类重写此方法以定义是否在 Staggered 布局中强制占满全屏。
+     * 默认返回 false。
+     */
+    open fun isFullSpan(item: T): Boolean {
+        return false
+    }
+
+    // ============================================================================================
+    // Internal Configuration (DSL 注入点)
+    // ============================================================================================
+
+    // 内部持有的 DSL 配置策略 (优先级高于 Override)
+    internal var configSpanSize: ((item: T, position: Int, totalSpans: Int) -> Int)? = null
+    internal var configFullSpan: ((item: T) -> Boolean)? = null
+
+    /**
+     * [Internal Dispatch]
+     * 核心调度逻辑：DSL 配置 > 子类重写 > 默认值
+     */
+    internal fun resolveSpanSize(item: T, position: Int, totalSpans: Int): Int {
+        return configSpanSize?.invoke(item, position, totalSpans)
+            ?: onSpanSize(item, position, totalSpans)
+    }
+
+    /**
+     * [Internal Dispatch]
+     */
+    @PublishedApi
+    internal fun resolveFullSpan(item: T): Boolean {
+        return configFullSpan?.invoke(item)
+            ?: isFullSpan(item)
+    }
 
     // Diff 相关 (默认实现)
     open fun areContentsTheSame(oldItem: T, newItem: T): Boolean = oldItem == newItem

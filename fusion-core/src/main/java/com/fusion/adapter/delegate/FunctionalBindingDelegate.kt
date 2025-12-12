@@ -2,6 +2,7 @@ package com.fusion.adapter.delegate
 
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.dsl.DelegateDsl
+import com.fusion.adapter.dsl.SpanScope
 import com.fusion.adapter.internal.DslSignature
 import com.fusion.adapter.internal.ViewSignature
 
@@ -73,6 +74,18 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         // DelegateDsl.clickDebounce 是 Long? (null 代表使用全局配置)
         // BindingDelegate.itemClickDebounceInterval 也是 Long?
         this.itemClickDebounceInterval = dsl.clickDebounce
+
+        // 应用 Layout DSL
+        dsl.spanSizeBlock?.let { dslBlock ->
+            // 将带有 Scope 的 DSL Lambda 转换为底层需要的 (T, Int, Int) -> Int
+            this.configSpanSize = { item, pos, total ->
+                dslBlock(item, pos, SpanScope(total))
+            }
+        }
+
+        dsl.fullSpanBlock?.let {
+            this.configFullSpan = it
+        }
     }
 
 }

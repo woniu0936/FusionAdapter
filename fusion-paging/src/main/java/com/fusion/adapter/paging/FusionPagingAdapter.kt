@@ -10,6 +10,8 @@ import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.RegistryOwner
+import com.fusion.adapter.extensions.attachFusionGridSupport
+import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.logD
 
 /**
@@ -109,6 +111,7 @@ open class FusionPagingAdapter<T : Any> private constructor(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
+        holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
         if (item != null) {
             // 使用空列表避免对象分配
             core.onBindViewHolder(holder, item, position)
@@ -120,10 +123,21 @@ open class FusionPagingAdapter<T : Any> private constructor(
             onBindViewHolder(holder, position)
         } else {
             val item = getItem(position)
+            // 局部刷新也要处理布局
+            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
             if (item != null) {
                 core.onBindViewHolder(holder, item, position, payloads)
             }
         }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        recyclerView.attachFusionGridSupport(
+            adapter = this,
+            getItem = { pos -> this.getItem(pos) }, // Paging 的 getItem
+            getDelegate = { item -> core.getDelegate(item) }
+        )
     }
 
     // --- 生命周期分发 ---

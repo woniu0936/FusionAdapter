@@ -130,6 +130,22 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
         return this;
     }
 
+    /**
+     * [Layout API] 重写此方法定义 Grid 列数
+     */
+    @Override
+    public int onSpanSize(@NonNull T item, int position, int totalSpans) {
+        return 1; // 默认行为
+    }
+
+    /**
+     * [Layout API] 重写此方法定义是否全屏 (Staggered)
+     */
+    @Override
+    public boolean isFullSpan(@NonNull T item) {
+        return false; // 默认行为
+    }
+
     // =======================================================================================
     // 内部类与接口
     // =======================================================================================

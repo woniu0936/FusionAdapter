@@ -8,6 +8,8 @@ import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.RegistryOwner
+import com.fusion.adapter.extensions.attachFusionGridSupport
+import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -103,15 +105,28 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() ,
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        core.onBindViewHolder(holder, differ.currentList[position], position)
+        val item = differ.currentList[position]
+        holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+        core.onBindViewHolder(holder, item, position)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isEmpty()) {
             onBindViewHolder(holder, position)
         } else {
-            core.onBindViewHolder(holder, differ.currentList[position], position, payloads)
+            val item = differ.currentList[position]
+            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+            core.onBindViewHolder(holder, item, position, payloads)
         }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        recyclerView.attachFusionGridSupport(
+            adapter = this,
+            getItem = { pos -> if (pos in differ.currentList.indices) differ.currentList[pos] else null },
+            getDelegate = { item -> core.getDelegate(item) }
+        )
     }
 
     // --- 生命周期分发 (防止内存泄漏) ---

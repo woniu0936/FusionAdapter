@@ -2,10 +2,11 @@ package com.fusion.adapter
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.extensions.attachFusionGridSupport
+import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
-import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.RegistryOwner
 
 /**
  * [FusionAdapter] - 手动挡
@@ -85,15 +86,30 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        core.onBindViewHolder(holder, items[position], position)
+        val item = items[position]
+        holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+        core.onBindViewHolder(holder, item, position)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isEmpty()) {
             onBindViewHolder(holder, position)
         } else {
-            core.onBindViewHolder(holder, items[position], position, payloads)
+            val item = items[position]
+            // ★ 即使是局部刷新，也要确保布局参数正确 (以防 ViewHolder 复用或布局变动)
+            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+            // 局部刷新
+            core.onBindViewHolder(holder, item, position, payloads)
         }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        recyclerView.attachFusionGridSupport(
+            adapter = this,
+            getItem = { pos -> if (pos in items.indices) items[pos] else null },
+            getDelegate = { item -> core.getDelegate(item) }
+        )
     }
 
     // --- 生命周期分发 ---

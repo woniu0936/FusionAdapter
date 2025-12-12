@@ -2,6 +2,7 @@ package com.fusion.adapter.internal
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
 import java.util.Collections
@@ -127,6 +128,11 @@ class AdapterController {
 
         val delegate = registry.getDelegate(oldType)
         return delegate.getChangePayload(oldItem, newItem)
+    }
+
+    fun getDelegate(item: Any): FusionDelegate<Any, RecyclerView.ViewHolder>? {
+        val viewType = registry.getItemViewType(item)
+        return registry.getDelegateOrNull(viewType)
     }
 
     // ========================================================================================

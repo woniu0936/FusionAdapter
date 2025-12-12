@@ -31,6 +31,13 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     @PublishedApi
     internal var createBlock: (VB.() -> Unit)? = null
 
+    // 临时存储 DSL 配置
+    @PublishedApi
+    internal var spanSizeBlock: ((item: T, position: Int, scope: SpanScope) -> Int)? = null
+
+    @PublishedApi
+    internal var fullSpanBlock: ((item: T) -> Boolean)? = null
+
     /** 定义数据绑定逻辑 (简易版，不带 position) */
     fun onBind(block: VB.(item: T) -> Unit) {
         bindBlock = { item, _ -> block(item) }
@@ -78,5 +85,46 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
      */
     fun onCreate(block: VB.() -> Unit) {
         createBlock = block
+    }
+
+    // ============================================================================================
+    // Layout API - Flat & Context Aware (扁平化 & 上下文感知)
+    // ============================================================================================
+
+    /**
+     * [Grid] 设置跨度。
+     * 使用 SpanScope 上下文，可直接调用 totalSpans, half, third。
+     *
+     * 示例: spanSize { _, _ -> totalSpans }
+     */
+    fun spanSize(block: SpanScope.(item: T, position: Int) -> Int) {
+        // 将 DSL 的 Scope 转换为 Lambda 存储
+        spanSizeBlock = { item, pos, scope -> scope.block(item, pos) }
+    }
+
+    /**
+     * [Grid] 固定跨度 (便捷重载)
+     */
+    fun spanSize(count: Int) {
+        spanSizeBlock = { _, _, _ -> count }
+    }
+
+    /**
+     * [Universal] 强制占满全屏 (自动适配 Grid 和 Staggered)
+     */
+    fun fullSpan() {
+        fullSpanBlock = { true }
+        // 自动联动: Grid 模式下返回 totalSpans
+        spanSizeBlock = { _, _, scope -> scope.totalSpans }
+    }
+
+    /**
+     * [Universal] 条件性占满全屏
+     */
+    fun fullSpanIf(condition: (item: T) -> Boolean) {
+        fullSpanBlock = condition
+        spanSizeBlock = { item, _, scope ->
+            if (condition(item)) scope.totalSpans else 1
+        }
     }
 }
