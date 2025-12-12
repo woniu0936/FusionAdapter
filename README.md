@@ -34,9 +34,9 @@ Add the dependency to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:fusion-core:0.3.0")
+    implementation("io.github.woniu0936:fusion-core:0.3.1")
     // optional, support paging3
-    implementation("io.github.woniu0936:fusion-paging:0.3.0")
+    implementation("io.github.woniu0936:fusion-paging:0.3.1")
 }
 ```
 
