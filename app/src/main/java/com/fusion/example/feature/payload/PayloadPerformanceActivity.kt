@@ -1,17 +1,15 @@
 package com.fusion.example.feature.payload
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
 import com.fusion.adapter.register
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
-import com.fusion.example.databinding.ItemImageBinding.inflate
-import com.fusion.example.databinding.ItemSimpleLayoutBinding
 import com.fusion.example.delegate.SocialPostDelegate
 import com.fusion.example.model.ImageItem
-import com.fusion.example.model.SimpleItem
 import com.fusion.example.model.SocialPost
 import com.fusion.example.utils.ChatStyleHelper
 import com.fusion.example.utils.MockDataGenerator
@@ -26,6 +24,7 @@ class PayloadPerformanceActivity : AppCompatActivity() {
         binding = ActivityRecyclerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fullStatusBar(binding.root)
+        binding.fabAdd.visibility = View.GONE
 
         // 1. 注册核心 Delegate (Class 方式)
         adapter.attachDelegate(SocialPost::class.java, SocialPostDelegate { post ->
