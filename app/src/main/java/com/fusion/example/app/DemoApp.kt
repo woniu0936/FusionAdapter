@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.initialize
+import com.fusion.adapter.intercept.FusionInterceptors
 import com.fusion.example.BuildConfig
 
 class DemoApp : Application() {
@@ -16,6 +17,10 @@ class DemoApp : Application() {
                 Log.e("Fusion", "Unknown type: " + item.javaClass, e);
             }
             setGlobalDebounceInterval(300)
+            addGlobalInterceptor(FusionInterceptors.safeGuard())
+            if (BuildConfig.DEBUG) {
+                addGlobalInterceptor(FusionInterceptors.log())
+            }
         }
     }
 

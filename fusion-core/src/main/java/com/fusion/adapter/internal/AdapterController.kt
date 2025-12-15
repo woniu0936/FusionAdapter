@@ -2,9 +2,13 @@ package com.fusion.adapter.internal
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.Fusion
+import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
+import com.fusion.adapter.intercept.FusionContext
+import com.fusion.adapter.intercept.FusionDataInterceptor
 import java.util.Collections
 
 /**
@@ -18,7 +22,102 @@ import java.util.Collections
  */
 class AdapterController {
 
-    private val registry = ViewTypeRegistry()
+    // 性能阈值：16ms (保证 60fps)
+    private val TIME_THRESHOLD_NS = 16_000_000L
+
+    val registry = ViewTypeRegistry()
+
+    // 局部拦截器 (Local)
+    private val localInterceptors = ArrayList<FusionDataInterceptor>()
+
+    // 🔥 性能核心：缓存合并后的拦截器列表快照
+    // 使用 volatile 保证多线程（如预加载线程）可见性
+    @Volatile
+    private var cachedSnapshot: List<FusionDataInterceptor>? = null
+
+    // 缓存 Context，避免每次 processData 都 new 对象
+    private val cachedContext by lazy {
+        object : FusionContext {
+            override val registry: ViewTypeRegistry
+                get() = this@AdapterController.registry
+            override val config: FusionConfig
+                get() = Fusion.getConfig()
+        }
+    }
+
+    /**
+     * 添加拦截器 (Write Path - Low Frequency)
+     * 策略：写时置空缓存 (Copy-On-Write 思想)
+     */
+    fun addInterceptor(interceptor: FusionDataInterceptor) {
+        synchronized(localInterceptors) {
+            localInterceptors.add(interceptor)
+            cachedSnapshot = null // 脏标记：缓存失效
+        }
+    }
+
+    /**
+     * 数据处理管道 (Read Path - High Frequency / Hot Path)
+     * 策略：读时直接使用快照，极大降低 GC 压力
+     */
+    fun processData(rawList: List<Any>): List<Any> {
+        // 1. 获取当前快照 (局部变量引用，线程安全)
+        var interceptors = cachedSnapshot
+
+        // 2. 如果缓存失效 (初始化或配置变更)，则重建
+        if (interceptors == null) {
+            val global = Fusion.getConfig().globalInterceptors
+            val local = localInterceptors // 读取最新的 local
+
+            if (global.isEmpty() && local.isEmpty()) {
+                // 空列表使用单例，减少内存占用
+                interceptors = emptyList()
+            } else {
+                // 合并 Global + Local，创建不可变列表
+                val combined = ArrayList<FusionDataInterceptor>(global.size + local.size)
+                combined.addAll(global)
+                combined.addAll(local)
+                interceptors = Collections.unmodifiableList(combined)
+            }
+
+            // 更新缓存
+            cachedSnapshot = interceptors
+        }
+
+        // 3. 🔥 极速短路 (Fast Path)
+        // 如果没有拦截器，直接返回原数据。不创建 Chain，不创建 Iterator。
+        // 这是对标顶级库的关键优化：Zero Cost Abstraction
+        if (interceptors!!.isEmpty()) {
+            return rawList
+        }
+
+        // --- 性能监控开始 ---
+        val start = System.nanoTime()
+
+        // 启动责任链
+        val chain = RealInterceptorChain(interceptors, 0, rawList, cachedContext)
+        val result = chain.proceed(rawList)
+
+        // --- 性能监控结束 ---
+        val cost = System.nanoTime() - start
+
+        // 机制：如果耗时过长，进行干预
+        if (cost > TIME_THRESHOLD_NS) {
+            val costMs = cost / 1_000_000f
+            val message = "⚠️ [Fusion Performance Alert] Interceptor chain took ${String.format("%.2f", costMs)}ms on Main Thread! " +
+                    "This may cause UI jank. Please check for heavy operations in your interceptors."
+
+            // 策略：Debug 模式直接崩，Release 模式打 Error 日志
+            if (Fusion.getConfig().isDebug) {
+                // 你可以选择抛出异常，强迫开发者优化
+                // throw FusionPerformanceException(message)
+                android.util.Log.e("Fusion", message)
+            } else {
+                android.util.Log.w("Fusion", message)
+            }
+        }
+        return result
+    }
 
     /**
      * 注册路由连接器 (核心入口)

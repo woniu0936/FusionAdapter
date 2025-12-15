@@ -111,6 +111,27 @@ class ViewTypeRegistry {
         }
     }
 
+    fun hasLinker(item: Any): Boolean {
+        val clazz = item.javaClass
+
+        // 1. 先查一级缓存 (精确匹配)
+        if (classToLinker.containsKey(clazz)) {
+            return true
+        }
+
+        // 2. 查二级缓存 (继承/接口匹配)
+        // 复用你现有的逻辑 findLinkerForInheritance
+        val linker = findLinkerForInheritance(clazz)
+        if (linker != null) {
+            // 查到了就写入一级缓存，提升下次性能
+            classToLinker[clazz] = linker as TypeRouter<Any>
+            return true
+        }
+
+        // 3. 确实没有注册
+        return false
+    }
+
     /**
      * [继承查找策略]
      * 仅在 classToLinker 未命中时执行。

@@ -10,6 +10,7 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
+import com.fusion.adapter.intercept.FusionDataInterceptor
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -81,9 +82,19 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() ,
     // 数据操作
     // ========================================================================================
 
+    fun addInterceptor(interceptor: FusionDataInterceptor) {
+        core.addInterceptor(interceptor)
+    }
+
     /** 提交数据列表 (异步计算 Diff) */
     fun submitList(list: List<Any>?, commitCallback: Runnable? = null) {
-        differ.submitList(list, commitCallback)
+        val rawList = list ?: emptyList()
+
+        // 🔥 核武器启动点：进入数据管道
+        // 得益于 Controller 的优化，如果没配置拦截器，这里开销为 0
+        val processedList = core.processData(rawList)
+
+        differ.submitList(processedList, commitCallback)
     }
 
     /** 获取当前数据列表 (只读) */

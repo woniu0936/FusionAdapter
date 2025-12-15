@@ -2,12 +2,15 @@ package com.fusion.adapter.paging
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.Fusion
 import com.fusion.adapter.dsl.DelegateDsl
 import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
+import com.fusion.adapter.intercept.FusionPagingContext
 
 // =================================================================
 // 1. 快速启动 (Setup)
@@ -58,4 +61,20 @@ inline fun <reified T : Any> FusionPagingAdapter<*>.register(
     scope.block()
 
     this.attachLinker(T::class.java, scope.builder.linker)
+}
+
+// Paging 版本的 Debug 拦截器 DSL
+fun <T : Any> FusionPagingAdapter<T>.addDebugInterceptor(
+    block: (PagingData<T>, FusionPagingContext) -> PagingData<T>
+) {
+    if (Fusion.getConfig().isDebug) {
+        this.addInterceptor { data, context -> block(data, context) }
+    }
+}
+
+// 简化版 DSL (不需要 Context)
+fun <T : Any> FusionPagingAdapter<T>.addInterceptor(
+    block: (PagingData<T>) -> PagingData<T>
+) {
+    this.addInterceptor { data, _ -> block(data) }
 }

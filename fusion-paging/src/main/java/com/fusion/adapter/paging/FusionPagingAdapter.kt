@@ -2,9 +2,13 @@ package com.fusion.adapter.paging
 
 import android.annotation.SuppressLint
 import android.view.ViewGroup
+import androidx.lifecycle.Lifecycle
+import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
+import androidx.paging.filter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.Fusion
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.delegate.FusionDelegate
@@ -12,6 +16,9 @@ import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
+import com.fusion.adapter.intercept.FusionPagingContext
+import com.fusion.adapter.intercept.FusionPagingInterceptor
+import com.fusion.adapter.internal.ViewTypeRegistry
 import com.fusion.adapter.internal.logD
 
 /**
@@ -34,10 +41,68 @@ open class FusionPagingAdapter<T : Any> private constructor(
     // 核心引擎
     private val core = AdapterController()
 
+    // Paging 拦截器容器
+    private val interceptors = ArrayList<FusionPagingInterceptor<T>>()
+
+    // 缓存 Context，避免重复创建
+    private val pagingContext = object : FusionPagingContext {
+        override val registry: ViewTypeRegistry get() = core.registry
+        override val config get() = Fusion.getConfig()
+    }
+
     init {
         // [关键步骤] 构造完成后，将 Core 注入到 DiffCallbackProxy 中
         // 此时 Core 已初始化完毕，可以安全进行 Diff 计算
         diffProxy.attachCore(core)
+    }
+
+    // ------------------------------------------------------
+    // 🔥 核心 Hook：拦截器管道 (Interceptor Pipeline)
+    // ------------------------------------------------------
+
+    fun addInterceptor(interceptor: FusionPagingInterceptor<T>) {
+        interceptors.add(interceptor)
+    }
+
+    /**
+     * 数据处理管道：应用所有拦截器 + 自动安全过滤
+     */
+    private fun sanitizePagingData(pagingData: PagingData<T>): PagingData<T> {
+        var currentData = pagingData
+
+        // 1. 执行用户自定义拦截器 (Map / Transform)
+        // PagingData 是流式定义，这里的循环只是构建操作链，开销极小
+        for (interceptor in interceptors) {
+            currentData = interceptor.intercept(currentData, pagingContext)
+        }
+
+        // 2. 🔥 核心安全机制：自动过滤未注册类型 (Registry-Aware Safety)
+        // 这是 Paging 版的 "Zero Side-Effect" 保证。
+        // 直接利用 Paging3 的 filter 操作符，在后台线程执行过滤。
+        currentData = currentData.filter { item ->
+            val hasLinker = core.registry.hasLinker(item)
+            if (!hasLinker && Fusion.getConfig().isDebug) {
+                // Debug 模式下打印日志，但不崩，因为 Paging 的流是异步的，崩在 Diff 线程很难查
+                android.util.Log.w("FusionPaging", "⚠️ Paging 自动剔除未注册数据: ${item.javaClass.simpleName}")
+            }
+            hasLinker
+        }
+
+        return currentData
+    }
+
+    // ------------------------------------------------------
+    // 🔥 submit 入口
+    // ------------------------------------------------------
+
+     suspend fun submit(pagingData: PagingData<T>) {
+        val safeData = sanitizePagingData(pagingData)
+        super.submitData(safeData)
+    }
+
+     fun submit(lifecycle: Lifecycle, pagingData: PagingData<T>) {
+        val safeData = sanitizePagingData(pagingData)
+        super.submitData(lifecycle, safeData)
     }
 
     // -----------------------------------------------------------------------
@@ -89,19 +154,7 @@ open class FusionPagingAdapter<T : Any> private constructor(
     // ========================================================================================
 
     override fun getItemViewType(position: Int): Int {
-        val item = getItem(position)
-
-        // Paging 3 的 Placeholder 处理
-        if (item == null) {
-            // Fusion 架构依赖具体的 Item 类型来寻找 Delegate。
-            // 如果遇到 null (占位符)，我们抛出明确的异常，引导用户关闭占位符或自行扩展。
-            // (顶级库应当 Fail Fast 并在文档中说明，而不是吞掉错误)
-            throw IllegalStateException(
-                "FusionPagingAdapter received a null item (Placeholder). " +
-                        "Please set PagingConfig.enablePlaceholders = false, or override getItemViewType to handle nulls."
-            )
-        }
-
+        val item = getItem(position) ?: return 0
         return core.getItemViewType(item)
     }
 

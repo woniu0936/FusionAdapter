@@ -3,6 +3,7 @@ package com.fusion.adapter
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.FallbackDelegate // 假设这是默认兜底
 import com.fusion.adapter.exception.ErrorListener
+import com.fusion.adapter.intercept.FusionDataInterceptor
 import com.fusion.adapter.internal.DEFAULT_DEBOUNCE_INTERVAL
 
 /**
@@ -15,6 +16,8 @@ class FusionConfig private constructor(builder: Builder) {
     @JvmField val errorListener: ErrorListener? = builder.errorListener
     @JvmField val globalFallbackDelegate: FusionDelegate<Any, *>? = builder.globalFallbackDelegate
     @JvmField val globalDebounceInterval: Long = builder.globalDebounceInterval
+    // 全局拦截器，List 是不可变的，保证线程安全
+    @JvmField val globalInterceptors: List<FusionDataInterceptor> = ArrayList(builder.globalInterceptors)
 
     /**
      * [Builder 模式]
@@ -25,6 +28,7 @@ class FusionConfig private constructor(builder: Builder) {
         internal var errorListener: ErrorListener? = null
         internal var globalFallbackDelegate: FusionDelegate<Any, *>? = FallbackDelegate()
         internal var globalDebounceInterval: Long = DEFAULT_DEBOUNCE_INTERVAL
+        internal val globalInterceptors = ArrayList<FusionDataInterceptor>()
 
         /**
          * 设置调试模式
@@ -56,6 +60,11 @@ class FusionConfig private constructor(builder: Builder) {
 
         fun setGlobalDebounceInterval(interval: Long): Builder {
             this.globalDebounceInterval = interval
+            return this
+        }
+
+        fun addGlobalInterceptor(interceptor: FusionDataInterceptor): Builder {
+            this.globalInterceptors.add(interceptor)
             return this
         }
 

@@ -1,5 +1,20 @@
+public abstract interface class com/fusion/adapter/intercept/FusionPagingContext {
+	public abstract fun getConfig ()Lcom/fusion/adapter/FusionConfig;
+	public abstract fun getRegistry ()Lcom/fusion/adapter/internal/ViewTypeRegistry;
+	public abstract fun isDebug ()Z
+}
+
+public final class com/fusion/adapter/intercept/FusionPagingContext$DefaultImpls {
+	public static fun isDebug (Lcom/fusion/adapter/intercept/FusionPagingContext;)Z
+}
+
+public abstract interface class com/fusion/adapter/intercept/FusionPagingInterceptor {
+	public abstract fun intercept (Landroidx/paging/PagingData;Lcom/fusion/adapter/intercept/FusionPagingContext;)Landroidx/paging/PagingData;
+}
+
 public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/paging/PagingDataAdapter, com/fusion/adapter/RegistryOwner {
 	public fun <init> ()V
+	public final fun addInterceptor (Lcom/fusion/adapter/intercept/FusionPagingInterceptor;)V
 	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
 	public fun getItemViewType (I)I
@@ -12,5 +27,12 @@ public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/paging/Pag
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun submit (Landroidx/lifecycle/Lifecycle;Landroidx/paging/PagingData;)V
+	public final fun submit (Landroidx/paging/PagingData;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fusion/adapter/paging/PagingExtensionsKt {
+	public static final fun addDebugInterceptor (Lcom/fusion/adapter/paging/FusionPagingAdapter;Lkotlin/jvm/functions/Function2;)V
+	public static final fun addInterceptor (Lcom/fusion/adapter/paging/FusionPagingAdapter;Lkotlin/jvm/functions/Function1;)V
 }
 
