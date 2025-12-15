@@ -8,6 +8,7 @@ import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.intercept.FusionDataInterceptor
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
+import java.util.Collections
 
 /**
  * [FusionAdapter] - 手动挡
@@ -25,6 +26,14 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
 
     // 内部数据持有
     private val items = ArrayList<Any>()
+
+    /**
+     * 获取当前实际渲染的数据列表 (Read-Only)
+     * 这是经过所有拦截器处理、安全检查后的最终列表。
+     * 即 RecyclerView 真正看到的列表。
+     */
+    val currentItems: List<Any>
+        get() = Collections.unmodifiableList(items)
 
     fun addInterceptor(interceptor: FusionDataInterceptor) {
         core.addInterceptor(interceptor)

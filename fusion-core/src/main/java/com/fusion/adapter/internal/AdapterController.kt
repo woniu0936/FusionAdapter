@@ -57,8 +57,8 @@ class AdapterController {
     }
 
     /**
-     * 数据处理管道 (Read Path - High Frequency / Hot Path)
-     * 策略：读时直接使用快照，极大降低 GC 压力
+     * 数据处理管道 (Hot Path)
+     * 流程：[用户拦截器 (可选)] -> [性能监控 (仅拦截器)] -> [强制安全检查 (内置)]
      */
     fun processData(rawList: List<Any>): List<Any> {
         // 1. 获取当前快照 (局部变量引用，线程安全)
@@ -70,53 +70,74 @@ class AdapterController {
             val local = localInterceptors // 读取最新的 local
 
             if (global.isEmpty() && local.isEmpty()) {
-                // 空列表使用单例，减少内存占用
                 interceptors = emptyList()
             } else {
-                // 合并 Global + Local，创建不可变列表
                 val combined = ArrayList<FusionDataInterceptor>(global.size + local.size)
                 combined.addAll(global)
                 combined.addAll(local)
                 interceptors = Collections.unmodifiableList(combined)
             }
-
-            // 更新缓存
             cachedSnapshot = interceptors
         }
 
-        // 3. 🔥 极速短路 (Fast Path)
-        // 如果没有拦截器，直接返回原数据。不创建 Chain，不创建 Iterator。
-        // 这是对标顶级库的关键优化：Zero Cost Abstraction
+        // ------------------------------------------------------------
+        // Phase 1: 执行拦截器管道 (Interceptor Pipeline)
+        // ------------------------------------------------------------
+
+        val processedList: List<Any>
+
         if (interceptors!!.isEmpty()) {
-            return rawList
-        }
+            // 🔥 极速短路 (Fast Path): 无拦截器时，跳过 Chain 创建和性能监控
+            processedList = rawList
+        } else {
+            // --- 性能监控开始 ---
+            val start = System.nanoTime()
 
-        // --- 性能监控开始 ---
-        val start = System.nanoTime()
+            val chain = RealInterceptorChain(interceptors, 0, rawList, cachedContext)
+            processedList = chain.proceed(rawList)
 
-        // 启动责任链
-        val chain = RealInterceptorChain(interceptors, 0, rawList, cachedContext)
-        val result = chain.proceed(rawList)
+            // --- 性能监控结束 ---
+            val cost = System.nanoTime() - start
 
-        // --- 性能监控结束 ---
-        val cost = System.nanoTime() - start
+            // 机制：如果耗时过长，进行干预
+            if (cost > TIME_THRESHOLD_NS) {
+                val costMs = cost / 1_000_000f
+                val message = "⚠️ [Fusion Performance Alert] Interceptor chain took ${String.format("%.2f", costMs)}ms on Main Thread! " +
+                        "This may cause UI jank. Please check for heavy operations in your interceptors."
 
-        // 机制：如果耗时过长，进行干预
-        if (cost > TIME_THRESHOLD_NS) {
-            val costMs = cost / 1_000_000f
-            val message = "⚠️ [Fusion Performance Alert] Interceptor chain took ${String.format("%.2f", costMs)}ms on Main Thread! " +
-                    "This may cause UI jank. Please check for heavy operations in your interceptors."
-
-            // 策略：Debug 模式直接崩，Release 模式打 Error 日志
-            if (Fusion.getConfig().isDebug) {
-                // 你可以选择抛出异常，强迫开发者优化
-                // throw FusionPerformanceException(message)
-                android.util.Log.e("Fusion", message)
-            } else {
-                android.util.Log.w("Fusion", message)
+                if (Fusion.getConfig().isDebug) {
+                    android.util.Log.e("Fusion", message)
+                } else {
+                    android.util.Log.w("Fusion", message)
+                }
             }
         }
-        return result
+
+        // ------------------------------------------------------------
+        // Phase 2: 强制安全检查 (Hardcoded Safety Net)
+        // 无论用户是否配置拦截器，这一步永远执行，确保 UI 绝对安全
+        // ------------------------------------------------------------
+
+        // 优化：如果列表为空，直接返回，避免创建 ArrayList
+        if (processedList.isEmpty()) {
+            return processedList
+        }
+
+        val finalSafeList = ArrayList<Any>(processedList.size)
+        val isDebug = Fusion.getConfig().isDebug
+
+        for (item in processedList) {
+            if (registry.hasLinker(item)) {
+                finalSafeList.add(item)
+            } else {
+                // 仅在 Debug 模式下警告，Release 模式下静默剔除
+                if (isDebug) {
+                    android.util.Log.w("Fusion", "⚠️ Fusion 剔除了未注册类型: ${item.javaClass.simpleName}。请检查是否忘记 register()。")
+                }
+            }
+        }
+
+        return finalSafeList
     }
 
     /**

@@ -1,315 +1,139 @@
 package com.fusion.adapter.intercept
 
+import android.os.SystemClock
 import android.util.Log
 
 /**
- * Fusion 标准拦截器工厂 (Fusion Standard Library)
+ * Fusion 标准拦截器库 (Ultimate Edition)
  *
- * 提供了一组经过深度性能优化的内置拦截器，覆盖 90% 的 Adapter 数据处理场景。
- * 包含：安全过滤、去重、条件过滤、周期插入、排序、头尾注入、日志监控、类型筛选。
- *
- * 使用方式：
- * ```kotlin
- * adapter.addInterceptor(FusionInterceptors.safeGuard())
- * adapter.addInterceptor(FusionInterceptors.log("MyTag"))
- * ```
+ * 剔除了所有应由 ViewModel 处理的业务逻辑 (Sort/Filter/Distinct)，
+ * 专注于 ViewModel 难以处理的 "UI 装饰逻辑" 和 "工程质量监控"。
  */
 object FusionInterceptors {
 
-    /**
-     * 【核心场景：安全卫士】
-     * 自动剔除未注册 ViewType 的数据，防止 RecyclerView 崩溃或出现 UI 错乱。
-     *
-     * **描述**：
-     * 利用 Context 中的 Registry 检查每一个 Item 是否有对应的 Linker/Delegate。
-     * 如果没有，该 Item 将被静默移除，不会进入 DiffUtil 和 RecyclerView。
-     *
-     * **推荐使用场景**：
-     * 1. 几乎所有的 Adapter 都建议作为全局拦截器配置 (`Fusion.initialize`)。
-     * 2. Paging 分页列表，防止后端下发未知的新类型导致 Crash。
-     *
-     * @param debugLog Boolean - 是否在 Debug 模式下打印被剔除数据的警告日志。默认为 true。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 在全局初始化时添加
-     * Fusion.initialize {
-     *     addGlobalInterceptor(FusionInterceptors.safeGuard())
-     * }
-     * ```
-     */
-    fun safeGuard(debugLog: Boolean = true): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            val registry = chain.context.registry
-            val input = chain.input
-            // 性能优化：预分配容量，减少 ArrayList 扩容开销
-            val output = ArrayList<Any>(input.size)
-
-            for (item in input) {
-                if (registry.hasLinker(item)) {
-                    output.add(item)
-                } else if (debugLog && chain.context.config.isDebug) {
-                    Log.w("Fusion", "⚠️ SafeGuard removed unregistered item: ${item.javaClass.simpleName}")
-                }
-            }
-            chain.proceed(output)
-        }
-    }
+    // ============================================================================================
+    //  工程质量与调试类 (Quality Assurance & Debugging)
+    //  这是区别于普通库的“核武器”，帮助开发者排查疑难杂症。
+    // ============================================================================================
 
     /**
-     * 【核心场景：数据去重】
-     * 根据指定的 Key 对列表进行去重，保留第一个出现的元素。
+     * 【QA 核武器：数据契约验证 (Data Validator)】
+     * 强迫执行数据规则。如果后端下发了脏数据（如 id 为空，或者必须字段缺失），
+     * 在 Debug 模式下直接报错，Release 模式下自动剔除。
      *
-     * **描述**：
-     * 内部使用 `LinkedHashSet` 维护唯一性，时间复杂度接近 O(N)。
+     * **核心价值**：
+     * 这是 "Design by Contract" (契约式编程) 在列表层的落地。
+     * 避免了脏数据进入 ViewHolder 导致空指针异常。
      *
-     * **推荐使用场景**：
-     * 1. 后端接口可能下发重复数据（如 Feed 流推荐）。
-     * 2. 手动合并多个列表时需要去重。
-     *
-     * @param keySelector (Any) -> K - 键选择器函数。
-     *        接收列表中的 Item，返回用于判断唯一的 Key (如 ID, UserID)。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 根据 User 的 id 去重
-     * adapter.addInterceptor(FusionInterceptors.distinct { item ->
-     *     if (item is User) item.id else item
-     * })
-     * ```
+     * @param validator (Any) -> Boolean 返回 false 表示数据非法，会被剔除。
      */
-    fun <K> distinct(keySelector: (Any) -> K): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            chain.proceed(chain.input.distinctBy(keySelector))
-        }
-    }
-
-    /**
-     * 【核心场景：条件过滤】
-     * 根据指定条件保留数据，移除不符合条件的 Item。
-     *
-     * **描述**：
-     * 遍历列表，只保留 `predicate` 返回 true 的元素。
-     *
-     * **推荐使用场景**：
-     * 1. 根据业务状态隐藏内容（如：只显示已发布的文章）。
-     * 2. 根据用户权限过滤内容（如：非会员不显示 VIP 视频）。
-     * 3. 临时屏蔽某种类型的数据（A/B Test）。
-     *
-     * @param predicate (Any) -> Boolean - 判断函数。
-     *        接收 Item，返回 true 表示**保留**，返回 false 表示**移除**。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 过滤掉所有已删除的消息
-     * adapter.addInterceptor(FusionInterceptors.filter { item ->
-     *     if (item is Message) !item.isDeleted else true
-     * })
-     * ```
-     */
-    fun filter(predicate: (Any) -> Boolean): FusionDataInterceptor {
+    fun validate(validator: (Any) -> Boolean): FusionDataInterceptor {
         return FusionDataInterceptor { chain ->
             val input = chain.input
             val output = ArrayList<Any>(input.size)
+            var dirtyCount = 0
+
             for (item in input) {
-                if (predicate(item)) {
+                if (validator(item)) {
                     output.add(item)
+                } else {
+                    dirtyCount++
+                    if (chain.context.config.isDebug) {
+                        Log.e("Fusion", "❌ [Validator] Data integrity check failed! Item dropped: $item")
+                    }
                 }
             }
-            chain.proceed(output)
-        }
-    }
 
-    /**
-     * 【核心场景：周期性插入】
-     * 每隔固定数量的元素插入一个新的 Item。
-     *
-     * **描述**：
-     * 按照频率 `frequency` 计算插入位置。注意：如果列表结束，不会在末尾强行插入。
-     *
-     * **推荐使用场景**：
-     * 1. Feed 流中每隔 6 条内容插入一个广告。
-     * 2. 网格布局中插入全跨度的分割栏。
-     *
-     * @param frequency Int - 插入频率（每隔多少个元素）。必须 > 0。
-     * @param itemGenerator (Int) -> Any - 元素生成器函数。
-     *        接收当前原始数据的索引(Index)，返回要插入的 Item 对象。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 每 6 个条目插一个广告
-     * adapter.addInterceptor(FusionInterceptors.injectPeriodic(6) { index ->
-     *     AdItem(position = index)
-     * })
-     * ```
-     */
-    fun injectPeriodic(frequency: Int, itemGenerator: (index: Int) -> Any): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            val input = chain.input
-            if (input.isEmpty() || frequency <= 0) {
-                return@FusionDataInterceptor chain.proceed(input)
+            if (dirtyCount > 0 && chain.context.config.isDebug) {
+                // 可选：在 Debug 模式下抛出异常，倒逼后端修 Bug
+                 throw IllegalStateException("Found $dirtyCount invalid items!")
             }
 
-            // 精确计算最终大小，避免扩容
-            val insertionCount = (input.size - 1) / frequency
-            if (insertionCount <= 0) return@FusionDataInterceptor chain.proceed(input)
-
-            val output = ArrayList<Any>(input.size + insertionCount)
-
-            for (i in input.indices) {
-                output.add(input[i])
-                // 检查是否满足插入条件 (非最后一个元素)
-                if ((i + 1) % frequency == 0 && i != input.lastIndex) {
-                    output.add(itemGenerator(i))
-                }
-            }
             chain.proceed(output)
         }
     }
 
     /**
-     * 【核心场景：数据排序】
-     * 对列表数据进行排序。
+     * 【调试神器：性能透视 (Performance Profiler)】
+     * 详细分析当前 Adapter 的数据分布情况和处理耗时。
      *
-     * **描述**：
-     * 使用稳定排序算法。
-     * 注意：尽量在 ViewModel 层完成排序，此拦截器主要用于简单的 UI 层重排。
-     *
-     * **推荐使用场景**：
-     * 1. 简单的按时间倒序、按名称排序。
-     * 2. 对合并后的多种类型数据进行统一排序。
-     *
-     * @param comparator Comparator<Any> - 比较器。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 按时间戳倒序排列
-     * adapter.addInterceptor(FusionInterceptors.sort { o1, o2 ->
-     *     val t1 = (o1 as? TimeAware)?.timestamp ?: 0
-     *     val t2 = (o2 as? TimeAware)?.timestamp ?: 0
-     *     t2.compareTo(t1)
-     * })
-     * ```
+     * **核心价值**：
+     * 当列表卡顿或数据不对时，这个拦截器能打印出 "数据构成表"。
+     * 比如：UserItem: 50个, AdItem: 5个, Header: 1个。
      */
-    fun sort(comparator: Comparator<Any>): FusionDataInterceptor {
+    fun trace(tag: String = "FusionTrace"): FusionDataInterceptor {
         return FusionDataInterceptor { chain ->
-            // sortedWith 返回的是新 List，不会修改原 input
-            chain.proceed(chain.input.sortedWith(comparator))
-        }
-    }
+            if (!chain.context.config.isDebug) return@FusionDataInterceptor chain.proceed(chain.input)
 
-    /**
-     * 【核心场景：头部注入】
-     * 在列表的最顶部添加一个固定的 Header Item。
-     *
-     * **描述**：
-     * 无论数据如何刷新，该 Item 始终位于 Index 0。
-     *
-     * **推荐使用场景**：
-     * 1. 列表顶部的提示栏、搜索框、Banner。
-     * 2. 下拉刷新时的 Loading 占位符。
-     *
-     * @param header Any - 要添加的 Header 数据对象。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * adapter.addInterceptor(FusionInterceptors.addHeader(MyBannerItem()))
-     * ```
-     */
-    fun addHeader(header: Any): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            val output = ArrayList<Any>(chain.input.size + 1)
-            output.add(header)
-            output.addAll(chain.input)
-            chain.proceed(output)
-        }
-    }
+            val start = SystemClock.elapsedRealtimeNanos()
 
-    /**
-     * 【核心场景：底部注入】
-     * 在列表的最底部添加一个固定的 Footer Item。
-     *
-     * **描述**：
-     * 无论数据如何刷新，该 Item 始终位于列表末尾。
-     *
-     * **推荐使用场景**：
-     * 1. "没有更多数据了" 的提示。
-     * 2. 列表底部的免责声明、版本号。
-     *
-     * @param footer Any - 要添加的 Footer 数据对象。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * adapter.addInterceptor(FusionInterceptors.addFooter(EndMarkerItem()))
-     * ```
-     */
-    fun addFooter(footer: Any): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            val output = ArrayList<Any>(chain.input.size + 1)
-            output.addAll(chain.input)
-            output.add(footer)
-            chain.proceed(output)
-        }
-    }
-
-    /**
-     * 【核心场景：调试监控】
-     * 监控数据流的变化过程和耗时。
-     *
-     * **描述**：
-     * 仅在 Debug 模式下生效。记录输入数量、输出数量以及处理耗时。
-     *
-     * **推荐使用场景**：
-     * 1. 开发阶段排查数据为什么变少了，或者为什么刷新慢。
-     *
-     * @param tag String - 日志 Tag，用于区分不同的列表。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * adapter.addDebugInterceptor(FusionInterceptors.log("FeedList"))
-     * ```
-     */
-    fun log(tag: String = "Fusion"): FusionDataInterceptor {
-        return FusionDataInterceptor { chain ->
-            // 如果不是 Debug，直接透传，不做任何计时操作
-            if (!chain.context.config.isDebug) {
-                return@FusionDataInterceptor chain.proceed(chain.input)
-            }
-
-            val start = System.nanoTime()
-            val inputSize = chain.input.size
-
+            // 执行后续链条
             val result = chain.proceed(chain.input)
 
-            val cost = (System.nanoTime() - start) / 1000
-            val outputSize = result.size
+            val costNs = SystemClock.elapsedRealtimeNanos() - start
+            val costMs = costNs / 1_000_000f
 
-            Log.d(tag, "⛓️ Interceptor Chain: Input=$inputSize -> Output=$outputSize, Cost=${cost}us")
+            // 统计数据分布
+            val distribution = result.groupingBy { it.javaClass.simpleName }.eachCount()
+
+            // 打印漂亮的表格日志
+            val sb = StringBuilder()
+            sb.append("\n╔════════════════════════════════════════════════════")
+            sb.append("\n║ Fusion Adapter Trace [$tag]")
+            sb.append("\n╠════════════════════════════════════════════════════")
+            sb.append("\n║ ⚡ Process Cost : ${String.format("%.3f", costMs)} ms")
+            sb.append("\n║ 📥 Input Size   : ${chain.input.size}")
+            sb.append("\n║ 📤 Output Size  : ${result.size}")
+            sb.append("\n║ 📊 Distribution :")
+            distribution.forEach { (type, count) ->
+                sb.append("\n║    - $type : $count")
+            }
+            sb.append("\n╚════════════════════════════════════════════════════")
+            Log.d("Fusion", sb.toString())
+
             result
         }
     }
 
     /**
-     * 【特例场景：类型筛选】
-     * 过滤列表，只保留特定类型 [T] 的数据。
+     * 【QA 黑科技：混沌测试 (Chaos Monkey)】
+     * 仅在 Debug 模式下生效。随机打乱数据、随机丢弃数据、或随机重复数据。
      *
-     * **描述**：
-     * 这是一个 inline + reified 函数，利用泛型具体化进行过滤。
-     *
-     * **推荐使用场景**：
-     * 1. 在混合列表中只提取视频数据。
-     * 2. 数据清洗，移除所有非 UI Model 的杂质对象。
-     *
-     * **使用示例**：
-     * ```kotlin
-     * // 只保留 User 类型的对象
-     * adapter.addInterceptor(FusionInterceptors.filterType<User>())
-     * ```
+     * **核心价值**：
+     * 用于测试 DiffUtil 的健壮性，以及 UI 应对空状态、异常状态的表现。
+     * 它可以模拟弱网丢包、后端乱序等极端情况。
      */
-    inline fun <reified T> filterType(): FusionDataInterceptor {
+    fun chaosMonkey(): FusionDataInterceptor {
         return FusionDataInterceptor { chain ->
-            // filterIsInstance 是 Kotlin 标准库的高效实现
-            chain.proceed(chain.input.filterIsInstance<T>() as List<Any>)
+            if (!chain.context.config.isDebug) return@FusionDataInterceptor chain.proceed(chain.input)
+
+            val input = ArrayList(chain.input)
+            val mode = (System.currentTimeMillis() % 3).toInt()
+
+            Log.w("Fusion", "🔥 Chaos Monkey Activated! Mode: $mode")
+
+            val result = when (mode) {
+                0 -> { // 随机乱序
+                    input.shuffle()
+                    input
+                }
+
+                1 -> { // 随机丢弃 20%
+                    input.filter { Math.random() > 0.2 }
+                }
+
+                2 -> { // 随机重复某些数据
+                    val noisyList = ArrayList<Any>()
+                    input.forEach {
+                        noisyList.add(it)
+                        if (Math.random() > 0.9) noisyList.add(it) // 10% 概率重复
+                    }
+                    noisyList
+                }
+
+                else -> input
+            }
+            chain.proceed(result)
         }
     }
 }

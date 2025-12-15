@@ -9,17 +9,18 @@ import androidx.paging.filter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.internal.AdapterController
-import com.fusion.adapter.internal.TypeRouter
+import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
-import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.intercept.FusionPagingContext
 import com.fusion.adapter.intercept.FusionPagingInterceptor
+import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
 import com.fusion.adapter.internal.logD
+import com.fusion.adapter.internal.logW
 
 /**
  * [FusionPagingAdapter]
@@ -34,7 +35,7 @@ import com.fusion.adapter.internal.logD
  */
 open class FusionPagingAdapter<T : Any> private constructor(
     private val diffProxy: DiffCallbackProxy<T>
-) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy) , RegistryOwner {
+) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy), RegistryOwner {
 
     constructor() : this(DiffCallbackProxy())
 
@@ -81,9 +82,9 @@ open class FusionPagingAdapter<T : Any> private constructor(
         // 直接利用 Paging3 的 filter 操作符，在后台线程执行过滤。
         currentData = currentData.filter { item ->
             val hasLinker = core.registry.hasLinker(item)
-            if (!hasLinker && Fusion.getConfig().isDebug) {
+            if (!hasLinker) {
                 // Debug 模式下打印日志，但不崩，因为 Paging 的流是异步的，崩在 Diff 线程很难查
-                android.util.Log.w("FusionPaging", "⚠️ Paging 自动剔除未注册数据: ${item.javaClass.simpleName}")
+                logW("FusionPaging") { "⚠️ Paging 自动剔除未注册数据: ${item.javaClass.simpleName}" }
             }
             hasLinker
         }
@@ -95,12 +96,12 @@ open class FusionPagingAdapter<T : Any> private constructor(
     // 🔥 submit 入口
     // ------------------------------------------------------
 
-     suspend fun submit(pagingData: PagingData<T>) {
+    suspend fun submit(pagingData: PagingData<T>) {
         val safeData = sanitizePagingData(pagingData)
         super.submitData(safeData)
     }
 
-     fun submit(lifecycle: Lifecycle, pagingData: PagingData<T>) {
+    fun submit(lifecycle: Lifecycle, pagingData: PagingData<T>) {
         val safeData = sanitizePagingData(pagingData)
         super.submitData(lifecycle, safeData)
     }
