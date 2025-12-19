@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "🔍 [FusionAdapter] Checking API binary compatibility..."
+
+# 运行 apiCheck
+# 如果是 Windows 环境，Git Bash 通常也能识别 ./gradlew
+# 如果遇到权限问题，脚本会自动尝试赋予执行权限
+if [ ! -x "./gradlew" ]; then
+    chmod +x ./gradlew
+fi
+
+./gradlew apiCheck --daemon
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo " "
+    echo "❌ [Error] API check failed!"
+    echo "⚠️  It seems you modified the public API but forgot to update the API signature file."
+    echo "💡 Please run the following command to update the API dump, then add the changes:"
+    echo " "
+    echo "    ./gradlew apiDump"
+    echo "    git add ."
+    echo " "
+    exit 1
+fi
+
+echo "✅ [Success] API check passed."
+exit 0
