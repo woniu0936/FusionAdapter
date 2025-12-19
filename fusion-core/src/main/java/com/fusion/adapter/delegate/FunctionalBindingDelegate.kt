@@ -38,9 +38,9 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         onBind?.invoke(binding, item, position)
     }
 
-    override fun onViewHolderCreated(holder: BindingHolder<VB>) {
+    override fun onViewHolderCreated(binding: VB) {
         // 调用 DSL 传入的初始化逻辑
-        onCreate?.invoke(holder.binding)
+        onCreate?.invoke(binding)
     }
 
     override fun onBindPayload(

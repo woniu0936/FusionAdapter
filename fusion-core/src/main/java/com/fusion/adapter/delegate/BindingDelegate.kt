@@ -84,12 +84,12 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
                 false
             }
         }
-        onViewHolderCreated(holder)
+        onViewHolderCreated(holder.binding)
         return holder
     }
 
     /** 提供钩子函数供子类初始化点击事件等 */
-    protected open fun onViewHolderCreated(holder: BindingHolder<VB>) {}
+    protected open fun onViewHolderCreated(binding: VB) {}
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
         holder.itemView.setTag(R.id.fusion_item_tag, item)

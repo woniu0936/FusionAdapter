@@ -24,9 +24,9 @@ class SocialPostDelegate(
         }
     }
 
-    override fun onViewHolderCreated(holder: BindingHolder<ItemSocialPostBinding>) {
-        holder.binding.btnLike.setOnClickListener {
-            val item = holder.itemView.getTag(R.id.fusion_item_tag) as? SocialPost
+    override fun onViewHolderCreated(binding: ItemSocialPostBinding) {
+        binding.btnLike.setOnClickListener {
+            val item = binding.root.getTag(R.id.fusion_item_tag) as? SocialPost
             if (item != null) onLikeClick(item)
         }
     }
