@@ -11,6 +11,7 @@ import com.fusion.example.feature.layout.GridSpanSizeActivity
 import com.fusion.example.feature.layout.StaggeredFullSpanActivity
 import com.fusion.example.feature.paging.PagingDemoActivity
 import com.fusion.example.feature.payload.PayloadPerformanceActivity
+import com.fusion.example.feature.test.CrashTestActivity
 import com.fusion.example.utils.fullStatusBar
 
 class MainActivity : AppCompatActivity() {
@@ -56,6 +57,11 @@ class MainActivity : AppCompatActivity() {
         // 6. [Java 兼容]
         binding.btnJava.setOnClickListener {
             startActivity(Intent(this, JavaInteropActivity::class.java))
+        }
+
+        // 7. test unregister class crash in debug
+        binding.btnCrash.setOnClickListener {
+            startActivity(Intent(this, CrashTestActivity::class.java))
         }
 
     }

@@ -27,6 +27,7 @@
         <activity android:name=".feature.dsl.DslComplexActivity" />
         <activity android:name=".feature.layout.GridSpanSizeActivity" />
         <activity android:name=".feature.layout.StaggeredFullSpanActivity" />
+        <activity android:name=".feature.test.CrashTestActivity" />
     </application>
 
 </manifest>
