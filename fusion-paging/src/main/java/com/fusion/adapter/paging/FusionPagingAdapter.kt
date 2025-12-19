@@ -15,6 +15,7 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.delegate.BindingHolder
+import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.FusionPlaceholderDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.diff.StableId
@@ -237,6 +238,12 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
+        core.register(clazz, linker)
+    }
+
+    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val linker = TypeRouter<T>()
+        linker.map(Unit, delegate)
         core.register(clazz, linker)
     }
 
