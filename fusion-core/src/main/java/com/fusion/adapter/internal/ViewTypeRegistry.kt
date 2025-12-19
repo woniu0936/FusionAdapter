@@ -17,6 +17,11 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class ViewTypeRegistry {
 
+    companion object {
+        // 使用一个与 FALLBACK_VIEW_TYPE (-2048) 不同的负数
+        const val TYPE_PLACEHOLDER = -2049
+    }
+
     // [核心路由表]
     // Key: 数据类型 Class
     // Value: 路由连接器 Linker

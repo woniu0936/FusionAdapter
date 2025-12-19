@@ -1,174 +1,143 @@
-package com.fusion.adapter.paging
-
-import android.annotation.SuppressLint
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
-import androidx.paging.PagingData
-import androidx.paging.PagingDataAdapter
-import androidx.paging.filter
+import androidx.paging.*
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
+import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.RegistryOwner
-import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.diff.SmartDiffCallback
-import com.fusion.adapter.extensions.attachFusionGridSupport
+import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
+import com.fusion.adapter.intercept.FusionContext
 import com.fusion.adapter.intercept.FusionPagingContext
 import com.fusion.adapter.intercept.FusionPagingInterceptor
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
-import com.fusion.adapter.internal.logD
 import com.fusion.adapter.internal.logW
+import com.fusion.adapter.paging.FusionPlaceholderViewHolder
+import kotlinx.coroutines.flow.Flow
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * [FusionPagingAdapter]
- * 专为 AndroidX Paging 3 设计的 Fusion 适配器。
+ * FusionPagingAdapter: 顶级分页适配器 (Final Version)
  *
- * 架构特性：
- * 1. **全功能复刻**：支持 Fusion v2.2 的所有特性（O(1)路由、Smart Diff、Payload、生命周期托管）。
- * 2. **无缝兼容**：API 设计与 FusionListAdapter 完全一致，迁移零成本。
- * 3. **延迟代理**：解决了 PagingDataAdapter 构造函数需要 DiffCallback 但 Core 尚未初始化的死锁问题。
- *
- * 注意：建议在 PagingConfig 中设置 enablePlaceholders = false，因为 Fusion 强依赖类型系统。
+ * 核心特性：
+ * 1. [Safety] 100% 复用 AdapterController 的 Diff 安全逻辑，防止 "ID相同类型不同" 导致的 Crash。
+ * 2. [Performance] 支持 StableId 接口，大幅提升 RecyclerView 更新性能。
+ * 3. [Architecture] 严格遵循 Paging3 代理模式，补全了 LoadState/ConcatAdapter 支持。
  */
-open class FusionPagingAdapter<T : Any> private constructor(
-    private val diffProxy: DiffCallbackProxy<T>
-) : PagingDataAdapter<T, RecyclerView.ViewHolder>(diffProxy), RegistryOwner {
+open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
 
-    constructor() : this(DiffCallbackProxy())
-
-    // 核心引擎
+    // 复用已有的核心引擎
     private val core = AdapterController()
 
-    // Paging 拦截器容器
-    private val interceptors = ArrayList<FusionPagingInterceptor<T>>()
+    // Paging 数据流拦截器 (注意：这是针对 PagingData 流的拦截，区别于 Core 的 List 拦截)
+    private val interceptors = CopyOnWriteArrayList<FusionPagingInterceptor<T>>()
 
-    // 缓存 Context，避免重复创建
+    // 上下文环境
     private val pagingContext = object : FusionPagingContext {
         override val registry: ViewTypeRegistry get() = core.registry
-        override val config get() = Fusion.getConfig()
+        override val config: FusionConfig get() = Fusion.getConfig()
     }
+
+    // 内部代理适配器
+    private val helperAdapter = PagingHelperAdapter()
 
     init {
-        // [关键步骤] 构造完成后，将 Core 注入到 DiffCallbackProxy 中
-        // 此时 Core 已初始化完毕，可以安全进行 Diff 计算
-        diffProxy.attachCore(core)
-    }
 
-    // ------------------------------------------------------
-    // 🔥 核心 Hook：拦截器管道 (Interceptor Pipeline)
-    // ------------------------------------------------------
+        // [数据观察者桥接]
+        // 将 Paging 的刷新通知转发给 RecyclerView
+        helperAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onChanged() = notifyDataSetChanged()
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = notifyItemRangeChanged(positionStart, itemCount)
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = notifyItemRangeChanged(positionStart, itemCount, payload)
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = notifyItemRangeInserted(positionStart, itemCount)
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = notifyItemRangeRemoved(positionStart, itemCount)
+            override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = notifyItemMoved(fromPosition, toPosition)
 
-    fun addInterceptor(interceptor: FusionPagingInterceptor<T>) {
-        interceptors.add(interceptor)
-    }
-
-    /**
-     * 数据处理管道：应用所有拦截器 + 自动安全过滤
-     */
-    private fun sanitizePagingData(pagingData: PagingData<T>): PagingData<T> {
-        var currentData = pagingData
-
-        // 1. 执行用户自定义拦截器 (Map / Transform)
-        // PagingData 是流式定义，这里的循环只是构建操作链，开销极小
-        for (interceptor in interceptors) {
-            currentData = interceptor.intercept(currentData, pagingContext)
-        }
-
-        // 2. 🔥 核心安全机制：自动过滤未注册类型 (Registry-Aware Safety)
-        // 这是 Paging 版的 "Zero Side-Effect" 保证。
-        // 直接利用 Paging3 的 filter 操作符，在后台线程执行过滤。
-        currentData = currentData.filter { item ->
-            val hasLinker = core.registry.hasLinker(item)
-            if (!hasLinker) {
-                // Debug 模式下打印日志，但不崩，因为 Paging 的流是异步的，崩在 Diff 线程很难查
-                logW("FusionPaging") { "⚠️ Paging 自动剔除未注册数据: ${item.javaClass.simpleName}" }
+            // [关键] 同步状态恢复策略 (避免旋转屏幕位置丢失)
+            override fun onStateRestorationPolicyChanged() {
+                this@FusionPagingAdapter.stateRestorationPolicy = helperAdapter.stateRestorationPolicy
             }
-            hasLinker
-        }
-
-        return currentData
+        })
     }
 
     // ------------------------------------------------------
-    // 🔥 submit 入口
+    // 🔥 核心 API (Paging3 标准)
     // ------------------------------------------------------
 
-    suspend fun submit(pagingData: PagingData<T>) {
-        val safeData = sanitizePagingData(pagingData)
-        super.submitData(safeData)
+    suspend fun submitData(pagingData: PagingData<T>) {
+        helperAdapter.submitData(applyInterceptors(pagingData))
     }
 
-    fun submit(lifecycle: Lifecycle, pagingData: PagingData<T>) {
-        val safeData = sanitizePagingData(pagingData)
-        super.submitData(lifecycle, safeData)
+    fun submitData(lifecycle: Lifecycle, pagingData: PagingData<T>) {
+        helperAdapter.submitData(lifecycle, applyInterceptors(pagingData))
     }
 
-    // -----------------------------------------------------------------------
-    // [底层 API] - 供 Java 用户使用，或供 Kotlin 扩展函数内部调用
-    // -----------------------------------------------------------------------
+    fun retry() = helperAdapter.retry()
+    fun refresh() = helperAdapter.refresh()
+
+    // 获取快照 (List)
+    fun snapshot(): ItemSnapshotList<T> = helperAdapter.snapshot()
 
     /**
-     * [Low-Level API] 挂载路由连接器
-     * 原名: registerLinker
-     * 语义: 将构建好的 Linker 挂载到 Core 引擎中
+     * 安全获取 Item (不触发加载)
+     * 适用于 ClickListener 或 Analytics
      */
-    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        core.register(clazz, linker)
-    }
+    fun peek(index: Int): T? = helperAdapter.peek(index)
 
-    /**
-     * [Low-Level API] 挂载单一委托
-     * 原名: register
-     * 语义: 将单一 Delegate 挂载到 Core 引擎中
-     */
-    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val linker = TypeRouter<T>()
-        linker.map(Unit, delegate)
-        core.register(clazz, linker)
-    }
+    // ------------------------------------------------------
+    // 🛠 Adapter 实现细节 (委托给 Core)
+    // ------------------------------------------------------
 
-    // ========================================================================================
-    // 1. 注册 API (与 FusionListAdapter 保持 100% 一致)
-    // ========================================================================================
-
-    /**
-     * [KTX 底层接口] 注册路由连接器
-     */
-    fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
-        core.register(clazz, linker)
-    }
-
-    /**
-     * [Java 快捷接口] 注册单类型委托
-     */
-    fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val linker = TypeRouter<T>()
-        linker.map(Unit, delegate)
-        core.register(clazz, linker)
-    }
-
-    // ========================================================================================
-    // 2. 核心桥接 (Core Bridge)
-    // ========================================================================================
+    override fun getItemCount(): Int = helperAdapter.itemCount
 
     override fun getItemViewType(position: Int): Int {
-        val item = getItem(position) ?: return 0
+        // 必须调用 getItemInternal 以触发 Paging 加载 (如果需要)
+        // 注意：Paging3 使用 null 表示 Placeholder
+        val item = helperAdapter.getItemInternal(position) ?: return ViewTypeRegistry.TYPE_PLACEHOLDER
+
+        // 直接调用 Core，Registry 内部有缓存 (O(1)) 和兜底逻辑
         return core.getItemViewType(item)
     }
 
+    override fun getItemId(position: Int): Long {
+        // 仅在 setHasStableIds(true) 时有效
+        if (!hasStableIds()) return RecyclerView.NO_ID
+
+        // 使用 peek 避免为了获取 ID 而触发网络请求
+        val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
+
+        // [对接你的 StableId 接口]
+        return if (item is StableId) {
+            // 假设 stableId 是 Long 或 Int。如果是 String 的 hashcode 可能会碰撞，需注意
+            (item.stableId as? Long) ?: item.stableId.hashCode().toLong()
+        } else {
+            RecyclerView.NO_ID
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        // 专门处理 Placeholder，Core 可能没有注册这个负数 ID
+        if (viewType == ViewTypeRegistry.TYPE_PLACEHOLDER) {
+            // 如果你有专门的 Placeholder 布局，可以在这里 create。
+            // 否则需要一个空的 ViewHolder 防止 Crash
+            return FusionPlaceholderViewHolder(parent)
+        }
         return core.onCreateViewHolder(parent, viewType)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val item = getItem(position)
-        holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+        val item = helperAdapter.getItemInternal(position)
         if (item != null) {
-            // 使用空列表避免对象分配
+            // 绑定 StaggeredGrid 逻辑 (如果有)
+            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+            // Core 的 onBind 已经包含了 "delegate == null" 的检查，这里直接传进去很安全
             core.onBindViewHolder(holder, item, position)
+        } else {
+            // 处理 Placeholder 的绑定 (可选)
         }
     }
 
@@ -176,67 +145,111 @@ open class FusionPagingAdapter<T : Any> private constructor(
         if (payloads.isEmpty()) {
             onBindViewHolder(holder, position)
         } else {
-            val item = getItem(position)
-            // 局部刷新也要处理布局
-            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+            val item = helperAdapter.getItemInternal(position)
             if (item != null) {
+                holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
                 core.onBindViewHolder(holder, item, position, payloads)
             }
         }
     }
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        super.onAttachedToRecyclerView(recyclerView)
-        recyclerView.attachFusionGridSupport(
-            adapter = this,
-            getItem = { pos -> this.getItem(pos) }, // Paging 的 getItem
-            getDelegate = { item -> core.getDelegate(item) }
-        )
+    fun addInterceptor(interceptor: FusionPagingInterceptor<T>) {
+        interceptors.add(interceptor)
     }
 
-    // --- 生命周期分发 ---
+    // ------------------------------------------------------
+    // ⚙️ 内部逻辑
+    // ------------------------------------------------------
 
-    override fun onViewRecycled(holder: RecyclerView.ViewHolder) =
-        core.onViewRecycled(holder)
+    private fun applyInterceptors(pagingData: PagingData<T>): PagingData<T> {
+        var data = pagingData
+        // 执行 PagingData 流拦截器
+        interceptors.forEach { interceptor ->
+            data = interceptor.intercept(data, pagingContext)
+        }
 
-    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) =
-        core.onViewAttachedToWindow(holder)
+        // [Thread Safe] Registry 使用 ConcurrentHashMap，这里在 Diff 线程运行是安全的
+        // 自动过滤未注册的数据，防止渲染层 Crash
+        return data.filter { item ->
+            val supported = core.registry.hasLinker(item)
+            if (!supported && pagingContext.isDebug) {
+                // 复用 Core 的日志风格
+                logW("Fusion") { "⚠️ [Paging Filter] 剔除未注册类型: ${item.javaClass.simpleName}" }
+            }
+            supported
+        }
+    }
 
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) =
-        core.onViewDetachedFromWindow(holder)
+    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
+        core.register(clazz, linker)
+    }
 
-    // ========================================================================================
-    // 3. 内部代理类 (解决构造函数依赖循环)
-    // ========================================================================================
+    // ------------------------------------------------------
+    // 🧩 LoadState / Header / Footer 支持
+    // ------------------------------------------------------
+
+    val loadStateFlow: Flow<CombinedLoadStates> get() = helperAdapter.loadStateFlow
+
+    fun addLoadStateListener(listener: (CombinedLoadStates) -> Unit) = helperAdapter.addLoadStateListener(listener)
+
+    fun removeLoadStateListener(listener: (CombinedLoadStates) -> Unit) = helperAdapter.removeLoadStateListener(listener)
+
+    fun addOnPagesUpdatedListener(listener: () -> Unit) = helperAdapter.addOnPagesUpdatedListener(listener)
+
+    fun removeOnPagesUpdatedListener(listener: () -> Unit) = helperAdapter.removeOnPagesUpdatedListener(listener)
 
     /**
-     * [DiffCallbackProxy]
-     * 作为一个中间层传给 super()，并在 init 中连接 Core。
+     * 正确实现 ConcatAdapter 组装
+     * 必须把 `this` (FusionPagingAdapter) 放进去，而不是 helperAdapter
      */
-    private class DiffCallbackProxy<T : Any> : DiffUtil.ItemCallback<T>() {
+    fun withLoadStateHeaderAndFooter(
+        header: LoadStateAdapter<*>,
+        footer: LoadStateAdapter<*>
+    ): ConcatAdapter {
+        addLoadStateListener { loadStates ->
+            header.loadState = loadStates.prepend
+            footer.loadState = loadStates.append
+        }
+        return ConcatAdapter(header, this, footer)
+    }
 
-        private var core: AdapterController? = null
+    fun withLoadStateFooter(footer: LoadStateAdapter<*>): ConcatAdapter {
+        addLoadStateListener { loadStates ->
+            footer.loadState = loadStates.append
+        }
+        return ConcatAdapter(this, footer)
+    }
 
-        fun attachCore(core: AdapterController) {
-            this.core = core
+    // ------------------------------------------------------
+    // 🔒 内部代理类
+    // ------------------------------------------------------
+
+    private inner class PagingHelperAdapter : PagingDataAdapter<T, RecyclerView.ViewHolder>(
+        // [Best Practice] 直接复用 Core 的 Diff 逻辑
+        object : DiffUtil.ItemCallback<T>() {
+            /**
+             * 必须使用 core.areItemsTheSame!
+             * 因为 AdapterController 会先检查 ViewType。
+             * 如果 T 的 ID 没变，但 Class 变了，core 会返回 false（正确）。
+             * 如果只比较 ID，RecyclerView 可能会尝试用旧的 ViewHolder 渲染新类型的数据，导致 Crash。
+             */
+            override fun areItemsTheSame(old: T, new: T) = core.areItemsTheSame(old, new)
+
+            override fun areContentsTheSame(old: T, new: T) = core.areContentsTheSame(old, new)
+
+            override fun getChangePayload(old: T, new: T) = core.getChangePayload(old, new)
+        }
+    ) {
+        // 暴露受保护的方法
+        fun getItemInternal(position: Int): T? = super.getItem(position)
+
+        // 屏蔽 UI 构建能力，防止误用
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            throw IllegalStateException("Proxy Error: Helper adapter should never create views.")
         }
 
-        override fun areItemsTheSame(oldItem: T, newItem: T): Boolean {
-            // ID 判断是无状态的，直接调用静态策略
-            logD("Paging") { "🔥🔥🔥 [Diff Fatal] Core is NULL! Fallback to legacy check." }
-            return core?.areItemsTheSame(oldItem, newItem)
-                ?: SmartDiffCallback.areItemsTheSame(oldItem, newItem)
-        }
-
-        @SuppressLint("DiffUtilEquals")
-        override fun areContentsTheSame(oldItem: T, newItem: T): Boolean {
-            // 内容判断依赖 Delegate，需要 Core
-            return core?.areContentsTheSame(oldItem, newItem)
-                ?: (oldItem == newItem) // 兜底：如果 Core 还没注入(理论上不会)，降级为 equals
-        }
-
-        override fun getChangePayload(oldItem: T, newItem: T): Any? {
-            return core?.getChangePayload(oldItem, newItem)
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            throw IllegalStateException("Proxy Error: Helper adapter should never bind views.")
         }
     }
 }

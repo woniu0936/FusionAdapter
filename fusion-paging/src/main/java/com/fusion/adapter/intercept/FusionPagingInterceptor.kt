@@ -1,17 +1,12 @@
 package com.fusion.adapter.intercept
 
 import androidx.paging.PagingData
-import com.fusion.adapter.FusionConfig
-import com.fusion.adapter.internal.ViewTypeRegistry
 
 /**
  * Paging 上下文
  * 保持与 List 版本一致的开发体验
  */
-interface FusionPagingContext {
-    val registry: ViewTypeRegistry
-    val config: FusionConfig
-    val isDebug: Boolean get() = config.isDebug
+interface FusionPagingContext : FusionContext {
 }
 
 /**

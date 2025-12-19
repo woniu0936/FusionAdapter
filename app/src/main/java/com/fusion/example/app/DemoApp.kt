@@ -17,10 +17,10 @@ class DemoApp : Application() {
                 Log.e("Fusion", "Unknown type: " + item.javaClass, e);
             }
             setGlobalDebounceInterval(300)
-            addGlobalInterceptor(FusionInterceptors.safeGuard())
-            if (BuildConfig.DEBUG) {
-                addGlobalInterceptor(FusionInterceptors.log())
-            }
+//            addGlobalInterceptor(FusionInterceptors.safeGuard())
+//            if (BuildConfig.DEBUG) {
+//                addGlobalInterceptor(FusionInterceptors.log())
+//            }
         }
     }
 

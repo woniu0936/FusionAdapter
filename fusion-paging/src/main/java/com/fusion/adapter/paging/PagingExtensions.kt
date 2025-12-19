@@ -1,5 +1,6 @@
 package com.fusion.adapter.paging
 
+import FusionPagingAdapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingData
@@ -63,12 +64,14 @@ inline fun <reified T : Any> FusionPagingAdapter<*>.register(
     this.attachLinker(T::class.java, scope.builder.linker)
 }
 
-// Paging 版本的 Debug 拦截器 DSL
+// Paging 版本 Debug 拦截器 DSL
 fun <T : Any> FusionPagingAdapter<T>.addDebugInterceptor(
     block: (PagingData<T>, FusionPagingContext) -> PagingData<T>
 ) {
     if (Fusion.getConfig().isDebug) {
-        this.addInterceptor { data, context -> block(data, context) }
+        this.addInterceptor { data, context ->
+            block(data, context)
+        }
     }
 }
 
