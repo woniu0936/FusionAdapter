@@ -3,14 +3,18 @@ package com.fusion.example.feature.dsl
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.fusion.adapter.paging.register
 import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
+import com.fusion.example.databinding.ItemImageBinding
+import com.fusion.example.databinding.ItemImageBinding.inflate
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.databinding.ItemMsgSystemBinding
 import com.fusion.example.databinding.ItemMsgTextBinding
 import com.fusion.example.databinding.ItemTextBinding
 import com.fusion.example.model.FusionMessage
+import com.fusion.example.model.ImageItem
 import com.fusion.example.model.TextItem
 import com.fusion.example.utils.ChatStyleHelper
 import com.fusion.example.utils.MockDataGenerator
@@ -64,6 +68,14 @@ class DslComplexActivity : AppCompatActivity() {
                 onBind { item ->
                     tvContent.text = item.content
                     cardRoot.setCardBackgroundColor(0xFFF0F0F0.toInt())
+                }
+            }
+
+            register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                onBind { item ->
+                    ChatStyleHelper.bindStandaloneImage(this)
+                    tvDesc.text = "Image ID: ${item.id}"
+                    ivImage.layoutParams.height = 400
                 }
             }
         }

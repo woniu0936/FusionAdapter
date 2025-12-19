@@ -17,8 +17,6 @@ object MockDataGenerator {
             val id = "item_$i"
             val random = Random.nextInt(100)
             val item: Any = when {
-                // 10% 概率插入社交帖子 (展示 Payload)
-                random < 10 -> SocialPost(id, "User_$i", "FusionAdapter is amazing!", Random.nextInt(500), false)
                 // 10% 概率插入纯图片 (展示 DSL 1对1)
                 random < 20 -> ImageItem(id, "https://via.placeholder.com/150")
                 // 10% 概率插入纯文本 (展示 DSL 1对1)
