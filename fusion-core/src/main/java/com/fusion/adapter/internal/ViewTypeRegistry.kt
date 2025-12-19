@@ -2,7 +2,6 @@ package com.fusion.adapter.internal
 
 import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.Fusion
 import com.fusion.adapter.delegate.FusionDelegate
 import java.util.concurrent.ConcurrentHashMap
 
@@ -19,7 +18,6 @@ class ViewTypeRegistry {
 
     companion object {
         const val TYPE_PLACEHOLDER = -2049
-        private const val FALLBACK_VIEW_TYPE = -2048
     }
 
     // [核心路由表]
@@ -50,7 +48,8 @@ class ViewTypeRegistry {
         // 2. 提取 Delegate 生成全局唯一 ID，并注册到 UI 查找表
         linker.getAllDelegates().forEach { registerDelegateGlobal(it) }
 
-        supportedCache.remove(clazz)
+        // 注册表变更时，必须清除缓存，否则旧的判定结果可能过期
+        supportedCache.clear()
     }
 
     private fun registerDelegateGlobal(delegate: FusionDelegate<*, *>) {
@@ -92,10 +91,6 @@ class ViewTypeRegistry {
         // B. 继承/接口匹配 (这是一个耗时操作)
         if (findLinkerForInheritance(clazz) != null) return true
 
-        // C. 全局 Fallback
-        // 如果配置了 Fallback，意味着"所有未知类型"都是 Supported (显示为 Fallback View)
-        if (Fusion.getConfig().globalFallbackDelegate != null) return true
-
         return false
     }
 
@@ -121,55 +116,29 @@ class ViewTypeRegistry {
 
         // [Step 3] 如果还没找到 (linker 依然为 null)，说明未注册且无父类匹配
         if (linker == null) {
-            return handleMissingType(item)
+            throw IllegalStateException("Fusion: Critical - Item ${clazz.simpleName} has no registered Linker.")
         }
 
-        try {
-            // [Step 4] 路由解析
-            val delegate = linker.resolve(item)
-                ?: throw IllegalStateException("Fusion: 路由失败 (Key 未映射) -> ${clazz.simpleName}")
+        // [Step 4] 路由解析
+        val delegate = linker.resolve(item)
+            ?: throw IllegalStateException("Fusion: 路由失败 (Key 未映射) -> ${clazz.simpleName}")
 
-            // [Step 5] 获取 ID
-            val uniqueKey = delegate.getUniqueViewType()
-            val id = GlobalViewTypePool.getId(uniqueKey)
+        // [Step 5] 获取 ID
+        val uniqueKey = delegate.getUniqueViewType()
+        val id = GlobalViewTypePool.getId(uniqueKey)
 
-            // [添加日志] 关键！打印 Key 和 ID
-            logD("FusionTracker") {
-                """
+        // [添加日志] 关键！打印 Key 和 ID
+        logD("FusionTracker") {
+            """
                 ✅ [GetViewType] Resolved:
                    Item: ${clazz.simpleName}
                    Delegate: ${delegate.javaClass.simpleName} @${System.identityHashCode(delegate)}
                    UniqueKey: $uniqueKey
                    GlobalID: $id
             """.trimIndent()
-            }
-
-            return id
-
-        } catch (e: Exception) {
-            return handleException(item, e)
-        }
-    }
-
-    fun hasLinker(item: Any): Boolean {
-        val clazz = item.javaClass
-
-        // 1. 先查一级缓存 (精确匹配)
-        if (classToLinker.containsKey(clazz)) {
-            return true
         }
 
-        // 2. 查二级缓存 (继承/接口匹配)
-        // 复用你现有的逻辑 findLinkerForInheritance
-        val linker = findLinkerForInheritance(clazz)
-        if (linker != null) {
-            // 查到了就写入一级缓存，提升下次性能
-            classToLinker[clazz] = linker as TypeRouter<Any>
-            return true
-        }
-
-        // 3. 确实没有注册
-        return false
+        return id
     }
 
     /**
@@ -178,7 +147,7 @@ class ViewTypeRegistry {
      */
     private fun findLinkerForInheritance(clazz: Class<*>): TypeRouter<Any>? {
         // A. 向上查找父类 (优先匹配父类)
-        var current = clazz.superclass
+        var current: Class<*>? = clazz.superclass
         while (current != null && current != Any::class.java) {
             val linker = classToLinker[current]
             if (linker != null) {
@@ -198,36 +167,6 @@ class ViewTypeRegistry {
         }
 
         return null
-    }
-
-    /**
-     * 异常/兜底处理
-     */
-    private fun handleMissingType(item: Any): Int {
-        val e = IllegalStateException("Fusion: 未注册的数据类型 -> ${item.javaClass.simpleName}")
-        return handleException(item, e)
-    }
-
-    private fun handleException(item: Any, e: Exception): Int {
-        val config = Fusion.getConfig()
-
-        // Debug 模式直接崩溃，暴露问题
-        if (config.isDebug) {
-            throw e
-        }
-
-        // 生产环境：上报日志 + 兜底
-        config.errorListener?.onError(item, e)
-
-        val fallback = config.globalFallbackDelegate ?: throw e // 如果没配兜底，只能崩
-
-        // 懒加载注册兜底 Delegate
-        if (viewTypeToDelegate.indexOfKey(FALLBACK_VIEW_TYPE) < 0) {
-            @Suppress("UNCHECKED_CAST")
-            viewTypeToDelegate.put(FALLBACK_VIEW_TYPE, fallback as FusionDelegate<Any, RecyclerView.ViewHolder>)
-        }
-
-        return FALLBACK_VIEW_TYPE
     }
 
     fun getDelegate(viewType: Int): FusionDelegate<Any, RecyclerView.ViewHolder> {

@@ -1,11 +1,14 @@
 package com.fusion.adapter.internal
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
+import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
+import com.fusion.adapter.exception.UnregisteredTypeException
 import java.util.Collections
 
 /**
@@ -22,32 +25,50 @@ class AdapterController {
     val registry = ViewTypeRegistry()
 
     /**
-     * ✅ 数据清洗 (Sanitization)
+     * Sanitization
      * 职责：剔除未注册且无 Fallback 的数据，防止 LayoutManager 崩溃或错乱。
      * 性能：基于 Registry 缓存，耗时极低。
+     * 策略：
+     * 1. 检查 Registry 是否支持。
+     * 2. 支持 -> 放行。
+     * 3. 不支持：
+     *    - Debug 模式 -> 直接抛出异常 Crash (Fail-Fast)。
+     *    - Release 模式 -> 丢弃数据，并回调 ErrorListener 进行上报 (Fail-Safe + Observability)。
      */
     fun sanitize(rawList: List<Any>): List<Any> {
         if (rawList.isEmpty()) return rawList
-
-        val isDebug = Fusion.getConfig().isDebug
+        val config = Fusion.getConfig()
         var hasRemoved = false
-
-        // 预分配大小，避免扩容
         val safeList = ArrayList<Any>(rawList.size)
 
         for (item in rawList) {
             if (registry.isSupported(item)) {
                 safeList.add(item)
             } else {
+                handleUnregisteredItem(item, config)
                 hasRemoved = true
-                if (isDebug) {
-                    logW("Fusion") { "⚠️ [Data Sanitizer] Item dropped: ${item.javaClass.simpleName}. No Delegate registered." }
-                }
             }
         }
 
-        // 优化：如果没有剔除任何数据，直接返回原列表（减少内存分配）
         return if (hasRemoved) safeList else rawList
+    }
+
+    /**
+     * 统一处理未注册数据的逻辑
+     */
+    private fun handleUnregisteredItem(item: Any, config: FusionConfig) {
+        val exception = UnregisteredTypeException(item)
+
+        if (config.isDebug) {
+            // 🚨 Debug 模式：直接 Crash，强制开发者修复
+            throw exception
+        } else {
+            // 🛡️ Release 模式：静默丢弃，但通过 ErrorListener 上报
+            // 开发者可以接入 Firebase/Bugly 等进行追踪
+            config.errorListener?.onError(item, exception)
+            // 可选：在 Logcat 留个底，方便本地查看 Release 包日志
+            Log.e("Fusion", "⚠️ [Sanitizer] Dropped unregistered item: ${item.javaClass.simpleName}. Reported to ErrorListener.")
+        }
     }
 
     /**

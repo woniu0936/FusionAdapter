@@ -32,7 +32,6 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 public final class com/fusion/adapter/FusionConfig {
 	public final field errorListener Lcom/fusion/adapter/exception/ErrorListener;
 	public final field globalDebounceInterval J
-	public final field globalFallbackDelegate Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final field isDebug Z
 	public synthetic fun <init> (Lcom/fusion/adapter/FusionConfig$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
@@ -43,7 +42,6 @@ public final class com/fusion/adapter/FusionConfig$Builder {
 	public final fun setDebug (Z)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setErrorListener (Lcom/fusion/adapter/exception/ErrorListener;)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setGlobalDebounceInterval (J)Lcom/fusion/adapter/FusionConfig$Builder;
-	public final fun setGlobalFallback (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/FusionConfig$Builder;
 }
 
 public final class com/fusion/adapter/FusionExtensionsKt {
@@ -110,13 +108,6 @@ public final class com/fusion/adapter/delegate/BindingDelegate$BindingHolder : a
 
 public abstract interface class com/fusion/adapter/delegate/BindingInflater {
 	public abstract fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Landroidx/viewbinding/ViewBinding;
-}
-
-public final class com/fusion/adapter/delegate/FallbackDelegate : com/fusion/adapter/delegate/FusionDelegate {
-	public fun <init> ()V
-	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
-	public fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
-	public fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 }
 
 public final class com/fusion/adapter/delegate/FunctionalBindingDelegate : com/fusion/adapter/delegate/BindingDelegate {
@@ -341,6 +332,10 @@ public abstract interface class com/fusion/adapter/exception/ErrorListener {
 	public abstract fun onError (Ljava/lang/Object;Ljava/lang/Exception;)V
 }
 
+public final class com/fusion/adapter/exception/UnregisteredTypeException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Object;)V
+}
+
 public final class com/fusion/adapter/extensions/LayoutExtensionsKt {
 	public static final fun configImage (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
 	public static final fun configList (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
@@ -447,7 +442,6 @@ public final class com/fusion/adapter/internal/ViewTypeRegistry {
 	public final fun getDelegate (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getDelegateOrNull (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getItemViewType (Ljava/lang/Object;)I
-	public final fun hasLinker (Ljava/lang/Object;)Z
 	public final fun isSupported (Ljava/lang/Object;)Z
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
 }

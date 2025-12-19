@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.diff.StableId
+import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
@@ -72,16 +73,28 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
      * 只有注册过（或有 Fallback）的数据才会进入 Diff 流程。
      */
     private fun sanitizePagingData(pagingData: PagingData<T>): PagingData<T> {
+        val config = Fusion.getConfig()
+        val isDebug = config.isDebug
+
         return pagingData.filter { item ->
             val isSupported = core.registry.isSupported(item)
-            if (!isSupported && Fusion.getConfig().isDebug) {
-                // 使用 System.out 或者 Android Log 打印
-                android.util.Log.w("Fusion", "⚠️ [Paging Sanitizer] Item dropped: ${item.javaClass.simpleName}. No Delegate registered.")
+
+            if (isSupported) {
+                true // 保留
+            } else {
+                val exception = UnregisteredTypeException(item)
+                if (isDebug) {
+                    // 🚨 Debug 模式：Paging 中抛出异常会传播到 LoadState.Error
+                    // 开发者会在 UI 上看到加载失败，Logcat 会有红字 StackTrace
+                    throw exception
+                } else {
+                    // 🛡️ Release 模式：上报并丢弃
+                    config.errorListener?.onError(item, exception)
+                    false // 丢弃
+                }
             }
-            isSupported
         }
     }
-
 
     fun retry() = helperAdapter.retry()
     fun refresh() = helperAdapter.refresh()
