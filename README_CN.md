@@ -8,36 +8,55 @@
 
 [🇨🇳 中文文档](./README_CN.md) | [🇺🇸 English](./README.md)
 
-**FusionAdapter** 是一个基于 Kotlin DSL 和 ViewBinding 构建的新一代 Android `RecyclerView` 适配器库。
+**FusionAdapter** 是一款专为 Kotlin 时代设计的现代化、Fail-Safe 的 RecyclerView 适配器库。
 
-它旨在将繁琐的 Adapter 样板代码（ViewHolder、ViewType、DiffUtil）**熔断（Fusion）** 为简洁、类型安全的声明式代码。不仅原生支持 **Paging 3** 和 **Smart Diff**，更通过极其灵活的 DSL 路由机制，让复杂的多类型列表开发变得轻而易举。
+它旨在通过简洁的 **Kotlin DSL** 消除繁琐的样板代码（ViewHolders, ViewTypes, DiffUtils）。结合内置的 **高性能数据清洗 (Sanitization)**、**原生 Paging 3 支持** 以及 **ViewBinding**，它让构建复杂的多类型异构列表变得前所未有的简单与安全。
 
 🔗 **GitHub**: [https://github.com/woniu0936/FusionAdapter](https://github.com/woniu0936/FusionAdapter)
 
 ---
 
-## ✨ 核心特性
+## 🆚 为什么选择 FusionAdapter?
 
-*   **⚡ 极简 DSL**：告别 Adapter 类爆炸，一行代码启动列表，逻辑内聚。
-*   **🔀 强大的路由分发**：
-    *   支持 **异构列表**（多种不同的 Data Class）。
-    *   支持 **同构多态**（同一 Data Class 根据属性映射不同布局，如聊天气泡）。
-*   **📐 布局管控**：在 DSL 中直接声明 `spanSize` 和 `fullSpan`，完美适配 Grid 和瀑布流。
-*   **🎨 ViewBinding 集成**：原生支持 `ViewBinding`，告别 `findViewById`，类型安全。
-*   **🚀 Smart Diff**：内置智能差异计算策略，支持 `StableId`，彻底解决列表闪烁。
-*   **📄 Paging 3 支持**：无缝接入 Jetpack Paging 3，API 与普通列表完全一致。
-*   **🛡️ 生产级兜底**：完善的全局异常拦截与兜底视图机制，防止 Crash。
+FusionAdapter 与业界主流库的深度对比：
+
+| 核心维度 | **FusionAdapter** | **Epoxy (Airbnb)** | **MultiType** | **BRVAH (v4)** |
+| :--- | :--- | :--- | :--- | :--- |
+| **编码范式** | **Kotlin DSL** (原地注册) | 注解处理 (Annotation) | 类映射 (Class Mapping) | 继承式 (Inheritance) |
+| **样板代码** | **零 (Zero)**<br>无需创建 Adapter/Holder 类 | 高 (需创建 Model) | 中 (需创建 Binder) | 中 |
+| **安全策略** | **Fail-Fast / Fail-Safe**<br>*(Debug 崩溃提醒，Release 自动清洗)* | Fail-Safe (隐式不显示) | Fail-Fast (直接崩溃) | 未定义<br>(可能导致错乱) |
+| **Paging 3** | **原生支持**<br>*(统一 API，自动处理占位符)* | 需引入扩展库 | 无支持 | 兼容模式<br>(核心仍为回调) |
+| **编译成本** | **无** (纯运行时) | **慢** (依赖 KAPT/KSP) | 无 | 无 |
+| **网格布局** | **自动注入** (Auto Span) | 自动处理 | 手动管理 | 手动管理 |
+
+**核心优势:** FusionAdapter 拥有 **Epoxy** 般的强大布局能力却无编译损耗，拥有 **MultiType** 般的灵活性却提供更现代的 DSL，同时为您提供了梦寐以求的顶级 **Paging 3** 原生支持。
 
 ---
 
-## 📦 引入依赖
+## ✨ 核心特性
 
-在你的 `build.gradle.kts` (App 模块) 中添加：
+*   **⚡ 极简 DSL**: 告别 Adapter 类爆炸。仅需一个代码块即可启动一个多类型列表。
+*   **🛡️ 健壮的数据清洗**:
+    *   **Debug**: 遇到未注册类型立即崩溃 (Fail-Fast)，帮助在开发期发现 Bug。
+    *   **Release**: 自动剔除非法数据 (Fail-Safe)，防止线上崩溃或 Grid 布局错位。
+*   **📄 原生 Paging 3**: 提供专用的 `FusionPagingAdapter`，API 与标准版完全一致。支持 **自动 Null 占位符**。
+*   **🔀 强大的路由能力**:
+    *   **多态映射**: 根据属性（如消息类型）将同一个数据类映射到不同的布局。
+    *   **异构列表**: 轻松混合 Header、Product、Ad、Footer 等不同数据实体。
+*   **📐 智能布局控制**: 直接在 DSL 中声明 `spanSize` 和 `fullSpan`，自动适配 Grid 和瀑布流。
+*   **🚀 智能差分**: 内置 `AsyncListDiffer` 并支持 `StableId`，实现高性能的平滑动画。
+*   **🎨 ViewBinding**: 类型安全，告别 `findViewById`。
+
+---
+
+## 📦 安装
+
+在模块级 `build.gradle.kts` 中添加依赖：
 
 ```kotlin
 dependencies {
     implementation("io.github.woniu0936:fusion-core:0.5.0")
-    // 可选，支持paging3
+    // 可选：原生 Paging 3 支持
     implementation("io.github.woniu0936:fusion-paging:0.5.0")
 }
 ```
@@ -46,23 +65,23 @@ dependencies {
 
 ## 🔨 使用指南
 
-### 1. 基础列表 (Simple List)
+### 1. 简单列表 (DSL)
 
-最简单的场景：一种数据对应一种布局。
+最简单的场景：将一种数据类型映射到一个布局。
 
 ```kotlin
-// 在 Activity / Fragment 中
+// In Activity / Fragment
 val adapter = recyclerView.setupFusion {
     
-    // 注册: 数据类型 String -> 布局 ItemTextBinding
+    // 注册: 数据类型 (String) -> 布局 (ItemTextBinding)
     register(ItemTextBinding::inflate) {
         
-        // onBind: 处理数据绑定 (this 为 Binding)
+        // onBind: `this` 是 ViewBinding, `item` 是数据
         onBind { item ->
             tvTitle.text = item
         }
 
-        // onClick: 处理点击事件
+        // onItemClick: 处理点击事件
         onItemClick { item ->
             toast("Clicked: $item")
         }
@@ -73,184 +92,156 @@ val adapter = recyclerView.setupFusion {
 adapter.submitList(listOf("Hello", "Fusion", "Adapter"))
 ```
 
-### 2. 多类型列表：同构多态 (Polymorphism / Chat Mode)
+### 2. 多态列表 (聊天模式)
 
-**这是 FusionAdapter 最强大的功能之一。**
-适用于数据类型相同（如 `Message`），但需要根据属性（如 `msgType`）展示不同 UI（文本、图片、系统消息）的场景。告别繁琐的 `getItemViewType`！
+处理同一数据类 (`Message`) 根据内部状态渲染不同布局的场景。告别 `getItemViewType`！
 
 ```kotlin
-data class Message(val id: String, val type: Int, val content: String)
+data class Message(val type: Int, val content: String)
 
 recyclerView.setupFusion {
-    // 针对 Message 类型开启路由模式
+    // 为 Message 类型开启路由模式
     register<Message> {
         
-        // 1. 定义分发规则 (提取 Key)
+        // 1. 定义匹配规则 (提取 Key)
         match { it.type }
 
-        // 2. 映射: 文本消息
+        // 2. 映射 Key -> 布局: 文本消息
         map(TYPE_TEXT, ItemMsgTextBinding::inflate) {
-            onBind { msg -> 
-                tvContent.text = msg.content
-                // 动态调整气泡样式（左/右）
-                ChatStyleHelper.bindTextMsg(this, msg.isMe)
-            }
+            onBind { msg -> tvContent.text = msg.content }
         }
 
-        // 3. 映射: 图片消息
+        // 3. 映射 Key -> 布局: 图片消息
         map(TYPE_IMAGE, ItemMsgImageBinding::inflate) {
-            onBind { msg -> 
-                ivImage.load(msg.content)
-                ChatStyleHelper.bindImageMsg(this, msg.isMe)
-            }
-        }
-
-        // 4. 映射: 系统通知
-        map(TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
-            onBind { msg -> tvSystem.text = msg.content }
+            onBind { msg -> ivImage.load(msg.content) }
         }
     }
 }
 ```
 
-### 3. 多类型列表：异构混合 (Heterogeneous List)
+### 3. Paging 3 集成
 
-在一个列表中混合展示多种不同的数据实体，例如：`Header` + `Product` + `Ad` + `Footer`。
-
-```kotlin
-recyclerView.setupFusion {
-    // 注册 Header 数据类型
-    register<HeaderItem, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
-        onBind { item -> tvTitle.text = item.title }
-    }
-
-    // 注册商品数据类型
-    register<ProductItem, ItemProductBinding>(ItemProductBinding::inflate) {
-        onBind { item -> tvName.text = item.name }
-    }
-    
-    // 注册广告数据类型
-    register<AdItem, ItemAdBinding>(ItemAdBinding::inflate) { ... }
-}
-
-// 提交混合数据列表 List<Any>
-adapter.submitList(listOf(HeaderItem("热门"), ProductItem(1), AdItem(...)))
-```
-
-### 4. 布局控制 (Grid & Staggered Support)
-
-FusionAdapter 允许你在 DSL 中直接控制 `GridLayoutManager` 或 `StaggeredGridLayoutManager` 的布局行为，无需编写自定义 LayoutManager。
-
-```kotlin
-val layoutManager = GridLayoutManager(context, 2) // 或 StaggeredGridLayoutManager
-recyclerView.layoutManager = layoutManager
-
-recyclerView.setupFusion(layoutManager) { // 传入 LayoutManager 以启用布局DSL
-
-    // 通栏标题 (占满所有列)
-    register<HeaderItem, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
-        onBind { ... }
-        
-        // Staggered: 开启通栏
-        fullSpanIf { true } 
-        // Grid: 占满 spanCount
-        spanSize { item, position -> layoutManager.spanCount } 
-    }
-
-    // 普通网格项 (占1列)
-    register<GridItem, ItemGridBinding>(ItemGridBinding::inflate) {
-        onBind { ... }
-        spanSize { _, _ -> 1 }
-    }
-}
-```
-
----
-
-## 🚀 性能优化
-
-### 🔹 智能 Diff (Smart Diff) & StableId
-
-FusionAdapter 内部封装了 `AsyncListDiffer`。为了获得极致的性能和精准的动画（避免 `notifyDataSetChanged` 带来的闪烁），建议数据模型实现 `StableId` 接口：
-
-```kotlin
-data class User(
-    val uid: String, 
-    val name: String
-) : StableId {
-    // 返回唯一标识，DiffUtil 将使用它来判断 Item 是否移动或变更
-    override val stableId: Any = uid
-}
-```
-
-### 🔹 局部刷新 (Payloads)
-
-在 DSL 中轻松处理 `notifyItemChanged(pos, payload)`，仅刷新 View 的特定属性，避免图片闪烁或重绘：
-
-```kotlin
-register(ItemPostBinding::inflate) {
-    onBind { post -> 
-        tvContent.text = post.content
-        updateLikeState(post.isLiked) // 全量绑定
-    }
-    
-    // 处理局部刷新
-    bindPayload(SocialPost::isLiked, SocialPost::likeCount) { isLiked, likeCount ->
-        // 仅当 isLiked 或 likeCount 变化时触发
-        updateLikeState(isLiked, likeCount)
-    }
-}
-```
-
----
-
-## 📄 Paging 3 支持
-
-Fusion 提供了专用的 `FusionPagingAdapter`，API 与普通 DSL 版完全一致，零成本迁移：
+Fusion 提供了 `FusionPagingAdapter`，API 与标准版 DSL 完全一致，零成本迁移。
 
 ```kotlin
 // 使用 setupFusionPaging 扩展方法
-val pagingAdapter = recyclerView.setupFusionPaging<FusionMessage> {
-    register<FusionMessage> {
-        match { it.type }
-        map(TYPE_TEXT, ItemTextBinding::inflate) { ... }
-        map(TYPE_IMAGE, ItemImageBinding::inflate) { ... }
+val pagingAdapter = recyclerView.setupFusionPaging<User> {
+    
+    // 1. 注册正常 Item
+    register(ItemUserBinding::inflate) {
+        onBind { user -> tvName.text = user.name }
+    }
+
+    // 2. 注册占位符 (骨架屏)
+    // 当 Paging 3 返回 null (加载中) 时自动显示此布局
+    registerPlaceholder(ItemSkeletonBinding::inflate) {
+        onBind { binding.shimmer.startShimmer() }
     }
 }
 
-// 配合 ViewModel 提交 PagingData
+// 提交 PagingData
 lifecycleScope.launch {
-    viewModel.flow.collectLatest { pagingData ->
+    viewModel.pagingFlow.collectLatest { pagingData ->
         pagingAdapter.submitData(pagingData)
     }
 }
 ```
 
+### 4. 网格与瀑布流布局
+
+直接在 DSL 中控制 Span。Fusion 会自动处理 `SpanSizeLookup`，无需手动计算 Position。
+
+```kotlin
+val layoutManager = GridLayoutManager(context, 2)
+recyclerView.layoutManager = layoutManager
+
+// 传入 layoutManager 以启用布局 DSL
+recyclerView.setupFusion(layoutManager) {
+    
+    // Header: 总是占满一行
+    register<Header>(ItemHeaderBinding::inflate) {
+        onBind { ... }
+        // 适用于 Grid 和 瀑布流
+        fullSpanIf { true } 
+    }
+
+    // Grid Item: 动态 Span
+    register<GridItem>(ItemGridBinding::inflate) {
+        onBind { ... }
+        spanSize { item, position, scope -> 
+            // 如果是推广商品占满一行，否则占一格
+            if (item.isPromoted) scope.totalSpans else 1 
+        }
+    }
+}
+```
+
 ---
 
-## ⚙️ 全局配置
+## 🛡️ 健壮性与安全
 
-建议在 `Application` 中进行初始化，配置 Debug 模式和异常监听。
+FusionAdapter 引入了严格的 **Sanitization (数据清洗)** 机制来确保布局的一致性。
+
+### 全局配置
+建议在 `Application` 中初始化 Fusion：
 
 ```kotlin
 Fusion.initialize {
-    // Debug 模式：
-    // true  -> 遇到未注册类型抛出异常 (开发环境推荐，快速发现 Bug)
-    // false -> 自动渲染兜底 View (默认 GONE)，防止 Crash (线上环境推荐)
+    // DEBUG 模式 (Fail-Fast): 
+    // 遇到未注册类型立即 CRASH。
+    // 强制开发者在开发阶段修复问题。
     setDebug(BuildConfig.DEBUG)
     
-    // 全局异常监听
+    // RELEASE 模式 (Fail-Safe): 
+    // 静默丢弃未注册的数据，防止线上 Crash 或 Grid 布局错位。
+    // 通过监听器上报异常数据以便分析。
     setErrorListener { item, e ->
-        Log.e("Fusion", "Rendering error for ${item.javaClass}", e)
+        FirebaseCrashlytics.getInstance().recordException(e)
     }
 }
+```
+
+### 类型安全机制
+*   **Fail-Fast**: 如果你添加了一个 `Product` 类型但忘了 `register`，Debug 模式下会直接抛出 `UnregisteredTypeException`。
+*   **Fail-Safe**: 在 Release 模式下，该数据会在进入 `RecyclerView` 之前被自动过滤掉，确保不会出现空白 Item 或导致网格布局塌陷。
+
+---
+
+## ⚙️ 进阶特性
+
+### 局部刷新 (Payloads)
+轻松处理 `notifyItemChanged(pos, payload)`，仅更新变化的 View。
+
+```kotlin
+register(ItemPostBinding::inflate) {
+    onBind { post -> ... } // 全量更新
+    
+    // 仅当 likeCount 发生变化时触发
+    bindPayload(Post::likeCount) { count ->
+        tvLikeCount.text = count.toString()
+    }
+}
+```
+
+### 手动骨架屏 (非 Paging)
+在普通列表中显式驱动骨架屏显示。
+
+```kotlin
+// 1. 注册骨架屏布局
+adapter.registerPlaceholder(ItemSkeletonBinding::inflate)
+
+// 2. 显示 10 个骨架占位符
+adapter.submitPlaceholders(10)
+
+// 3. 数据加载完毕，显示真实数据
+adapter.submitList(data)
 ```
 
 ---
 
 ## ☕ Java 互操作性
 
-Fusion 并未遗忘 Java 开发者，提供了友好的 `JavaDelegate` 类，支持与 Kotlin DSL 混合使用。
+FusionAdapter 对 Java 友好。你可以通过继承 `JavaDelegate` 类来混合使用。
 
 ```java
 // 1. 创建 Delegate
@@ -260,13 +251,6 @@ public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
 
 // 2. 注册
 adapter.attachDelegate(User.class, new UserDelegate());
-
-// 3. 甚至支持复杂的 TypeRouter
-adapter.attachLinker(Message.class, new TypeRouter<Message>()
-    .match(Message::getType)
-    .map(TYPE_TEXT, new TextDelegate())
-    .map(TYPE_IMAGE, new ImageDelegate())
-);
 ```
 
 ---
