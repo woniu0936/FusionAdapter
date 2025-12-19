@@ -1,6 +1,7 @@
 @file:JvmName("FusionViewUtil") // 👈 关键：Java 调用时类名为 FusionViewUtil
 package com.fusion.adapter.internal
 
+import android.os.SystemClock
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -43,7 +44,7 @@ private class DebouncedClickListener(
     private var lastClickTime = 0L
 
     override fun onClick(v: View) {
-        val now = System.currentTimeMillis()
+        val now = SystemClock.elapsedRealtime()
         if (now - lastClickTime >= intervalMs) {
             lastClickTime = now
             originListener.onClick(v)
