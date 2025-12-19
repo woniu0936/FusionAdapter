@@ -29,6 +29,7 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
 
             // 类型 A: 标题 (Header) -> 强制全宽
             register<HeaderItem, ItemTextBinding>(ItemTextBinding::inflate) {
+                stableId { it.title }
                 onBind { item ->
                     tvContent.text = "--- ${item.title} ---"
                     tvContent.textSize = 18f
@@ -42,6 +43,7 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
 
             // 类型 B: 图片内容 (Content) -> 瀑布流
             register<StaggeredItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                stableId { it.height }
                 onBind { item ->
                     ChatStyleHelper.bindStandaloneImage(this)
                     tvDesc.text = "H:${item.height}px"
@@ -55,16 +57,16 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
         // 2. 生成分组数据
         val items = ArrayList<Any>()
         for (i in 1..6) {
-            items.add(HeaderItem("Group $i"))
+            items.add(HeaderItem(i, "Group $i"))
             // 每个组添加一些随机高度的 Item
             repeat(10) {
-                items.add(StaggeredItem(height = Random.nextInt(200, 600)))
+                items.add(StaggeredItem(i + it, height = Random.nextInt(200, 600)))
             }
         }
 
         adapter.submitList(items)
     }
 
-    data class HeaderItem(val title: String)
-    data class StaggeredItem(val height: Int)
+    data class HeaderItem(val id: Int, val title: String)
+    data class StaggeredItem(val id: Int, val height: Int)
 }

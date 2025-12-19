@@ -18,12 +18,13 @@ import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.FusionPlaceholderDelegate
 import com.fusion.adapter.delegate.LayoutHolder
-import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
+import com.fusion.adapter.internal.checkStableIdRequirement
+import com.fusion.adapter.internal.mapToRecyclerViewId
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import kotlinx.coroutines.flow.Flow
 
@@ -45,7 +46,9 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     private val helperAdapter = PagingHelperAdapter()
 
     init {
-
+        if (Fusion.getConfig().defaultStableId) {
+            setHasStableIds(true)
+        }
         // [数据观察者桥接]
         // 将 Paging 的刷新通知转发给 RecyclerView
         helperAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -61,6 +64,22 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
                 this@FusionPagingAdapter.stateRestorationPolicy = helperAdapter.stateRestorationPolicy
             }
         })
+    }
+
+    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
+        checkStableIdRequirement(this, clazz, linker.getAllDelegates())
+        core.register(clazz, linker)
+    }
+
+    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        // 1. 安全检查 (刚刚实现的逻辑)
+        // 确保开启全局 StableId 时，手动 attach 的 delegate 也配置了 ID
+        checkStableIdRequirement(this, clazz, listOf(delegate))
+
+        // 2. 构造 Linker 并注册
+        val linker = TypeRouter<T>()
+        linker.map(Unit, delegate)
+        core.register(clazz, linker)
     }
 
     // ------------------------------------------------------
@@ -182,19 +201,31 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun getItemId(position: Int): Long {
-        // 仅在 setHasStableIds(true) 时有效
+        // 1. 快速前置检查
         if (!hasStableIds()) return RecyclerView.NO_ID
 
-        // 使用 peek 避免为了获取 ID 而触发网络请求
+        // 2. 数据获取
         val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
+        val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
 
-        // [对接你的 StableId 接口]
-        return if (item is StableId) {
-            // 假设 stableId 是 Long 或 Int。如果是 String 的 hashcode 可能会碰撞，需注意
-            (item.stableId as? Long) ?: item.stableId.hashCode().toLong()
-        } else {
-            RecyclerView.NO_ID
+        // 3. 获取原始 ID (Any?)
+        @Suppress("UNCHECKED_CAST")
+        val rawId = delegate.getItemId(item)
+
+        // --- 运行时安全兜底 (Safety Net) ---
+        if (rawId == null) {
+            // 这种情况理论上在 Debug 模式下会被注册检查拦截。
+            // 但在 Release 模式下，如果 setHasStableIds(false) 失败，
+            // 代码会走到这里。此时绝对不能返回 NO_ID 或重复 ID。
+
+            // 策略：使用 System.identityHashCode。
+            // 它在对象生命周期内是不变的，且冲突概率极低。
+            // 虽然这会让动画失效（因为每次 new 对象 ID 都变），但它能 100% 保证不 Crash。
+            return System.identityHashCode(item).toLong()
         }
+
+        // 4. 极致转换 (Delegated to Utils)
+        return mapToRecyclerViewId(rawId)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -235,16 +266,6 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
                 core.onBindViewHolder(holder, item, position, payloads)
             }
         }
-    }
-
-    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        core.register(clazz, linker)
-    }
-
-    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val linker = TypeRouter<T>()
-        linker.map(Unit, delegate)
-        core.register(clazz, linker)
     }
 
     // ------------------------------------------------------

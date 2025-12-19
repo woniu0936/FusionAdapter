@@ -70,6 +70,15 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     // RecyclerView 适配层
     // =======================================================================================
 
+    /**
+     * Java API: 配置 Stable ID
+     * @param provider 一个函数，接受 Item，返回 ID (Long/String/Int/UUID等)
+     */
+    public void setStableId(@NonNull Function<T, Object> provider) {
+        // 调用父类 Kotlin 的 setStableId，将 Java Function 转换为 Kotlin Lambda
+        super.setStableId(item -> provider.apply(item));
+    }
+
     @Override
     public @NotNull ViewSignature getSignature() {
         return signature;

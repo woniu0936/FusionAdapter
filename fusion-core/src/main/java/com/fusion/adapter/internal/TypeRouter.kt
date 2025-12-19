@@ -1,7 +1,8 @@
 package com.fusion.adapter.internal
 
-import com.fusion.adapter.delegate.FusionDelegate
+import androidx.annotation.RestrictTo
 import com.fusion.adapter.DiffKeyProvider
+import com.fusion.adapter.delegate.FusionDelegate
 
 /**
  * [TypeRouter]
@@ -58,7 +59,8 @@ class TypeRouter<T : Any> {
     /**
      * [Core 内部调用] 获取所有持有的 Delegate (用于全局注册)
      */
-    internal fun getAllDelegates(): Collection<FusionDelegate<T, *>> {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun getAllDelegates(): Collection<FusionDelegate<T, *>> {
         return keyToDelegate.values
     }
 }

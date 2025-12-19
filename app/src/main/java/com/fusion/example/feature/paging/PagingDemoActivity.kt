@@ -46,6 +46,7 @@ class PagingDemoActivity : AppCompatActivity() {
 
                 // 文本消息
                 map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+                    stableId { it.id }
                     onBind { item ->
                         tvContent.text = item.content
                         ChatStyleHelper.bindTextMsg(this, item.isMe)
@@ -55,6 +56,7 @@ class PagingDemoActivity : AppCompatActivity() {
 
                 // 图片消息
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                    stableId { it.id }
                     onBind { item ->
                         ivImage.contentDescription = item.content
                         ChatStyleHelper.bindImageMsg(this, item.isMe)
@@ -64,11 +66,13 @@ class PagingDemoActivity : AppCompatActivity() {
 
                 // 系统消息
                 map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                    stableId { it.id }
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
             }
 
             register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     ChatStyleHelper.bindStandaloneImage(this)
                     tvDesc.text = "Extra Type: ${item.id}"

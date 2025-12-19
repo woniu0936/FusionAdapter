@@ -30,12 +30,29 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     // 使用通用接口 Watcher 存储
     private val propertyWatchers = ArrayList<Watcher<T>>()
 
+    internal var idProvider: ((T) -> Any?)? = null
+
     /**
      * [唯一标识生成器]
      * 用于生成全局唯一的 ViewType Key。
      *
      */
     final fun getUniqueViewType(): Any = signature
+
+    /**
+     * 手动设置 Stable ID 的获取逻辑 (非 DSL 方式)
+     */
+    fun setStableId(provider: (T) -> Any?) {
+        this.idProvider = provider
+    }
+
+    /**
+     * 获取 Item ID
+     * 只有一种途径：DSL 配置。如果未配置，返回 null。
+     */
+    fun getItemId(item: T): Any? {
+        return idProvider?.invoke(item)
+    }
 
     // ============================================================================================
     // Layout Strategy (核心布局策略)

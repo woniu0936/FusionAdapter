@@ -33,6 +33,7 @@ class PayloadPerformanceActivity : AppCompatActivity() {
 
         // 2. 混入另一种类型 (DSL 方式)，证明兼容性
         adapter.register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+            stableId { it.id }
             onBind { item ->
                 ChatStyleHelper.bindStandaloneImage(this)
                 tvDesc.text = "Image ID: ${item.id}"

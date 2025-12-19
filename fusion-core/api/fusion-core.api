@@ -17,6 +17,7 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 	public final fun getCurrentItems ()Ljava/util/List;
 	public final fun getItem (I)Ljava/lang/Object;
 	public fun getItemCount ()I
+	public fun getItemId (I)J
 	public fun getItemViewType (I)I
 	public final fun insertItem (ILjava/lang/Object;)V
 	public fun onAttachedToRecyclerView (Landroidx/recyclerview/widget/RecyclerView;)V
@@ -34,6 +35,7 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 }
 
 public final class com/fusion/adapter/FusionConfig {
+	public final field defaultStableId Z
 	public final field errorListener Lcom/fusion/adapter/exception/ErrorListener;
 	public final field globalDebounceInterval J
 	public final field isDebug Z
@@ -44,6 +46,7 @@ public final class com/fusion/adapter/FusionConfig$Builder {
 	public fun <init> ()V
 	public final fun build ()Lcom/fusion/adapter/FusionConfig;
 	public final fun setDebug (Z)Lcom/fusion/adapter/FusionConfig$Builder;
+	public final fun setDefaultStableIds (Z)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setErrorListener (Lcom/fusion/adapter/exception/ErrorListener;)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setGlobalDebounceInterval (J)Lcom/fusion/adapter/FusionConfig$Builder;
 }
@@ -66,6 +69,7 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
 	public final fun getCurrentList ()Ljava/util/List;
 	public fun getItemCount ()I
+	public fun getItemId (I)J
 	public fun getItemViewType (I)I
 	public fun onAttachedToRecyclerView (Landroidx/recyclerview/widget/RecyclerView;)V
 	public fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;I)V
@@ -141,6 +145,7 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	protected final fun dispatchHandledPayloads (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Ljava/util/List;)Z
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun getItemId (Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
 	public final fun getUniqueViewType ()Ljava/lang/Object;
 	public fun isFullSpan (Ljava/lang/Object;)Z
@@ -158,6 +163,7 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	protected final fun registerWatcher (Lcom/fusion/adapter/internal/Watcher;)V
 	public final fun resolveFullSpan (Ljava/lang/Object;)Z
+	public final fun setStableId (Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract class com/fusion/adapter/delegate/FusionPlaceholderDelegate : com/fusion/adapter/delegate/FusionDelegate {
@@ -191,6 +197,7 @@ public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adap
 	public fun setOnItemClick (JLcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
 	public fun setOnItemClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
 	public fun setOnItemLongClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemLongClickListener;)Lcom/fusion/adapter/delegate/JavaDelegate;
+	public fun setStableId (Ljava/util/function/Function;)V
 }
 
 public class com/fusion/adapter/delegate/JavaDelegate$JavaBindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
@@ -265,10 +272,6 @@ public final class com/fusion/adapter/diff/SmartDiffCallback : androidx/recycler
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 }
 
-public abstract interface class com/fusion/adapter/diff/StableId {
-	public abstract fun getStableId ()Ljava/lang/Object;
-}
-
 public final class com/fusion/adapter/dsl/DelegateDsl {
 	public fun <init> ()V
 	public final fun areContentsTheSame (Lkotlin/jvm/functions/Function2;)V
@@ -280,6 +283,7 @@ public final class com/fusion/adapter/dsl/DelegateDsl {
 	public final fun getContentSameBlock ()Lkotlin/jvm/functions/Function2;
 	public final fun getCreateBlock ()Lkotlin/jvm/functions/Function1;
 	public final fun getFullSpanBlock ()Lkotlin/jvm/functions/Function1;
+	public final fun getIdProviderBlock ()Lkotlin/jvm/functions/Function1;
 	public final fun getLongClickAction ()Lkotlin/jvm/functions/Function3;
 	public final fun getRawPayloadBlock ()Lkotlin/jvm/functions/Function4;
 	public final fun getSpanSizeBlock ()Lkotlin/jvm/functions/Function3;
@@ -304,11 +308,13 @@ public final class com/fusion/adapter/dsl/DelegateDsl {
 	public final fun setContentSameBlock (Lkotlin/jvm/functions/Function2;)V
 	public final fun setCreateBlock (Lkotlin/jvm/functions/Function1;)V
 	public final fun setFullSpanBlock (Lkotlin/jvm/functions/Function1;)V
+	public final fun setIdProviderBlock (Lkotlin/jvm/functions/Function1;)V
 	public final fun setLongClickAction (Lkotlin/jvm/functions/Function3;)V
 	public final fun setRawPayloadBlock (Lkotlin/jvm/functions/Function4;)V
 	public final fun setSpanSizeBlock (Lkotlin/jvm/functions/Function3;)V
 	public final fun spanSize (I)V
 	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
+	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class com/fusion/adapter/dsl/RegistrationBuilder {
@@ -347,6 +353,10 @@ public final class com/fusion/adapter/dsl/SpanScope {
 
 public abstract interface class com/fusion/adapter/exception/ErrorListener {
 	public abstract fun onError (Ljava/lang/Object;Ljava/lang/Exception;)V
+}
+
+public final class com/fusion/adapter/exception/MissingStableIdException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Class;)V
 }
 
 public final class com/fusion/adapter/exception/UnregisteredTypeException : java/lang/RuntimeException {
@@ -445,8 +455,17 @@ public final class com/fusion/adapter/internal/LoggerKt {
 	public static final fun logW (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 }
 
+public final class com/fusion/adapter/internal/StableIdSafetyKt {
+	public static final fun checkStableIdRequirement (Landroidx/recyclerview/widget/RecyclerView$Adapter;Ljava/lang/Class;Ljava/util/Collection;)V
+}
+
+public final class com/fusion/adapter/internal/StableIdUtilsKt {
+	public static final fun mapToRecyclerViewId (Ljava/lang/Object;)J
+}
+
 public final class com/fusion/adapter/internal/TypeRouter {
 	public fun <init> ()V
+	public final fun getAllDelegates ()Ljava/util/Collection;
 	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeRouter;
 	public final fun match (Lcom/fusion/adapter/DiffKeyProvider;)Lcom/fusion/adapter/internal/TypeRouter;
 }

@@ -83,6 +83,7 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         this.onBindPayloadRaw = dsl.rawPayloadBlock
         this.onCreate = dsl.createBlock
         this.onContentSame = dsl.contentSameBlock
+        this.idProvider = dsl.idProviderBlock
         // 注册所有 Watcher
         dsl.pendingWatchers.forEach { watcher ->
             registerWatcherFromDsl(watcher)

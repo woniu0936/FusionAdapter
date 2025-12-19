@@ -7,7 +7,6 @@ import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
-import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder
 import java.util.Collections
@@ -144,26 +143,34 @@ class AdapterController {
     // ========================================================================================
 
     /**
-     * [关键修复] 代理 DiffUtil.areItemsTheSame
+     * 代理 DiffUtil.areItemsTheSame
      * 必须确保 ViewType 相同，否则不能复用 ViewHolder
      */
     fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        // 1. 先获取两个 Item 的 ViewType
         val oldType = registry.getItemViewType(oldItem)
         val newType = registry.getItemViewType(newItem)
 
-        // 2. 如果类型变了（比如从 Text 变 Image），绝对不是同一个 Item
-        // 即使 ID 一样，也必须销毁重建
         if (oldType != newType) {
-            logE("Diff") {
-                val oldId = (oldItem as? StableId)?.stableId
-                val newId = (newItem as? StableId)?.stableId
-                "🔥🔥 [Diff Mismatch] ID相同但类型不同! Old: ${oldItem.javaClass.simpleName}($oldId) vs New: ${newItem.javaClass.simpleName}($newId)"
-            }
+            // 类型不同，无需多言
             return false
         }
 
-        // 3. 类型一样，再交给静态策略去比对 ID
+        val delegate = registry.getDelegate(oldType)
+
+        // 1. 尝试从 DSL 获取 ID
+        @Suppress("UNCHECKED_CAST")
+        val oldId = delegate.getItemId(oldItem)
+        @Suppress("UNCHECKED_CAST")
+        val newId = delegate.getItemId(newItem)
+
+        // 2. 核心分支：如果定义了 ID 规则，则严格按照 ID 判断
+        if (oldId != null && newId != null) {
+            return oldId == newId
+        }
+
+        // 3. 兜底分支：没有定义 ID，回退到对象的 equals 比较
+        // 这对于 Kotlin data class 也是可用的，虽然性能略低于 ID 对比，
+        // 但作为默认行为是符合直觉的。
         return SmartDiffCallback.areItemsTheSame(oldItem, newItem)
     }
 

@@ -15,6 +15,8 @@ class FusionConfig private constructor(builder: Builder) {
     val errorListener: ErrorListener? = builder.errorListener
     @JvmField
     val globalDebounceInterval: Long = builder.globalDebounceInterval
+    @JvmField
+    val defaultStableId: Boolean = builder.defaultStableId
 
     /**
      * [Builder 模式]
@@ -24,6 +26,7 @@ class FusionConfig private constructor(builder: Builder) {
         internal var isDebug: Boolean = false
         internal var errorListener: ErrorListener? = null
         internal var globalDebounceInterval: Long = DEFAULT_DEBOUNCE_INTERVAL
+        internal var defaultStableId: Boolean = false
 
         /**
          * 设置调试模式
@@ -45,6 +48,11 @@ class FusionConfig private constructor(builder: Builder) {
 
         fun setGlobalDebounceInterval(interval: Long): Builder {
             this.globalDebounceInterval = interval
+            return this
+        }
+
+        fun setDefaultStableIds(enable: Boolean): Builder {
+            this.defaultStableId = enable
             return this
         }
 

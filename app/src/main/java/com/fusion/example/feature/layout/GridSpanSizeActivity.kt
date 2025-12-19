@@ -23,8 +23,8 @@ class GridSpanSizeActivity : AppCompatActivity() {
 
         // 1. 初始化 Fusion，传入 GridLayoutManager
         val adapter = binding.recyclerView.setupFusion(GridLayoutManager(this, spanCount)) {
-
             register<GridSpanItem, ItemTextBinding>(ItemTextBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     tvContent.text = "${item.span} Span(s)"
                     // 视觉区分：不同 Span 不同颜色

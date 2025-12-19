@@ -46,6 +46,9 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
     @PublishedApi
     internal var fullSpanBlock: ((item: T) -> Boolean)? = null
 
+    @PublishedApi
+    internal var idProviderBlock: ((T) -> Any?)? = null
+
     // 暂存所有 Watcher
     internal val pendingWatchers = ArrayList<Watcher<T>>()
 
@@ -183,4 +186,18 @@ class DelegateDsl<T : Any, VB : ViewBinding> {
             if (condition(item)) scope.totalSpans else 1
         }
     }
+
+    /**
+     * 新增：配置非侵入式的 Stable ID
+     *
+     * 示例：
+     * register<User, ItemUserBinding>(...) {
+     *     stableId { it.userId } // 直接使用 userId 做指纹
+     *     onBind { ... }
+     * }
+     */
+    fun stableId(block: (item: T) -> Any?) {
+        this.idProviderBlock = block
+    }
+
 }

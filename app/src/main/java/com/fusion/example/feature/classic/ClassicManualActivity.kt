@@ -6,8 +6,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.example.databinding.ActivityRecyclerBinding
-import com.fusion.example.delegate.SimpleLayoutDelegate
 import com.fusion.example.delegate.ImageMsgDelegate
+import com.fusion.example.delegate.SimpleLayoutDelegate
 import com.fusion.example.delegate.SystemMsgDelegate
 import com.fusion.example.delegate.TextMsgDelegate
 import com.fusion.example.model.FusionMessage
@@ -50,15 +50,17 @@ class ClassicManualActivity : AppCompatActivity() {
 
     private fun setupRegistration() {
         // 1. [一对一] 显式注册 LayoutDelegate (无 ViewBinding)
-        adapter.attachDelegate(SimpleItem::class.java, SimpleLayoutDelegate())
+        adapter.attachDelegate(SimpleItem::class.java, SimpleLayoutDelegate().apply {
+            setStableId { it.id }
+        })
 
         // 2. [一对多] 显式注册 Linker (Router)
         // 这种写法适合不喜欢 DSL 或者需要动态构建 Router 的场景
         val messageRouter = TypeRouter<FusionMessage>()
             .match { it.msgType } // 定义分发规则
-            .map(FusionMessage.TYPE_TEXT, TextMsgDelegate()) // 复用已有的 Delegate
-            .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate()) // 复用已有的 Delegate
-            .map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate()) // 复用已有的 Delegate
+            .map(FusionMessage.TYPE_TEXT, TextMsgDelegate().apply { setStableId { it.id } }) // 复用已有的 Delegate
+            .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate().apply { setStableId { it.id } }) // 复用已有的 Delegate
+            .map(FusionMessage.TYPE_SYSTEM, SystemMsgDelegate().apply { setStableId { it.id } }) // 复用已有的 Delegate
         // 为了演示简单，这里只注册了 Text 类型，其他类型会走全局 Fallback (如果有) 或者报错
         // 在实际项目中应该 map 完所有类型
 

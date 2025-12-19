@@ -18,7 +18,7 @@ import com.fusion.example.model.TextItem
 class CrashTestActivity : AppCompatActivity() {
 
     // Define an item that is INTENTIONALLY NOT registered
-    data class UnknownItem(val reason: String)
+    data class UnknownItem(val id:Int, val reason: String)
 
     private val adapter = FusionListAdapter()
     private val items = ArrayList<Any>()
@@ -53,7 +53,7 @@ class CrashTestActivity : AppCompatActivity() {
         // Button 1: The "Real World" Crash
         findViewById<Button>(R.id.btn_crash).setOnClickListener {
             // Add an unregistered item
-            items.add(UnknownItem("I am a ghost item!"))
+            items.add(UnknownItem(1,"I am a ghost item!"))
 
             Toast.makeText(this, "Adding UnknownItem... Watch out!", Toast.LENGTH_SHORT).show()
 
@@ -66,7 +66,7 @@ class CrashTestActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_catch_crash).setOnClickListener {
             try {
                 val riskyList = ArrayList(items)
-                riskyList.add(UnknownItem("I will be caught!"))
+                riskyList.add(UnknownItem(2,"I will be caught!"))
 
                 // Attempt to submit
                 adapter.submitList(riskyList)
