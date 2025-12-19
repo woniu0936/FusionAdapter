@@ -10,10 +10,10 @@ public final class com/fusion/adapter/Fusion {
 
 public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/RegistryOwner {
 	public fun <init> ()V
-	public final fun addInterceptor (Lcom/fusion/adapter/intercept/FusionDataInterceptor;)V
 	public final fun addItems (Ljava/util/List;)V
 	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun getCurrentItems ()Ljava/util/List;
 	public final fun getItem (I)Ljava/lang/Object;
 	public fun getItemCount ()I
 	public fun getItemViewType (I)I
@@ -33,14 +33,12 @@ public final class com/fusion/adapter/FusionConfig {
 	public final field errorListener Lcom/fusion/adapter/exception/ErrorListener;
 	public final field globalDebounceInterval J
 	public final field globalFallbackDelegate Lcom/fusion/adapter/delegate/FusionDelegate;
-	public final field globalInterceptors Ljava/util/List;
 	public final field isDebug Z
 	public synthetic fun <init> (Lcom/fusion/adapter/FusionConfig$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class com/fusion/adapter/FusionConfig$Builder {
 	public fun <init> ()V
-	public final fun addGlobalInterceptor (Lcom/fusion/adapter/intercept/FusionDataInterceptor;)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun build ()Lcom/fusion/adapter/FusionConfig;
 	public final fun setDebug (Z)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setErrorListener (Lcom/fusion/adapter/exception/ErrorListener;)Lcom/fusion/adapter/FusionConfig$Builder;
@@ -49,8 +47,6 @@ public final class com/fusion/adapter/FusionConfig$Builder {
 }
 
 public final class com/fusion/adapter/FusionExtensionsKt {
-	public static final fun addDebugInterceptor (Lcom/fusion/adapter/FusionAdapter;Lcom/fusion/adapter/intercept/FusionDataInterceptor;)V
-	public static final fun addDebugInterceptor (Lcom/fusion/adapter/FusionListAdapter;Lcom/fusion/adapter/intercept/FusionDataInterceptor;)V
 	public static final fun autoScrollToBottom (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$Adapter;)V
 	public static final fun initialize (Lcom/fusion/adapter/Fusion;Lkotlin/jvm/functions/Function1;)V
 	public static final fun plusAssign (Lcom/fusion/adapter/FusionListAdapter;Ljava/lang/Object;)V
@@ -63,7 +59,6 @@ public final class com/fusion/adapter/FusionExtensionsKt {
 
 public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/RegistryOwner {
 	public fun <init> ()V
-	public final fun addInterceptor (Lcom/fusion/adapter/intercept/FusionDataInterceptor;)V
 	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
 	public final fun getCurrentList ()Ljava/util/List;
@@ -374,43 +369,8 @@ public final class com/fusion/adapter/extensions/LayoutManagerExtensionsKt {
 	public static final fun attachFusionStaggeredSupport (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
 }
 
-public abstract interface class com/fusion/adapter/intercept/FusionContext {
-	public abstract fun getConfig ()Lcom/fusion/adapter/FusionConfig;
-	public abstract fun getRegistry ()Lcom/fusion/adapter/internal/ViewTypeRegistry;
-	public abstract fun isDebug ()Z
-}
-
-public final class com/fusion/adapter/intercept/FusionContext$DefaultImpls {
-	public static fun isDebug (Lcom/fusion/adapter/intercept/FusionContext;)Z
-}
-
-public abstract interface class com/fusion/adapter/intercept/FusionDataInterceptor {
-	public abstract fun intercept (Lcom/fusion/adapter/intercept/FusionDataInterceptor$Chain;)Ljava/util/List;
-}
-
-public abstract interface class com/fusion/adapter/intercept/FusionDataInterceptor$Chain {
-	public abstract fun getContext ()Lcom/fusion/adapter/intercept/FusionContext;
-	public abstract fun getInput ()Ljava/util/List;
-	public abstract fun proceed (Ljava/util/List;)Ljava/util/List;
-}
-
-public final class com/fusion/adapter/intercept/FusionInterceptors {
-	public static final field INSTANCE Lcom/fusion/adapter/intercept/FusionInterceptors;
-	public final fun addFooter (Ljava/lang/Object;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun addHeader (Ljava/lang/Object;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun distinct (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun filter (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun injectPeriodic (ILkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun log (Ljava/lang/String;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public static synthetic fun log$default (Lcom/fusion/adapter/intercept/FusionInterceptors;Ljava/lang/String;ILjava/lang/Object;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun safeGuard (Z)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public static synthetic fun safeGuard$default (Lcom/fusion/adapter/intercept/FusionInterceptors;ZILjava/lang/Object;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-	public final fun sort (Ljava/util/Comparator;)Lcom/fusion/adapter/intercept/FusionDataInterceptor;
-}
-
 public final class com/fusion/adapter/internal/AdapterController {
 	public fun <init> ()V
-	public final fun addInterceptor (Lcom/fusion/adapter/intercept/FusionDataInterceptor;)V
 	public final fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public final fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public final fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
@@ -423,8 +383,8 @@ public final class com/fusion/adapter/internal/AdapterController {
 	public final fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public final fun processData (Ljava/util/List;)Ljava/util/List;
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun sanitize (Ljava/util/List;)Ljava/util/List;
 }
 
 public final class com/fusion/adapter/internal/ClassSignature : com/fusion/adapter/internal/ViewSignature {
@@ -481,12 +441,18 @@ public abstract interface class com/fusion/adapter/internal/ViewSignature {
 }
 
 public final class com/fusion/adapter/internal/ViewTypeRegistry {
+	public static final field Companion Lcom/fusion/adapter/internal/ViewTypeRegistry$Companion;
+	public static final field TYPE_PLACEHOLDER I
 	public fun <init> ()V
 	public final fun getDelegate (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getDelegateOrNull (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getItemViewType (Ljava/lang/Object;)I
 	public final fun hasLinker (Ljava/lang/Object;)Z
+	public final fun isSupported (Ljava/lang/Object;)Z
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+}
+
+public final class com/fusion/adapter/internal/ViewTypeRegistry$Companion {
 }
 
 public abstract interface class com/fusion/adapter/internal/Watcher {

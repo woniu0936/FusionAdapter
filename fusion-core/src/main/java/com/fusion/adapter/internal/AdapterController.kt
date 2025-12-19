@@ -3,12 +3,9 @@ package com.fusion.adapter.internal
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
-import com.fusion.adapter.intercept.FusionContext
-import com.fusion.adapter.intercept.FusionDataInterceptor
 import java.util.Collections
 
 /**
@@ -22,122 +19,35 @@ import java.util.Collections
  */
 class AdapterController {
 
-    // 性能阈值：16ms (保证 60fps)
-    private val TIME_THRESHOLD_NS = 16_000_000L
-
     val registry = ViewTypeRegistry()
 
-    // 局部拦截器 (Local)
-    private val localInterceptors = ArrayList<FusionDataInterceptor>()
-
-    // 🔥 性能核心：缓存合并后的拦截器列表快照
-    // 使用 volatile 保证多线程（如预加载线程）可见性
-    @Volatile
-    private var cachedSnapshot: List<FusionDataInterceptor>? = null
-
-    // 缓存 Context，避免每次 processData 都 new 对象
-    private val cachedContext by lazy {
-        object : FusionContext {
-            override val registry: ViewTypeRegistry
-                get() = this@AdapterController.registry
-            override val config: FusionConfig
-                get() = Fusion.getConfig()
-        }
-    }
-
     /**
-     * 添加拦截器 (Write Path - Low Frequency)
-     * 策略：写时置空缓存 (Copy-On-Write 思想)
+     * ✅ 数据清洗 (Sanitization)
+     * 职责：剔除未注册且无 Fallback 的数据，防止 LayoutManager 崩溃或错乱。
+     * 性能：基于 Registry 缓存，耗时极低。
      */
-    fun addInterceptor(interceptor: FusionDataInterceptor) {
-        synchronized(localInterceptors) {
-            localInterceptors.add(interceptor)
-            cachedSnapshot = null // 脏标记：缓存失效
-        }
-    }
+    fun sanitize(rawList: List<Any>): List<Any> {
+        if (rawList.isEmpty()) return rawList
 
-    /**
-     * 数据处理管道 (Hot Path)
-     * 流程：[用户拦截器 (可选)] -> [性能监控 (仅拦截器)] -> [强制安全检查 (内置)]
-     */
-    fun processData(rawList: List<Any>): List<Any> {
-        // 1. 获取当前快照 (局部变量引用，线程安全)
-        var interceptors = cachedSnapshot
-
-        // 2. 如果缓存失效 (初始化或配置变更)，则重建
-        if (interceptors == null) {
-            val global = Fusion.getConfig().globalInterceptors
-            val local = localInterceptors // 读取最新的 local
-
-            if (global.isEmpty() && local.isEmpty()) {
-                interceptors = emptyList()
-            } else {
-                val combined = ArrayList<FusionDataInterceptor>(global.size + local.size)
-                combined.addAll(global)
-                combined.addAll(local)
-                interceptors = Collections.unmodifiableList(combined)
-            }
-            cachedSnapshot = interceptors
-        }
-
-        // ------------------------------------------------------------
-        // Phase 1: 执行拦截器管道 (Interceptor Pipeline)
-        // ------------------------------------------------------------
-
-        val processedList: List<Any>
-
-        if (interceptors!!.isEmpty()) {
-            // 🔥 极速短路 (Fast Path): 无拦截器时，跳过 Chain 创建和性能监控
-            processedList = rawList
-        } else {
-            // --- 性能监控开始 ---
-            val start = System.nanoTime()
-
-            val chain = RealInterceptorChain(interceptors, 0, rawList, cachedContext)
-            processedList = chain.proceed(rawList)
-
-            // --- 性能监控结束 ---
-            val cost = System.nanoTime() - start
-
-            // 机制：如果耗时过长，进行干预
-            if (cost > TIME_THRESHOLD_NS) {
-                val costMs = cost / 1_000_000f
-                val message = "⚠️ [Fusion Performance Alert] Interceptor chain took ${String.format("%.2f", costMs)}ms on Main Thread! " +
-                        "This may cause UI jank. Please check for heavy operations in your interceptors."
-
-                if (Fusion.getConfig().isDebug) {
-                    android.util.Log.e("Fusion", message)
-                } else {
-                    android.util.Log.w("Fusion", message)
-                }
-            }
-        }
-
-        // ------------------------------------------------------------
-        // Phase 2: 强制安全检查 (Hardcoded Safety Net)
-        // 无论用户是否配置拦截器，这一步永远执行，确保 UI 绝对安全
-        // ------------------------------------------------------------
-
-        // 优化：如果列表为空，直接返回，避免创建 ArrayList
-        if (processedList.isEmpty()) {
-            return processedList
-        }
-
-        val finalSafeList = ArrayList<Any>(processedList.size)
         val isDebug = Fusion.getConfig().isDebug
+        var hasRemoved = false
 
-        for (item in processedList) {
-            if (registry.hasLinker(item)) {
-                finalSafeList.add(item)
+        // 预分配大小，避免扩容
+        val safeList = ArrayList<Any>(rawList.size)
+
+        for (item in rawList) {
+            if (registry.isSupported(item)) {
+                safeList.add(item)
             } else {
-                // 仅在 Debug 模式下警告，Release 模式下静默剔除
+                hasRemoved = true
                 if (isDebug) {
-                    android.util.Log.w("Fusion", "⚠️ Fusion 剔除了未注册类型: ${item.javaClass.simpleName}。请检查是否忘记 register()。")
+                    logW("Fusion") { "⚠️ [Data Sanitizer] Item dropped: ${item.javaClass.simpleName}. No Delegate registered." }
                 }
             }
         }
 
-        return finalSafeList
+        // 优化：如果没有剔除任何数据，直接返回原列表（减少内存分配）
+        return if (hasRemoved) safeList else rawList
     }
 
     /**

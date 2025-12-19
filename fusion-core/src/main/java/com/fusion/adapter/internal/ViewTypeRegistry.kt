@@ -18,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap
 class ViewTypeRegistry {
 
     companion object {
-        // 使用一个与 FALLBACK_VIEW_TYPE (-2048) 不同的负数
         const val TYPE_PLACEHOLDER = -2049
+        private const val FALLBACK_VIEW_TYPE = -2048
     }
 
     // [核心路由表]
@@ -35,8 +35,9 @@ class ViewTypeRegistry {
     // 注意: 仅在主线程使用，SparseArrayCompat 足够高效且节省内存。
     private val viewTypeToDelegate = SparseArrayCompat<FusionDelegate<Any, RecyclerView.ViewHolder>>()
 
-    // 兜底 ViewType ID (固定负数)
-    private val FALLBACK_VIEW_TYPE = -2048
+    // ✅ 性能优化核心：缓存 "Class -> 是否支持" 的结果
+    // true: 支持; false: 不支持; null: 未计算
+    private val supportedCache = ConcurrentHashMap<Class<*>, Boolean>()
 
     /**
      * 注册入口
@@ -48,6 +49,8 @@ class ViewTypeRegistry {
 
         // 2. 提取 Delegate 生成全局唯一 ID，并注册到 UI 查找表
         linker.getAllDelegates().forEach { registerDelegateGlobal(it) }
+
+        supportedCache.remove(clazz)
     }
 
     private fun registerDelegateGlobal(delegate: FusionDelegate<*, *>) {
@@ -62,6 +65,38 @@ class ViewTypeRegistry {
 
         // C. 存入当前 Adapter 的查找表
         viewTypeToDelegate.put(viewType, castedDelegate)
+    }
+
+    /**
+     * ✅ 极速判断：当前数据类型是否被支持
+     * 用于 Adapter 在 Diff/Render 之前清洗脏数据
+     */
+    fun isSupported(item: Any): Boolean {
+        val clazz = item.javaClass
+
+        // 1. 一级缓存：直接查 Boolean 结果 (最快路径，O(1))
+        supportedCache[clazz]?.let { return it }
+
+        // 2. 二级检查：计算逻辑
+        val isSupported = checkIsSupportedInternal(clazz)
+
+        // 3. 写入缓存
+        supportedCache[clazz] = isSupported
+        return isSupported
+    }
+
+    private fun checkIsSupportedInternal(clazz: Class<*>): Boolean {
+        // A. 直接匹配
+        if (classToLinker.containsKey(clazz)) return true
+
+        // B. 继承/接口匹配 (这是一个耗时操作)
+        if (findLinkerForInheritance(clazz) != null) return true
+
+        // C. 全局 Fallback
+        // 如果配置了 Fallback，意味着"所有未知类型"都是 Supported (显示为 Fallback View)
+        if (Fusion.getConfig().globalFallbackDelegate != null) return true
+
+        return false
     }
 
     /**

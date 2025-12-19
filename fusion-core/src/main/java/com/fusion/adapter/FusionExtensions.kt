@@ -8,7 +8,6 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.dsl.DelegateDsl
 import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
-import com.fusion.adapter.intercept.FusionDataInterceptor
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
@@ -132,22 +131,4 @@ fun RecyclerView.autoScrollToBottom(adapter: RecyclerView.Adapter<*>) {
 
 inline fun Fusion.initialize(block: FusionConfig.Builder.() -> Unit) {
     initialize(FusionConfig.Builder().apply(block).build())
-}
-
-/**
- * 仅在 Debug 模式下添加拦截器 (语法糖)
- */
-fun FusionAdapter.addDebugInterceptor(interceptor: FusionDataInterceptor) {
-    if (Fusion.getConfig().isDebug) {
-        this.addInterceptor(interceptor)
-    }
-}
-
-/**
- * 仅在 Debug 模式下添加拦截器 (针对 ListAdapter)
- */
-fun FusionListAdapter.addDebugInterceptor(interceptor: FusionDataInterceptor) {
-    if (Fusion.getConfig().isDebug) {
-        this.addInterceptor(interceptor)
-    }
 }

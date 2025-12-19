@@ -5,7 +5,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
-import com.fusion.adapter.intercept.FusionDataInterceptor
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import java.util.Collections
@@ -35,9 +34,6 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     val currentItems: List<Any>
         get() = Collections.unmodifiableList(items)
 
-    fun addInterceptor(interceptor: FusionDataInterceptor) {
-        core.addInterceptor(interceptor)
-    }
 
     // ========================================================================================
     // 注册接口 (API)
@@ -60,38 +56,29 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     // ========================================================================================
 
     fun setItems(newItems: List<Any>) {
-        val processedItems = core.processData(newItems)
-
+        // ✅ 清洗
+        val safeItems = core.sanitize(newItems)
         items.clear()
-        items.addAll(processedItems)
+        items.addAll(safeItems)
         notifyDataSetChanged()
     }
 
     fun addItems(newItems: List<Any>) {
-        // 1. 进入管道处理
-        val processedItems = core.processData(newItems)
-
-        // 2. 只有处理后还有数据，才进行插入
-        if (processedItems.isNotEmpty()) {
+        // ✅ 清洗
+        val safeItems = core.sanitize(newItems)
+        if (safeItems.isNotEmpty()) {
             val start = items.size
-            items.addAll(processedItems)
-            notifyItemRangeInserted(start, processedItems.size)
+            items.addAll(safeItems)
+            notifyItemRangeInserted(start, safeItems.size)
         }
     }
 
     fun insertItem(position: Int, item: Any) {
-        // 1. 因为 processData 接受 List，我们需要把单个 item 包装成 List
-        // 这也允许拦截器做“裂变”操作（例如：插入 1 个 item，拦截器把它变成了 [Header, Item] 2 个）
-        val inputList = listOf(item)
-        val processedItems = core.processData(inputList)
-
-        // 2. 根据处理结果进行插入
-        if (processedItems.isNotEmpty()) {
-            items.addAll(position, processedItems)
-            notifyItemRangeInserted(position, processedItems.size)
-        } else {
-            // 如果该 item 被拦截器（如 SafetyInterceptor）过滤掉了，则什么都不做
-            // 这是一个非常“优雅”的静默失败，比 Crash 好一万倍
+        // 单个 Item 也要清洗（检查是否支持）
+        val safeList = core.sanitize(listOf(item))
+        if (safeList.isNotEmpty()) {
+            items.addAll(position, safeList)
+            notifyItemRangeInserted(position, safeList.size)
         }
     }
 

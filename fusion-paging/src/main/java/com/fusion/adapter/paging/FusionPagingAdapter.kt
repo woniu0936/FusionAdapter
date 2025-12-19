@@ -1,24 +1,23 @@
 import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
-import androidx.paging.*
+import androidx.paging.CombinedLoadStates
+import androidx.paging.ItemSnapshotList
+import androidx.paging.LoadStateAdapter
+import androidx.paging.PagingData
+import androidx.paging.PagingDataAdapter
+import androidx.paging.filter
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
-import com.fusion.adapter.intercept.FusionContext
-import com.fusion.adapter.intercept.FusionPagingContext
-import com.fusion.adapter.intercept.FusionPagingInterceptor
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
-import com.fusion.adapter.internal.logW
 import com.fusion.adapter.paging.FusionPlaceholderViewHolder
 import kotlinx.coroutines.flow.Flow
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * FusionPagingAdapter: 顶级分页适配器 (Final Version)
@@ -32,15 +31,6 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     // 复用已有的核心引擎
     private val core = AdapterController()
-
-    // Paging 数据流拦截器 (注意：这是针对 PagingData 流的拦截，区别于 Core 的 List 拦截)
-    private val interceptors = CopyOnWriteArrayList<FusionPagingInterceptor<T>>()
-
-    // 上下文环境
-    private val pagingContext = object : FusionPagingContext {
-        override val registry: ViewTypeRegistry get() = core.registry
-        override val config: FusionConfig get() = Fusion.getConfig()
-    }
 
     // 内部代理适配器
     private val helperAdapter = PagingHelperAdapter()
@@ -69,12 +59,29 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     // ------------------------------------------------------
 
     suspend fun submitData(pagingData: PagingData<T>) {
-        helperAdapter.submitData(applyInterceptors(pagingData))
+        helperAdapter.submitData(sanitizePagingData(pagingData))
     }
 
     fun submitData(lifecycle: Lifecycle, pagingData: PagingData<T>) {
-        helperAdapter.submitData(lifecycle, applyInterceptors(pagingData))
+        helperAdapter.submitData(lifecycle, sanitizePagingData(pagingData))
     }
+
+    /**
+     * ✅ Paging 数据清洗
+     * 利用 Paging 3 的 filter 操作符，在后台线程过滤掉不支持的数据类型。
+     * 只有注册过（或有 Fallback）的数据才会进入 Diff 流程。
+     */
+    private fun sanitizePagingData(pagingData: PagingData<T>): PagingData<T> {
+        return pagingData.filter { item ->
+            val isSupported = core.registry.isSupported(item)
+            if (!isSupported && Fusion.getConfig().isDebug) {
+                // 使用 System.out 或者 Android Log 打印
+                android.util.Log.w("Fusion", "⚠️ [Paging Sanitizer] Item dropped: ${item.javaClass.simpleName}. No Delegate registered.")
+            }
+            isSupported
+        }
+    }
+
 
     fun retry() = helperAdapter.retry()
     fun refresh() = helperAdapter.refresh()
@@ -150,33 +157,6 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
                 holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
                 core.onBindViewHolder(holder, item, position, payloads)
             }
-        }
-    }
-
-    fun addInterceptor(interceptor: FusionPagingInterceptor<T>) {
-        interceptors.add(interceptor)
-    }
-
-    // ------------------------------------------------------
-    // ⚙️ 内部逻辑
-    // ------------------------------------------------------
-
-    private fun applyInterceptors(pagingData: PagingData<T>): PagingData<T> {
-        var data = pagingData
-        // 执行 PagingData 流拦截器
-        interceptors.forEach { interceptor ->
-            data = interceptor.intercept(data, pagingContext)
-        }
-
-        // [Thread Safe] Registry 使用 ConcurrentHashMap，这里在 Diff 线程运行是安全的
-        // 自动过滤未注册的数据，防止渲染层 Crash
-        return data.filter { item ->
-            val supported = core.registry.hasLinker(item)
-            if (!supported && pagingContext.isDebug) {
-                // 复用 Core 的日志风格
-                logW("Fusion") { "⚠️ [Paging Filter] 剔除未注册类型: ${item.javaClass.simpleName}" }
-            }
-            supported
         }
     }
 
