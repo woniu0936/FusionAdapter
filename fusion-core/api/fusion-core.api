@@ -103,7 +103,7 @@ public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/a
 	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/BindingHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/BindingHolder;
-	protected fun onViewHolderCreated (Lcom/fusion/adapter/delegate/BindingHolder;)V
+	protected fun onViewHolderCreated (Landroidx/viewbinding/ViewBinding;)V
 	public final fun setOnItemClick (JLkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemClick (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemLongClick (Lkotlin/jvm/functions/Function3;)V
@@ -430,6 +430,7 @@ public final class com/fusion/adapter/internal/FusionViewUtil {
 	public static final fun click (Landroid/view/View;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun click$default (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;ILjava/lang/Object;)V
 	public static synthetic fun click$default (Landroid/view/View;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun findItemInternal (Landroid/view/View;)Ljava/lang/Object;
 	public static final fun setOnClick (Landroid/view/View;Landroid/view/View$OnClickListener;)V
 	public static final fun setOnClick (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;)V
 	public static synthetic fun setOnClick$default (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;ILjava/lang/Object;)V
