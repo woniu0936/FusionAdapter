@@ -1,4 +1,6 @@
+import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.lifecycle.Lifecycle
 import androidx.paging.CombinedLoadStates
 import androidx.paging.ItemSnapshotList
@@ -9,15 +11,19 @@ import androidx.paging.filter
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.RegistryOwner
+import com.fusion.adapter.delegate.BindingHolder
+import com.fusion.adapter.delegate.FusionPlaceholderDelegate
+import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
-import com.fusion.adapter.paging.FusionPlaceholderViewHolder
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -31,7 +37,8 @@ import kotlinx.coroutines.flow.Flow
 open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
 
     // 复用已有的核心引擎
-    private val core = AdapterController()
+    @PublishedApi
+    internal val core = AdapterController()
 
     // 内部代理适配器
     private val helperAdapter = PagingHelperAdapter()
@@ -58,6 +65,56 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     // ------------------------------------------------------
     // 🔥 核心 API (Paging3 标准)
     // ------------------------------------------------------
+
+    /**
+     * 注册占位符 (ViewBinding 模式)
+     */
+    inline fun <reified VB : ViewBinding> registerPlaceholder(
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline onBind: (VB) -> Unit = {}
+    ) {
+        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
+                return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
+            }
+
+            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
+                onBind(holder.binding)
+            }
+        }
+        core.registerPlaceholder(delegate)
+    }
+
+    /**
+     * 注册占位符 (LayoutRes 模式)
+     * 使用 LayoutHolder，与库中的 LayoutDelegate 保持一致。
+     *
+     * @param layoutResId 布局资源 ID
+     * @param onBind 可选的绑定回调（用于初始化 View，如开始动画）
+     */
+    fun registerPlaceholder(
+        @LayoutRes layoutResId: Int,
+        onBind: (LayoutHolder.() -> Unit)? = null
+    ) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
+                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+                return LayoutHolder(view)
+            }
+
+            override fun onBindPlaceholder(holder: LayoutHolder) {
+                onBind?.invoke(holder)
+            }
+        }
+        core.registerPlaceholder(delegate)
+    }
+
+    /**
+     * ✅ Java 兼容
+     */
+    fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerPlaceholder(delegate)
+    }
 
     suspend fun submitData(pagingData: PagingData<T>) {
         helperAdapter.submitData(sanitizePagingData(pagingData))
@@ -140,24 +197,30 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        // 专门处理 Placeholder，Core 可能没有注册这个负数 ID
-        if (viewType == ViewTypeRegistry.TYPE_PLACEHOLDER) {
-            // 如果你有专门的 Placeholder 布局，可以在这里 create。
-            // 否则需要一个空的 ViewHolder 防止 Crash
-            return FusionPlaceholderViewHolder(parent)
-        }
         return core.onCreateViewHolder(parent, viewType)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = helperAdapter.getItemInternal(position)
-        if (item != null) {
-            // 绑定 StaggeredGrid 逻辑 (如果有)
-            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
-            // Core 的 onBind 已经包含了 "delegate == null" 的检查，这里直接传进去很安全
-            core.onBindViewHolder(holder, item, position)
+        // 统一瀑布流支持逻辑
+        // 如果 item 是 null，我们用 FusionPlaceholder 单例代替它去查询 Delegate
+        // 这样骨架屏也能通过重写 isFullSpan() 来控制布局了
+        val layoutItem = item ?: FusionPlaceholder
+
+        holder.attachFusionStaggeredSupport(layoutItem) { queryItem ->
+            if (queryItem === FusionPlaceholder) {
+                core.registry.getPlaceholderDelegate()
+            } else {
+                core.getDelegate(queryItem)
+            }
+        }
+        if (item == null) {
+            // 绑定 Placeholder
+            val delegate = core.registry.getPlaceholderDelegate()
+            delegate?.onBindViewHolder(holder, Unit, position, mutableListOf())
         } else {
-            // 处理 Placeholder 的绑定 (可选)
+            // 绑定正常数据
+            core.onBindViewHolder(holder, item, position)
         }
     }
 

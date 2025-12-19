@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import com.fusion.adapter.core.R
 import com.fusion.adapter.delegate.BindingDelegate
+import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.example.databinding.ItemSocialPostBinding
 import com.fusion.example.model.SocialPost
 import com.fusion.example.utils.M3ColorGenerator

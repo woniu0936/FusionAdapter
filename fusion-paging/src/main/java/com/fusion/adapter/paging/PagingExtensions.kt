@@ -3,6 +3,8 @@ package com.fusion.adapter.paging
 import FusionPagingAdapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.lifecycle.Lifecycle
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -59,4 +61,11 @@ inline fun <reified T : Any> FusionPagingAdapter<*>.register(
     scope.block()
 
     this.attachLinker(T::class.java, scope.builder.linker)
+}
+
+/**
+ * 清空 Paging 数据。通常用于退出登录或重置搜索。
+ */
+fun FusionPagingAdapter<*>.clear(lifecycle: Lifecycle) {
+    this.submitData(lifecycle, PagingData.empty())
 }

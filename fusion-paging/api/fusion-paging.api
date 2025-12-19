@@ -3,6 +3,7 @@ public class FusionPagingAdapter : androidx/recyclerview/widget/RecyclerView$Ada
 	public final fun addLoadStateListener (Lkotlin/jvm/functions/Function1;)V
 	public final fun addOnPagesUpdatedListener (Lkotlin/jvm/functions/Function0;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
 	public fun getItemCount ()I
 	public fun getItemId (I)J
 	public fun getItemViewType (I)I
@@ -12,6 +13,9 @@ public class FusionPagingAdapter : androidx/recyclerview/widget/RecyclerView$Ada
 	public fun onCreateViewHolder (Landroid/view/ViewGroup;I)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public final fun peek (I)Ljava/lang/Object;
 	public final fun refresh ()V
+	public final fun registerPlaceholder (ILkotlin/jvm/functions/Function1;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionPlaceholderDelegate;)V
+	public static synthetic fun registerPlaceholder$default (LFusionPagingAdapter;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun removeLoadStateListener (Lkotlin/jvm/functions/Function1;)V
 	public final fun removeOnPagesUpdatedListener (Lkotlin/jvm/functions/Function0;)V
 	public final fun retry ()V
@@ -22,7 +26,7 @@ public class FusionPagingAdapter : androidx/recyclerview/widget/RecyclerView$Ada
 	public final fun withLoadStateHeaderAndFooter (Landroidx/paging/LoadStateAdapter;Landroidx/paging/LoadStateAdapter;)Landroidx/recyclerview/widget/ConcatAdapter;
 }
 
-public final class com/fusion/adapter/paging/FusionPlaceholderViewHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
-	public fun <init> (Landroid/view/ViewGroup;)V
+public final class com/fusion/adapter/paging/PagingExtensionsKt {
+	public static final fun clear (LFusionPagingAdapter;Landroidx/lifecycle/Lifecycle;)V
 }
 

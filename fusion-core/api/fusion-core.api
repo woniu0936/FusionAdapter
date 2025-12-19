@@ -13,6 +13,7 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 	public final fun addItems (Ljava/util/List;)V
 	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
 	public final fun getCurrentItems ()Ljava/util/List;
 	public final fun getItem (I)Ljava/lang/Object;
 	public fun getItemCount ()I
@@ -25,6 +26,9 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun registerPlaceholder (ILkotlin/jvm/functions/Function1;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionPlaceholderDelegate;)V
+	public static synthetic fun registerPlaceholder$default (Lcom/fusion/adapter/FusionAdapter;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun removeItem (I)V
 	public final fun setItems (Ljava/util/List;)V
 }
@@ -59,6 +63,7 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 	public fun <init> ()V
 	public final fun attachDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public fun attachLinker (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
 	public final fun getCurrentList ()Ljava/util/List;
 	public fun getItemCount ()I
 	public fun getItemViewType (I)I
@@ -69,6 +74,9 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun registerPlaceholder (ILkotlin/jvm/functions/Function1;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionPlaceholderDelegate;)V
+	public static synthetic fun registerPlaceholder$default (Lcom/fusion/adapter/FusionListAdapter;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun submitList (Ljava/util/List;Ljava/lang/Runnable;)V
 	public static synthetic fun submitList$default (Lcom/fusion/adapter/FusionListAdapter;Ljava/util/List;Ljava/lang/Runnable;ILjava/lang/Object;)V
 }
@@ -92,16 +100,16 @@ public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/a
 	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;)V
 	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
-	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/BindingDelegate$BindingHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/BindingHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
-	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/BindingDelegate$BindingHolder;
-	protected fun onViewHolderCreated (Lcom/fusion/adapter/delegate/BindingDelegate$BindingHolder;)V
+	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/BindingHolder;
+	protected fun onViewHolderCreated (Lcom/fusion/adapter/delegate/BindingHolder;)V
 	public final fun setOnItemClick (JLkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemClick (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnItemLongClick (Lkotlin/jvm/functions/Function3;)V
 }
 
-public final class com/fusion/adapter/delegate/BindingDelegate$BindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
+public final class com/fusion/adapter/delegate/BindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
 	public fun <init> (Landroidx/viewbinding/ViewBinding;)V
 	public final fun getBinding ()Landroidx/viewbinding/ViewBinding;
 }
@@ -150,6 +158,15 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	protected final fun registerWatcher (Lcom/fusion/adapter/internal/Watcher;)V
 	public final fun resolveFullSpan (Ljava/lang/Object;)Z
+}
+
+public abstract class com/fusion/adapter/delegate/FusionPlaceholderDelegate : com/fusion/adapter/delegate/FusionDelegate {
+	public fun <init> ()V
+	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
+	public fun onBindPlaceholder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public abstract fun onCreatePlaceholderViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
+	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 }
 
 public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adapter/delegate/FusionDelegate {
@@ -379,6 +396,7 @@ public final class com/fusion/adapter/internal/AdapterController {
 	public final fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionDelegate;)V
 	public final fun sanitize (Ljava/util/List;)Ljava/util/List;
 }
 
@@ -442,8 +460,10 @@ public final class com/fusion/adapter/internal/ViewTypeRegistry {
 	public final fun getDelegate (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getDelegateOrNull (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getItemViewType (Ljava/lang/Object;)I
+	public final fun getPlaceholderDelegate ()Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun isSupported (Ljava/lang/Object;)Z
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionDelegate;)V
 }
 
 public final class com/fusion/adapter/internal/ViewTypeRegistry$Companion {
@@ -452,5 +472,23 @@ public final class com/fusion/adapter/internal/ViewTypeRegistry$Companion {
 public abstract interface class com/fusion/adapter/internal/Watcher {
 	public abstract fun checkChange (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun execute (Ljava/lang/Object;Ljava/lang/Object;)V
+}
+
+public final class com/fusion/adapter/placeholder/FusionPlaceholder {
+	public static final field INSTANCE Lcom/fusion/adapter/placeholder/FusionPlaceholder;
+}
+
+public final class com/fusion/adapter/placeholder/FusionPlaceholderExtensionsKt {
+	public static final fun clear (Lcom/fusion/adapter/FusionAdapter;)V
+	public static final fun clear (Lcom/fusion/adapter/FusionListAdapter;Ljava/lang/Runnable;)V
+	public static synthetic fun clear$default (Lcom/fusion/adapter/FusionListAdapter;Ljava/lang/Runnable;ILjava/lang/Object;)V
+	public static final fun setPlaceholders (Lcom/fusion/adapter/FusionAdapter;I)V
+	public static synthetic fun setPlaceholders$default (Lcom/fusion/adapter/FusionAdapter;IILjava/lang/Object;)V
+	public static final fun submitPlaceholders (Lcom/fusion/adapter/FusionListAdapter;ILjava/lang/Runnable;)V
+	public static synthetic fun submitPlaceholders$default (Lcom/fusion/adapter/FusionListAdapter;ILjava/lang/Runnable;ILjava/lang/Object;)V
+}
+
+public final class com/fusion/adapter/placeholder/FusionPlaceholderViewHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
+	public fun <init> (Landroid/view/ViewGroup;)V
 }
 

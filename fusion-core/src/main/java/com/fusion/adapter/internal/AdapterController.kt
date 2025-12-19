@@ -9,6 +9,7 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.diff.StableId
 import com.fusion.adapter.exception.UnregisteredTypeException
+import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder
 import java.util.Collections
 
 /**
@@ -71,6 +72,11 @@ class AdapterController {
         }
     }
 
+    fun registerPlaceholder(delegate: FusionDelegate<*, *>) {
+        registry.registerPlaceholder(delegate)
+    }
+
+
     /**
      * 注册路由连接器 (核心入口)
      * @param clazz 数据类型 Class
@@ -91,6 +97,15 @@ class AdapterController {
     }
 
     fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        // 逻辑收敛：统一处理 Placeholder 的创建
+        if (viewType == ViewTypeRegistry.TYPE_PLACEHOLDER) {
+            val delegate = registry.getPlaceholderDelegate()
+            if (delegate != null) {
+                return delegate.onCreateViewHolder(parent)
+            } else {
+                return FusionPlaceholderViewHolder(parent)
+            }
+        }
         return registry.getDelegate(viewType).onCreateViewHolder(parent)
     }
 

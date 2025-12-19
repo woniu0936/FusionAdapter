@@ -1,8 +1,14 @@
 package com.fusion.adapter
 
+import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
+import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.delegate.FusionPlaceholderDelegate
+import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
@@ -21,7 +27,8 @@ import java.util.Collections
 open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
 
     // 核心引擎
-    private val core = AdapterController()
+    @PublishedApi
+    internal val core = AdapterController()
 
     // 内部数据持有
     private val items = ArrayList<Any>()
@@ -54,6 +61,57 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     // ========================================================================================
     // 数据操作 (Manual)
     // ========================================================================================
+
+    /**
+     * 注册占位符 (ViewBinding 模式)
+     */
+    inline fun <reified VB : ViewBinding> registerPlaceholder(
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline onBind: (VB) -> Unit = {}
+    ) {
+        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
+                return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
+            }
+
+            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
+                onBind(holder.binding)
+            }
+        }
+        core.registerPlaceholder(delegate)
+    }
+
+    /**
+     * 注册占位符 (LayoutRes 模式)
+     * 使用 LayoutHolder，与库中的 LayoutDelegate 保持一致。
+     *
+     * @param layoutResId 布局资源 ID
+     * @param onBind 可选的绑定回调（用于初始化 View，如开始动画）
+     */
+    fun registerPlaceholder(
+        @LayoutRes layoutResId: Int,
+        onBind: (LayoutHolder.() -> Unit)? = null
+    ) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
+                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+                return LayoutHolder(view)
+            }
+
+            override fun onBindPlaceholder(holder: LayoutHolder) {
+                onBind?.invoke(holder)
+            }
+        }
+        core.registerPlaceholder(delegate)
+    }
+
+    /**
+     * ✅ Java 兼容：注册占位符实例
+     * Java 用户可以通过 new FusionPlaceholderDelegate<Binding>() { ... } 来调用
+     */
+    fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerPlaceholder(delegate)
+    }
 
     fun setItems(newItems: List<Any>) {
         // ✅ 清洗

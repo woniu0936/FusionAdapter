@@ -3,6 +3,7 @@ package com.fusion.adapter.internal
 import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -37,6 +38,10 @@ class ViewTypeRegistry {
     // true: 支持; false: 不支持; null: 未计算
     private val supportedCache = ConcurrentHashMap<Class<*>, Boolean>()
 
+    // 标记是否注册了 Placeholder Delegate
+    @Volatile
+    private var hasPlaceholderDelegate = false
+
     /**
      * 注册入口
      */
@@ -66,11 +71,27 @@ class ViewTypeRegistry {
         viewTypeToDelegate.put(viewType, castedDelegate)
     }
 
+    fun registerPlaceholder(delegate: FusionDelegate<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val castedDelegate = delegate as FusionDelegate<Any, RecyclerView.ViewHolder>
+        viewTypeToDelegate.put(TYPE_PLACEHOLDER, castedDelegate)
+        hasPlaceholderDelegate = true
+        supportedCache.clear()
+    }
+
+    fun getPlaceholderDelegate(): FusionDelegate<Any, RecyclerView.ViewHolder>? {
+        return viewTypeToDelegate[TYPE_PLACEHOLDER]
+    }
+
     /**
      * ✅ 极速判断：当前数据类型是否被支持
      * 用于 Adapter 在 Diff/Render 之前清洗脏数据
      */
     fun isSupported(item: Any): Boolean {
+        // 特殊处理：如果是显式的 Placeholder 对象
+        if (item === FusionPlaceholder) {
+            return hasPlaceholderDelegate
+        }
         val clazz = item.javaClass
 
         // 1. 一级缓存：直接查 Boolean 结果 (最快路径，O(1))
@@ -98,6 +119,11 @@ class ViewTypeRegistry {
      * [核心查找算法] - O(1) in Hot Path
      */
     fun getItemViewType(item: Any): Int {
+        // 特殊处理 Placeholder
+        if (item === FusionPlaceholder) {
+            if (hasPlaceholderDelegate) return TYPE_PLACEHOLDER
+            throw IllegalStateException("Fusion: FusionPlaceholder used but no PlaceholderDelegate registered.")
+        }
         val clazz = item.javaClass
 
         // [Step 1] 快速查找 (热路径 O(1))

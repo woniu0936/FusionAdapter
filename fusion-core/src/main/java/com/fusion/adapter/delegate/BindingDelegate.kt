@@ -24,7 +24,7 @@ import kotlin.reflect.KProperty1
  */
 abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     private val inflater: BindingInflater<VB>
-) : FusionDelegate<T, BindingDelegate.BindingHolder<VB>>() {
+) : FusionDelegate<T, BindingHolder<VB>>() {
 
     /**
      * [默认签名策略]
@@ -196,5 +196,4 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         registerDataWatcher(p1, p2, p3, p4, p5, p6) { v1, v2, v3, v4, v5, v6 -> this.binding.action(v1, v2, v3, v4, v5, v6) }
     }
 
-    class BindingHolder<VB : ViewBinding>(val binding: VB) : RecyclerView.ViewHolder(binding.root)
 }

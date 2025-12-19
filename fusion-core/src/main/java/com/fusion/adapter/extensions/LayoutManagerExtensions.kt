@@ -1,11 +1,11 @@
 package com.fusion.adapter.extensions
 
-
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.placeholder.FusionPlaceholder
 
 /**
  * [性能关键] 自动为 ViewHolder 注入 Staggered 全屏支持。
@@ -60,7 +60,7 @@ fun RecyclerView.attachFusionGridSupport(
             override fun getSpanSize(position: Int): Int {
                 if (position == RecyclerView.NO_POSITION || position >= adapter.itemCount) return 1
 
-                val item = getItem(position) ?: return 1
+                val item = getItem(position) ?: FusionPlaceholder
                 // 这里的 getDelegate 是一个闭包对象调用
                 val delegate = getDelegate(item) ?: return 1
 
