@@ -6,6 +6,7 @@ import android.graphics.Color
 import com.fusion.adapter.core.R
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.BindingHolder
+import com.fusion.adapter.internal.findItem
 import com.fusion.example.databinding.ItemSocialPostBinding
 import com.fusion.example.model.SocialPost
 import com.fusion.example.utils.M3ColorGenerator
@@ -26,7 +27,7 @@ class SocialPostDelegate(
 
     override fun onViewHolderCreated(binding: ItemSocialPostBinding) {
         binding.btnLike.setOnClickListener {
-            val item = binding.root.getTag(R.id.fusion_item_tag) as? SocialPost
+            val item = binding.findItem<SocialPost>()
             if (item != null) onLikeClick(item)
         }
     }
