@@ -159,9 +159,9 @@ class AdapterController {
 
         // 1. 尝试从 DSL 获取 ID
         @Suppress("UNCHECKED_CAST")
-        val oldId = delegate.getItemId(oldItem)
+        val oldId = delegate.getStableId(oldItem)
         @Suppress("UNCHECKED_CAST")
-        val newId = delegate.getItemId(newItem)
+        val newId = delegate.getStableId(newItem)
 
         // 2. 核心分支：如果定义了 ID 规则，则严格按照 ID 判断
         if (oldId != null && newId != null) {

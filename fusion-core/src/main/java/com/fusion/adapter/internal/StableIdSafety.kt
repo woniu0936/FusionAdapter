@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
+import com.fusion.adapter.delegate.FunctionalBindingDelegate
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.MissingStableIdException
 
@@ -17,7 +18,17 @@ fun checkStableIdRequirement(
     if (!Fusion.getConfig().defaultStableId) return
 
     // 检查是否有 Delegate 缺少 idProvider
-    val hasMissingId = delegates.any { it.idProvider == null }
+    val hasMissingId = delegates.any { delegate ->
+        // 使用 <*, *> 解决编译错误
+        if (delegate is FunctionalBindingDelegate<*, *>) {
+            // 情况 A: DSL 创建的 Delegate
+            // 检查内部的 keyProvider 是否为 null (注意：这里要对应我们刚重命名的变量名)
+            delegate.idProvider == null
+        } else {
+            // 情况 B: 自定义继承的 Delegate (无法静态检查，放行)
+            false
+        }
+    }
 
     if (hasMissingId) {
         if (Fusion.getConfig().isDebug) {

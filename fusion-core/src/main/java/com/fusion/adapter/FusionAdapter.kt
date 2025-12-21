@@ -180,7 +180,7 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
         val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
 
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getItemId(item)
+        val rawId = delegate.getStableId(item)
 
         // --- 运行时安全兜底 (Safety Net) ---
         if (rawId == null) {

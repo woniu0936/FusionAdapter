@@ -5,6 +5,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.example.databinding.ItemTextBinding;
@@ -22,6 +23,12 @@ public class JavaTextDelegate extends JavaDelegate<TextItem, ItemTextBinding> {
             Toast.makeText(binding.getRoot().getContext(),
                     "Java Click: " + item.getContent(), Toast.LENGTH_SHORT).show();
         });
+    }
+
+    @Override
+    @Nullable
+    public Object getStableId(@NonNull TextItem item) {
+        return item.getId();
     }
 
     @NonNull

@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.adapter.internal.ViewSignature;
@@ -15,6 +16,12 @@ import com.fusion.example.utils.ChatStyleHelper;
 import org.jetbrains.annotations.NotNull;
 
 public class JavaMsgTextDelegate extends JavaDelegate<FusionMessage, ItemMsgTextBinding> {
+
+    @Override
+    @Nullable
+    public Object getStableId(@NonNull FusionMessage item) {
+        return item.getId();
+    }
 
     @NonNull
     @Override

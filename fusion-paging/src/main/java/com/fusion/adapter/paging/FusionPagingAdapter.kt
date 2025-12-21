@@ -210,7 +210,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
         // 3. 获取原始 ID (Any?)
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getItemId(item)
+        val rawId = delegate.getStableId(item)
 
         // --- 运行时安全兜底 (Safety Net) ---
         if (rawId == null) {

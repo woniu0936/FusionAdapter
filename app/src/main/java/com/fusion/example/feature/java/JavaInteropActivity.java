@@ -57,25 +57,17 @@ public class JavaInteropActivity extends AppCompatActivity {
         // 场景 1: 一对一注册 (Simple Registration)
         // ========================================================================
         // 语法：register(Class).to(Delegate)
-        JavaTextDelegate javaTextDelegate = new JavaTextDelegate();
-        javaTextDelegate.setStableId((Function<TextItem, Object>) TextItem::getId);
         adapter.attachDelegate(TextItem.class, new JavaTextDelegate());
 
         // ========================================================================
         // 场景 2: 一对多路由注册 (Complex Routing)
         // ========================================================================
         // 语法：register(Class).dispatch(KeyMapper).map(Key, Delegate)...register()
-        JavaMsgTextDelegate javaMsgTextDelegate = new JavaMsgTextDelegate();
-        javaMsgTextDelegate.setStableId((Function1<? super FusionMessage, ?>) FusionMessage::getId);
-        JavaMsgImageDelegate javaMsgImageDelegate = new JavaMsgImageDelegate();
-        javaMsgImageDelegate.setStableId((Function1<? super FusionMessage, ?>) FusionMessage::getId);
-        JavaMsgSystemDelegate javaMsgSystemDelegate = new JavaMsgSystemDelegate();
-        javaMsgSystemDelegate.setStableId((Function1<? super FusionMessage, ?>) FusionMessage::getId);
         adapter.attachLinker(FusionMessage.class, new TypeRouter<FusionMessage>()
                 .match(FusionMessage::getMsgType)
-                .map(FusionMessage.TYPE_TEXT, javaMsgTextDelegate)
-                .map(FusionMessage.TYPE_IMAGE, javaMsgImageDelegate) // 显式调用 register 完成构建);
-                .map(FusionMessage.TYPE_SYSTEM, javaMsgSystemDelegate)); // 显式调用 register 完成构建);
+                .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
+                .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate()) // 显式调用 register 完成构建);
+                .map(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())); // 显式调用 register 完成构建);
 
     }
 

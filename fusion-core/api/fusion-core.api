@@ -131,6 +131,7 @@ public final class com/fusion/adapter/delegate/FunctionalBindingDelegate : com/f
 	public final fun getOnContentSame ()Lkotlin/jvm/functions/Function2;
 	public final fun getOnCreate ()Lkotlin/jvm/functions/Function1;
 	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
+	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;)V
 	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
@@ -145,8 +146,8 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	protected final fun dispatchHandledPayloads (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Ljava/util/List;)Z
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	public final fun getItemId (Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
+	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun getUniqueViewType ()Ljava/lang/Object;
 	public fun isFullSpan (Ljava/lang/Object;)Z
 	public abstract fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
@@ -163,7 +164,6 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	protected final fun registerWatcher (Lcom/fusion/adapter/internal/Watcher;)V
 	public final fun resolveFullSpan (Ljava/lang/Object;)Z
-	public final fun setStableId (Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract class com/fusion/adapter/delegate/FusionPlaceholderDelegate : com/fusion/adapter/delegate/FusionDelegate {
@@ -184,6 +184,7 @@ public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adap
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer5;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer6;)V
 	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
+	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun isFullSpan (Ljava/lang/Object;)Z
 	protected abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 	protected fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;)V
@@ -197,7 +198,6 @@ public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adap
 	public fun setOnItemClick (JLcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
 	public fun setOnItemClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
 	public fun setOnItemLongClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemLongClickListener;)Lcom/fusion/adapter/delegate/JavaDelegate;
-	public fun setStableId (Ljava/util/function/Function;)V
 }
 
 public class com/fusion/adapter/delegate/JavaDelegate$JavaBindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {

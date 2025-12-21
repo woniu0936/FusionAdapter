@@ -25,6 +25,10 @@ class SocialPostDelegate(
         }
     }
 
+    override fun getStableId(item: SocialPost): Any? {
+        return item.id
+    }
+
     override fun onViewHolderCreated(binding: ItemSocialPostBinding) {
         binding.btnLike.setOnClickListener {
             val item = binding.findItem<SocialPost>()

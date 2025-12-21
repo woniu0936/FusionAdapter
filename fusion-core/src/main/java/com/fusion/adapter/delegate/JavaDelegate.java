@@ -70,13 +70,11 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     // RecyclerView 适配层
     // =======================================================================================
 
-    /**
-     * Java API: 配置 Stable ID
-     * @param provider 一个函数，接受 Item，返回 ID (Long/String/Int/UUID等)
-     */
-    public void setStableId(@NonNull Function<T, Object> provider) {
-        // 调用父类 Kotlin 的 setStableId，将 Java Function 转换为 Kotlin Lambda
-        super.setStableId(item -> provider.apply(item));
+
+    @Override
+    @Nullable
+    public Object getStableId(@NotNull T item) {
+        return super.getStableId(item);
     }
 
     @Override
@@ -169,54 +167,84 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
         return false; // 默认行为
     }
 
-    /** 1 参数 */
+    /**
+     * 1 参数
+     */
     protected final <P> void bindPayload(@NonNull Function<T, P> getter, @NonNull PayloadConsumer<VB, P> consumer) {
-        registerDataWatcher(getter::apply, (holder, val) -> { consumer.accept(holder.binding, val); return Unit.INSTANCE; });
+        registerDataWatcher(getter::apply, (holder, val) -> {
+            consumer.accept(holder.binding, val);
+            return Unit.INSTANCE;
+        });
     }
 
-    /** 2 参数 */
+    /**
+     * 2 参数
+     */
     protected final <P1, P2> void bindPayload(
             @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2,
             @NonNull PayloadConsumer2<VB, P1, P2> consumer
     ) {
-        registerDataWatcher(g1::apply, g2::apply, (holder, v1, v2) -> { consumer.accept(holder.binding, v1, v2); return Unit.INSTANCE; });
+        registerDataWatcher(g1::apply, g2::apply, (holder, v1, v2) -> {
+            consumer.accept(holder.binding, v1, v2);
+            return Unit.INSTANCE;
+        });
     }
 
-    /** 3 参数 */
+    /**
+     * 3 参数
+     */
     protected final <P1, P2, P3> void bindPayload(
             @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3,
             @NonNull PayloadConsumer3<VB, P1, P2, P3> consumer
     ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, (holder, v1, v2, v3) -> { consumer.accept(holder.binding, v1, v2, v3); return Unit.INSTANCE; });
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, (holder, v1, v2, v3) -> {
+            consumer.accept(holder.binding, v1, v2, v3);
+            return Unit.INSTANCE;
+        });
     }
 
-    /** 4 参数 */
+    /**
+     * 4 参数
+     */
     protected final <P1, P2, P3, P4> void bindPayload(
             @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4,
             @NonNull PayloadConsumer4<VB, P1, P2, P3, P4> consumer
     ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, (holder, v1, v2, v3, v4) -> { consumer.accept(holder.binding, v1, v2, v3, v4); return Unit.INSTANCE; });
+        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, (holder, v1, v2, v3, v4) -> {
+            consumer.accept(holder.binding, v1, v2, v3, v4);
+            return Unit.INSTANCE;
+        });
     }
 
     // ... 5, 6 参数以此类推 (为了节省篇幅，这里展示到 4，请按模式添加 5 和 6) ...
     // 下面补充 5 和 6 的代码，直接复制即可
 
-    /** 5 参数 */
+    /**
+     * 5 参数
+     */
     protected final <P1, P2, P3, P4, P5> void bindPayload(
             @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5,
             @NonNull PayloadConsumer5<VB, P1, P2, P3, P4, P5> consumer
     ) {
         registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply,
-                (holder, v1, v2, v3, v4, v5) -> { consumer.accept(holder.binding, v1, v2, v3, v4, v5); return Unit.INSTANCE; });
+                (holder, v1, v2, v3, v4, v5) -> {
+                    consumer.accept(holder.binding, v1, v2, v3, v4, v5);
+                    return Unit.INSTANCE;
+                });
     }
 
-    /** 6 参数 */
+    /**
+     * 6 参数
+     */
     protected final <P1, P2, P3, P4, P5, P6> void bindPayload(
             @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5, @NonNull Function<T, P6> g6,
             @NonNull PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> consumer
     ) {
         registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply, g6::apply,
-                (holder, v1, v2, v3, v4, v5, v6) -> { consumer.accept(holder.binding, v1, v2, v3, v4, v5, v6); return Unit.INSTANCE; });
+                (holder, v1, v2, v3, v4, v5, v6) -> {
+                    consumer.accept(holder.binding, v1, v2, v3, v4, v5, v6);
+                    return Unit.INSTANCE;
+                });
     }
 
     // =======================================================================================
@@ -233,12 +261,35 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
         boolean onLongClick(@NonNull VB binding, @NonNull T item, int position);
     }
 
-    @FunctionalInterface public interface PayloadConsumer<VB, P> { void accept(VB binding, P val); }
-    @FunctionalInterface public interface PayloadConsumer2<VB, P1, P2> { void accept(VB binding, P1 v1, P2 v2); }
-    @FunctionalInterface public interface PayloadConsumer3<VB, P1, P2, P3> { void accept(VB binding, P1 v1, P2 v2, P3 v3); }
-    @FunctionalInterface public interface PayloadConsumer4<VB, P1, P2, P3, P4> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4); }
-    @FunctionalInterface public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5); }
-    @FunctionalInterface public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6); }
+    @FunctionalInterface
+    public interface PayloadConsumer<VB, P> {
+        void accept(VB binding, P val);
+    }
+
+    @FunctionalInterface
+    public interface PayloadConsumer2<VB, P1, P2> {
+        void accept(VB binding, P1 v1, P2 v2);
+    }
+
+    @FunctionalInterface
+    public interface PayloadConsumer3<VB, P1, P2, P3> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3);
+    }
+
+    @FunctionalInterface
+    public interface PayloadConsumer4<VB, P1, P2, P3, P4> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4);
+    }
+
+    @FunctionalInterface
+    public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5);
+    }
+
+    @FunctionalInterface
+    public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6);
+    }
 
     public static class JavaBindingHolder<VB extends ViewBinding> extends RecyclerView.ViewHolder {
         @NonNull

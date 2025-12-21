@@ -22,6 +22,10 @@ class SimpleLayoutDelegate : LayoutDelegate<SimpleItem>(R.layout.item_simple_lay
         }
     }
 
+    override fun getStableId(item: SimpleItem): Any? {
+        return item.id
+    }
+
     override fun LayoutHolder.onBind(item: SimpleItem) {
         // 1. 设置标题
         setText(R.id.tv_title, item.title)

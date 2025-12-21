@@ -182,7 +182,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
 
         // 4. 获取原始 ID (DSL 配置)
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getItemId(item)
+        val rawId = delegate.getStableId(item)
 
         // --- 运行时安全兜底 (Safety Net) ---
         if (rawId == null) {

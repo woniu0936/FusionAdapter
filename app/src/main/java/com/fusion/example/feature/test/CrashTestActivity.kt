@@ -37,6 +37,7 @@ class CrashTestActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         adapter.register<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
+            stableId { item -> item.id }
             onBind { item ->
                 tvContent.text = item.content
                 cardRoot.setCardBackgroundColor(0xFFF0F0F0.toInt())

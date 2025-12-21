@@ -7,8 +7,11 @@ import com.fusion.example.utils.ChatStyleHelper
 
 class SystemMsgDelegate : BindingDelegate<FusionMessage, ItemMsgSystemBinding>(ItemMsgSystemBinding::inflate) {
 
-    // 系统消息通常不需要点击事件，所以这里不设置 onItemClick
+    override fun getStableId(item: FusionMessage): Any? {
+        return item.id
+    }
 
+    // 系统消息通常不需要点击事件，所以这里不设置 onItemClick
     override fun onBind(binding: ItemMsgSystemBinding, item: FusionMessage, position: Int) {
         binding.tvSystemMsg.text = item.content
     }

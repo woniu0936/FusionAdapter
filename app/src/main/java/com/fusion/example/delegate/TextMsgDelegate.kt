@@ -22,6 +22,10 @@ class TextMsgDelegate : BindingDelegate<FusionMessage, ItemMsgTextBinding>(ItemM
         }
     }
 
+    override fun getStableId(item: FusionMessage): Any? {
+        return item.id
+    }
+
     override fun onBind(binding: ItemMsgTextBinding, item: FusionMessage, position: Int) {
         // 直接操作 Binding，无需 findViewById
         binding.tvContent.text = item.content
