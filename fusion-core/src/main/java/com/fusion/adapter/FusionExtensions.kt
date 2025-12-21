@@ -2,12 +2,17 @@ package com.fusion.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.dsl.DelegateDsl
+import com.fusion.adapter.delegate.FunctionalLayoutDelegate
+import com.fusion.adapter.dsl.BindingDsl
+import com.fusion.adapter.dsl.LayoutDsl
 import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
+import com.fusion.adapter.internal.DslSignature
+import com.fusion.adapter.internal.TypeRouter
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
@@ -43,11 +48,38 @@ inline fun <reified T : Any> RegistryOwner.register(
  */
 inline fun <reified T : Any, reified VB : ViewBinding> RegistryOwner.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: DelegateDsl<T, VB>.() -> Unit
+    crossinline block: BindingDsl<T, VB>.() -> Unit
 ) {
     val builder = RegistrationBuilder(T::class.java)
     builder.bind(inflate, block)
     this.attachLinker(T::class.java, builder.linker)
+}
+
+/**
+ * [API 扩展] 支持直接使用 Layout ID 进行注册，无需 ViewBinding。
+ */
+inline fun <reified T : Any> RegistryOwner.register(
+    @LayoutRes layoutResId: Int,
+    noinline block: LayoutDsl<T>.() -> Unit
+) {
+    // 1. 创建 DSL 配置对象并执行用户的 block
+    val dsl = LayoutDsl<T>().apply(block)
+
+    // 2. 创建内部 Delegate 实现
+    // 使用 DslSignature 确保 ViewType 唯一性 (Class + LayoutRes 维度)
+    // 这里我们用 LayoutHolder::class.java 作为占位符，或者自定义一个标记类
+    val signature = DslSignature(T::class.java, Int::class.java) // Int 代表 layoutId 维度
+
+    val delegate = FunctionalLayoutDelegate<T>(signature, layoutResId)
+    delegate.applyDsl(dsl)
+
+    // 3. 安全检查 (复用之前写的 checkStableIdRequirement)
+    // 此时 delegate 已经是 FunctionalLayoutDelegate，检查逻辑能正确识别 keyProvider
+    // (注意：需要确保 attachLinker 内部调用了 checkStableIdRequirement)
+    val linker = TypeRouter<T>()
+    linker.map(Unit, delegate)
+
+    this.attachLinker(T::class.java, linker)
 }
 
 // ============================================================================================

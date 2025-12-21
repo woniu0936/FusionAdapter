@@ -31,7 +31,7 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
     /** [DSL] 快速创建匿名 Delegate 并绑定 */
     inline fun <reified VB : ViewBinding> bind(
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline block: DelegateDsl<T, VB>.() -> Unit
+        crossinline block: BindingDsl<T, VB>.() -> Unit
     ) {
         val delegate = createDelegate(inflate, block)
         bind(delegate)
@@ -55,7 +55,7 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
     inline fun <reified VB : ViewBinding> map(
         key: Any?,
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline block: DelegateDsl<T, VB>.() -> Unit
+        crossinline block: BindingDsl<T, VB>.() -> Unit
     ) {
         val delegate = createDelegate(inflate, block)
         map(key, delegate)
@@ -72,14 +72,14 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
     @PublishedApi
     internal inline fun <reified VB : ViewBinding> createDelegate(
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline block: DelegateDsl<T, VB>.() -> Unit
+        crossinline block: BindingDsl<T, VB>.() -> Unit
     ): BindingDelegate<T, VB> {
 
         // 1. 构建签名
         val signature = DslSignature(itemClass, VB::class.java)
 
         // 2. 执行 DSL 收集配置
-        val dsl = DelegateDsl<T, VB>().apply(block)
+        val dsl = BindingDsl<T, VB>().apply(block)
 
         // 3. 创建 Delegate
         val delegate = FunctionalBindingDelegate<T, VB>(signature, inflate)

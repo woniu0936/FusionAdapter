@@ -8,7 +8,7 @@ import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.dsl.DelegateDsl
+import com.fusion.adapter.dsl.BindingDsl
 import com.fusion.adapter.dsl.RegistrationBuilder
 import com.fusion.adapter.dsl.RouteScope
 
@@ -41,7 +41,7 @@ inline fun <reified T : Any> RecyclerView.setupFusionPaging(
  */
 inline fun <reified T : Any, reified VB : ViewBinding> FusionPagingAdapter<*>.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: DelegateDsl<T, VB>.() -> Unit
+    crossinline block: BindingDsl<T, VB>.() -> Unit
 ) {
     val builder = RegistrationBuilder(T::class.java)
     builder.bind(inflate, block)

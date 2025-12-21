@@ -124,7 +124,7 @@ public abstract interface class com/fusion/adapter/delegate/BindingInflater {
 
 public final class com/fusion/adapter/delegate/FunctionalBindingDelegate : com/fusion/adapter/delegate/BindingDelegate {
 	public fun <init> (Lcom/fusion/adapter/internal/DslSignature;Lcom/fusion/adapter/delegate/BindingInflater;)V
-	public final fun applyDsl (Lcom/fusion/adapter/dsl/DelegateDsl;)V
+	public final fun applyDsl (Lcom/fusion/adapter/dsl/BindingDsl;)V
 	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public final fun getOnBind ()Lkotlin/jvm/functions/Function3;
 	public final fun getOnBindPayloadRaw ()Lkotlin/jvm/functions/Function4;
@@ -139,6 +139,18 @@ public final class com/fusion/adapter/delegate/FunctionalBindingDelegate : com/f
 	public final fun setOnBindPayloadRaw (Lkotlin/jvm/functions/Function4;)V
 	public final fun setOnContentSame (Lkotlin/jvm/functions/Function2;)V
 	public final fun setOnCreate (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/fusion/adapter/delegate/FunctionalLayoutDelegate : com/fusion/adapter/delegate/LayoutDelegate {
+	public fun <init> (Lcom/fusion/adapter/internal/DslSignature;I)V
+	public final fun applyDsl (Lcom/fusion/adapter/dsl/LayoutDsl;)V
+	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun getSignature ()Lcom/fusion/adapter/internal/ViewSignature;
+	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun onBind (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;)V
+	public fun onBindPayload (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public fun onBindPayload (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onViewHolderCreated (Lcom/fusion/adapter/delegate/LayoutHolder;)V
 }
 
 public abstract class com/fusion/adapter/delegate/FusionDelegate {
@@ -272,7 +284,7 @@ public final class com/fusion/adapter/diff/SmartDiffCallback : androidx/recycler
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 }
 
-public final class com/fusion/adapter/dsl/DelegateDsl {
+public final class com/fusion/adapter/dsl/BindingDsl {
 	public fun <init> ()V
 	public final fun areContentsTheSame (Lkotlin/jvm/functions/Function2;)V
 	public final fun fullSpan ()V
@@ -298,9 +310,9 @@ public final class com/fusion/adapter/dsl/DelegateDsl {
 	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
 	public final fun onCreate (Lkotlin/jvm/functions/Function1;)V
 	public final fun onItemClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun onItemClick$default (Lcom/fusion/adapter/dsl/DelegateDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static synthetic fun onItemClick$default (Lcom/fusion/adapter/dsl/BindingDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun onItemClickIndexed (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun onItemClickIndexed$default (Lcom/fusion/adapter/dsl/DelegateDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun onItemClickIndexed$default (Lcom/fusion/adapter/dsl/BindingDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
 	public final fun onItemLongClick (Lkotlin/jvm/functions/Function1;)V
 	public final fun setBindBlock (Lkotlin/jvm/functions/Function3;)V
 	public final fun setClickAction (Lkotlin/jvm/functions/Function3;)V
@@ -312,6 +324,31 @@ public final class com/fusion/adapter/dsl/DelegateDsl {
 	public final fun setLongClickAction (Lkotlin/jvm/functions/Function3;)V
 	public final fun setRawPayloadBlock (Lkotlin/jvm/functions/Function4;)V
 	public final fun setSpanSizeBlock (Lkotlin/jvm/functions/Function3;)V
+	public final fun spanSize (I)V
+	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
+	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/fusion/adapter/dsl/LayoutDsl {
+	public fun <init> ()V
+	public final fun areContentsTheSame (Lkotlin/jvm/functions/Function2;)V
+	public final fun fullSpan ()V
+	public final fun fullSpanIf (Lkotlin/jvm/functions/Function1;)V
+	public final fun onBind (Lkotlin/jvm/functions/Function2;)V
+	public final fun onBindIndexed (Lkotlin/jvm/functions/Function3;)V
+	public final fun onBindPayload (Lkotlin/jvm/functions/Function3;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
+	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
+	public final fun onCreate (Lkotlin/jvm/functions/Function1;)V
+	public final fun onItemClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun onItemClick$default (Lcom/fusion/adapter/dsl/LayoutDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun onItemClickIndexed (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun onItemClickIndexed$default (Lcom/fusion/adapter/dsl/LayoutDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public final fun onItemLongClick (Lkotlin/jvm/functions/Function1;)V
 	public final fun spanSize (I)V
 	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
 	public final fun stableId (Lkotlin/jvm/functions/Function1;)V

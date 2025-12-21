@@ -11,11 +11,11 @@ import com.fusion.adapter.internal.Watcher
 import kotlin.reflect.KProperty1
 
 /**
- * [DelegateDsl]
+ * [BindingDsl]
  * 用于配置匿名 Delegate 的 DSL 接收者。
  * 用户在 register { ... } 闭包中接触到的就是这个类。
  */
-class DelegateDsl<T : Any, VB : ViewBinding> {
+class BindingDsl<T : Any, VB : ViewBinding> {
 
     // 使用 @PublishedApi internal 隐藏实现细节，同时允许 inline 函数访问
     @PublishedApi

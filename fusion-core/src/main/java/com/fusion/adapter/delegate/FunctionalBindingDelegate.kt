@@ -1,7 +1,7 @@
 package com.fusion.adapter.delegate
 
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.dsl.DelegateDsl
+import com.fusion.adapter.dsl.BindingDsl
 import com.fusion.adapter.dsl.SpanScope
 import com.fusion.adapter.internal.DslSignature
 import com.fusion.adapter.internal.ViewSignature
@@ -84,7 +84,7 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
      * 将 DSL 配置应用到 Delegate 实例。
      * 这里负责将 DSL 中收集的点击事件和防抖参数，同步给父类 BindingDelegate。
      */
-    fun applyDsl(dsl: DelegateDsl<T, VB>) {
+    fun applyDsl(dsl: BindingDsl<T, VB>) {
         this.onBind = dsl.bindBlock
         this.onBindPayloadRaw = dsl.rawPayloadBlock
         this.onCreate = dsl.createBlock

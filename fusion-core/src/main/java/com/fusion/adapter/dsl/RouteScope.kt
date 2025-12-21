@@ -20,7 +20,7 @@ class RouteScope<T : Any>(itemClass: Class<T>) {
     inline fun <reified VB : ViewBinding> map(
         key: Any?,
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline block: DelegateDsl<T, VB>.() -> Unit
+        crossinline block: BindingDsl<T, VB>.() -> Unit
     ) = builder.map(key, inflate, block)
 
     // 重载 map 支持直接传 Delegate 实例
