@@ -40,11 +40,11 @@ FusionAdapter 与业界主流库的深度对比：
     *   **Debug**: 遇到未注册类型立即崩溃 (Fail-Fast)，帮助在开发期发现 Bug。
     *   **Release**: 自动剔除非法数据 (Fail-Safe)，防止线上崩溃或 Grid 布局错位。
 *   **📄 原生 Paging 3**: 提供专用的 `FusionPagingAdapter`，API 与标准版完全一致。支持 **自动 Null 占位符**。
-*   **🔀 强大的路由能力**:
-    *   **多态映射**: 根据属性（如消息类型）将同一个数据类映射到不同的布局。
-    *   **异构列表**: 轻松混合 Header、Product、Ad、Footer 等不同数据实体。
+*   **🔀 级联 Stable ID 策略**:
+    *   支持 **Router 级 (共享)** 和 **Delegate 级 (覆盖)** 的 ID 配置策略。
+    *   解决一对多场景下的 ID 冲突，完美支持 RecyclerView 动画。
 *   **📐 智能布局控制**: 直接在 DSL 中声明 `spanSize` 和 `fullSpan`，自动适配 Grid 和瀑布流。
-*   **🚀 智能差分**: 内置 `AsyncListDiffer` 并支持 `StableId`，实现高性能的平滑动画。
+*   **🚀 智能差分**: 内置 `AsyncListDiffer`，结合 Stable ID 实现高性能渲染。
 *   **🎨 ViewBinding**: 类型安全，告别 `findViewById`。
 
 ---
@@ -76,6 +76,9 @@ val adapter = recyclerView.setupFusion {
     // 注册: 数据类型 (String) -> 布局 (ItemTextBinding)
     register(ItemTextBinding::inflate) {
         
+        // 配置 Stable ID 以优化性能 (可选)
+        stableId { it } 
+
         // onBind: `this` 是 ViewBinding, `item` 是数据
         onBind { item ->
             tvTitle.text = item
@@ -92,28 +95,39 @@ val adapter = recyclerView.setupFusion {
 adapter.submitList(listOf("Hello", "Fusion", "Adapter"))
 ```
 
-### 2. 多态列表 (聊天模式)
+### 2. 多态列表 (级联 Stable ID)
 
-处理同一数据类 (`Message`) 根据内部状态渲染不同布局的场景。告别 `getItemViewType`！
+处理同一数据类 (`Message`) 根据内部状态渲染不同布局的场景。
+Fusion 引入了 **"级联优先策略"** 来优雅处理 ID 问题。
 
 ```kotlin
-data class Message(val type: Int, val content: String)
+data class Message(val id: Long, val type: Int, val content: String)
 
 recyclerView.setupFusion {
-    // 为 Message 类型开启路由模式
     register<Message> {
         
-        // 1. 定义匹配规则 (提取 Key)
+        // [Level 2] Router 级配置: 
+        // 默认情况下，所有 Message 的 ID 都是 it.id
+        stableId { it.id }
+
+        // 定义匹配规则
         match { it.type }
 
-        // 2. 映射 Key -> 布局: 文本消息
+        // [Inherit] 继承: 自动继承 Router 级的 stableId
         map(TYPE_TEXT, ItemMsgTextBinding::inflate) {
-            onBind { msg -> tvContent.text = msg.content }
+            onBind { msg -> ... }
         }
 
-        // 3. 映射 Key -> 布局: 图片消息
         map(TYPE_IMAGE, ItemMsgImageBinding::inflate) {
-            onBind { msg -> ivImage.load(msg.content) }
+            onBind { msg -> ... }
+        }
+
+        // [Override] 覆盖: 特殊情况覆盖默认 ID 规则
+        // 例如：将同一条消息拆分显示，防止 ID 冲突
+        map(TYPE_SPLIT_PART, ItemMsgSplitBinding::inflate) {
+            // [Level 1] Delegate 级配置: 优先级高于 Router 级
+            stableId { "${it.id}_split" }
+            onBind { msg -> ... }
         }
     }
 }
@@ -129,6 +143,7 @@ val pagingAdapter = recyclerView.setupFusionPaging<User> {
     
     // 1. 注册正常 Item
     register(ItemUserBinding::inflate) {
+        stableId { it.userId }
         onBind { user -> tvName.text = user.name }
     }
 
@@ -187,23 +202,22 @@ FusionAdapter 引入了严格的 **Sanitization (数据清洗)** 机制来确保
 
 ```kotlin
 Fusion.initialize {
-    // DEBUG 模式 (Fail-Fast): 
-    // 遇到未注册类型立即 CRASH。
-    // 强制开发者在开发阶段修复问题。
+    // [DEBUG 模式]: Fail-Fast 
+    // 遇到未注册类型立即 CRASH。强制开发者在开发阶段修复问题。
     setDebug(BuildConfig.DEBUG)
     
-    // RELEASE 模式 (Fail-Safe): 
+    // [RELEASE 模式]: Fail-Safe 
     // 静默丢弃未注册的数据，防止线上 Crash 或 Grid 布局错位。
     // 通过监听器上报异常数据以便分析。
     setErrorListener { item, e ->
         FirebaseCrashlytics.getInstance().recordException(e)
     }
+
+    // 开启默认 StableId 检查 (推荐)
+    // 强制要求所有注册类型必须提供 stableId，以获得最佳性能
+    setDefaultStableIds(true) 
 }
 ```
-
-### 类型安全机制
-*   **Fail-Fast**: 如果你添加了一个 `Product` 类型但忘了 `register`，Debug 模式下会直接抛出 `UnregisteredTypeException`。
-*   **Fail-Safe**: 在 Release 模式下，该数据会在进入 `RecyclerView` 之前被自动过滤掉，确保不会出现空白 Item 或导致网格布局塌陷。
 
 ---
 
@@ -250,7 +264,10 @@ public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
 }
 
 // 2. 注册
-adapter.attachDelegate(User.class, new UserDelegate());
+adapter.attachLinker(User.class, new TypeRouter<User>()
+    .stableId(user -> user.getId()) // Java 8 Lambda 配置 ID
+    .map(null, new UserDelegate())
+);
 ```
 
 ---
