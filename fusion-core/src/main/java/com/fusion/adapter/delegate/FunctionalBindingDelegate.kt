@@ -32,13 +32,7 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
 
     var onCreate: (VB.() -> Unit)? = null
 
-    internal var idProvider: ((T) -> Any?)? = null
-
     override val signature: ViewSignature = dslSignature
-
-    override fun getStableId(item: T): Any? {
-        return idProvider?.invoke(item)
-    }
 
     override fun onBind(binding: VB, item: T, position: Int) {
         onBind?.invoke(binding, item, position)
@@ -89,7 +83,6 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         this.onBindPayloadRaw = dsl.rawPayloadBlock
         this.onCreate = dsl.createBlock
         this.onContentSame = dsl.contentSameBlock
-        this.idProvider = dsl.idProviderBlock
         // 注册所有 Watcher
         dsl.pendingWatchers.forEach { watcher ->
             registerWatcherFromDsl(watcher)
@@ -103,6 +96,8 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
         // DelegateDsl.clickDebounce 是 Long? (null 代表使用全局配置)
         // BindingDelegate.itemClickDebounceInterval 也是 Long?
         this.itemClickDebounceInterval = dsl.clickDebounce
+
+        dsl.idProviderBlock?.let { setStableId(it) }
 
         // 应用 Layout DSL
         dsl.spanSizeBlock?.let { dslBlock ->

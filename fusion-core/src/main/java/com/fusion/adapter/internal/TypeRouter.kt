@@ -23,6 +23,22 @@ class TypeRouter<T : Any> {
     // 映射表: Key -> Delegate
     private val keyToDelegate = HashMap<Any?, FusionDelegate<T, *>>()
 
+    // 保存 Router 级别的 provider
+    private var routerLevelIdProvider: ((T) -> Any?)? = null
+
+    /**
+     * [API] 配置该类型的全局 ID 规则 (支持链式调用)
+     *
+     * @param provider ID 获取函数
+     * @return this (TypeRouter) 以支持链式调用
+     */
+    fun stableId(provider: (T) -> Any?): TypeRouter<T> {
+        this.routerLevelIdProvider = provider
+        // 立即更新已有的 delegates
+        keyToDelegate.values.forEach { it.attachDefaultKeyProvider(provider) }
+        return this
+    }
+
     /**
      * 配置 Key 提取规则 (Match)
      * 支持链式调用。
@@ -44,6 +60,9 @@ class TypeRouter<T : Any> {
      * @return this
      */
     fun map(key: Any?, delegate: FusionDelegate<T, *>): TypeRouter<T> {
+        routerLevelIdProvider?.let { provider ->
+            delegate.attachDefaultKeyProvider(provider)
+        }
         keyToDelegate[key] = delegate
         return this
     }

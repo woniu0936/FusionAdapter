@@ -14,9 +14,6 @@ import kotlin.reflect.KProperty1
  */
 class LayoutDsl<T : Any> {
 
-    // --- 内部状态 ---
-    internal var keyProvider: ((T) -> Any?)? = null
-
     internal var bindBlock: (LayoutHolder.(item: T, position: Int) -> Unit)? = null
     internal var rawPayloadBlock: (LayoutHolder.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
     internal var clickAction: ((view: View, item: T, position: Int) -> Unit)? = null
@@ -26,13 +23,15 @@ class LayoutDsl<T : Any> {
     internal var createBlock: (LayoutHolder.() -> Unit)? = null // 对应 BindingDsl 的 onCreate
     internal var spanSizeBlock: ((item: T, position: Int, scope: SpanScope) -> Int)? = null
     internal var fullSpanBlock: ((item: T) -> Boolean)? = null
+    @PublishedApi
+    internal var idProviderBlock: ((T) -> Any?)? = null
 
     internal val pendingWatchers = ArrayList<Watcher<T>>()
 
     // --- 公开 API ---
 
     fun stableId(block: (item: T) -> Any?) {
-        this.keyProvider = block
+        this.idProviderBlock = block
     }
 
     // --- Data Binding ---

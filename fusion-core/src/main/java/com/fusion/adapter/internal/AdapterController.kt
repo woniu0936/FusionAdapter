@@ -22,7 +22,7 @@ import java.util.Collections
  */
 class AdapterController {
 
-    val registry = ViewTypeRegistry()
+    val viewTypeRegistry = ViewTypeRegistry()
 
     /**
      * Sanitization
@@ -42,7 +42,7 @@ class AdapterController {
         val safeList = ArrayList<Any>(rawList.size)
 
         for (item in rawList) {
-            if (registry.isSupported(item)) {
+            if (viewTypeRegistry.isSupported(item)) {
                 safeList.add(item)
             } else {
                 handleUnregisteredItem(item, config)
@@ -72,9 +72,8 @@ class AdapterController {
     }
 
     fun registerPlaceholder(delegate: FusionDelegate<*, *>) {
-        registry.registerPlaceholder(delegate)
+        viewTypeRegistry.registerPlaceholder(delegate)
     }
-
 
     /**
      * 注册路由连接器 (核心入口)
@@ -83,7 +82,7 @@ class AdapterController {
      */
     fun <T : Any> register(clazz: Class<T>, linker: TypeRouter<T>) {
         // 注册到注册表
-        registry.register(clazz, linker)
+        viewTypeRegistry.register(clazz, linker)
     }
 
     // ========================================================================================
@@ -92,27 +91,27 @@ class AdapterController {
 
     fun getItemViewType(item: Any): Int {
         // 路由不再依赖 position，只依赖 item 内容 (O(1) Key 映射)
-        return registry.getItemViewType(item)
+        return viewTypeRegistry.getItemViewType(item)
     }
 
     fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         // 逻辑收敛：统一处理 Placeholder 的创建
         if (viewType == ViewTypeRegistry.TYPE_PLACEHOLDER) {
-            val delegate = registry.getPlaceholderDelegate()
+            val delegate = viewTypeRegistry.getPlaceholderDelegate()
             if (delegate != null) {
                 return delegate.onCreateViewHolder(parent)
             } else {
                 return FusionPlaceholderViewHolder(parent)
             }
         }
-        return registry.getDelegate(viewType).onCreateViewHolder(parent)
+        return viewTypeRegistry.getDelegate(viewType).onCreateViewHolder(parent)
     }
 
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any> = Collections.emptyList()) {
-        val viewType = registry.getItemViewType(item)
+        val viewType = viewTypeRegistry.getItemViewType(item)
         // [核心修复] 兼容 ConcatAdapter / ViewPool 共享场景
         // 如果收到了外部 Adapter 的 ViewType (例如 Paging 的 Footer 0)，直接忽略。
-        val delegate = registry.getDelegateOrNull(viewType)
+        val delegate = viewTypeRegistry.getDelegateOrNull(viewType)
         logD("FusionTracker") {
             """
             ⚡ [OnBind] Executing...
@@ -143,34 +142,46 @@ class AdapterController {
     // ========================================================================================
 
     /**
+     * [ID 裁决逻辑]
+     * 核心规则：视图优先，注册中心兜底。
+     *
+     * 1. View Layer (Delegate): 如果具体视图定义了 ID (stableId/override)，优先使用。
+     *    这允许在特殊界面（如“猜你喜欢”）覆盖默认 ID。
+     * 2. Model Layer (IdentityRegistry): 如果视图没定义，使用 Adapter 级别的通用规则。
+     * 3. Null: 两者都未定义。
+     */
+    fun getStableId(item: Any, delegate: FusionDelegate<Any, *>): Any? {
+        return delegate.getStableId(item)
+    }
+
+    /**
      * 代理 DiffUtil.areItemsTheSame
      * 必须确保 ViewType 相同，否则不能复用 ViewHolder
      */
     fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        val oldType = registry.getItemViewType(oldItem)
-        val newType = registry.getItemViewType(newItem)
+        // 1. 最快路径：Java 类型不同，必然不同
+        if (oldItem::class.java != newItem::class.java) return false
 
+        // 2. 结构路径：ViewType 不同，必然不同
+        // (这是你提到的逻辑，必须保留)
+        val oldType = viewTypeRegistry.getItemViewType(oldItem)
+        val newType = viewTypeRegistry.getItemViewType(newItem)
         if (oldType != newType) {
-            // 类型不同，无需多言
             return false
         }
 
-        val delegate = registry.getDelegate(oldType)
+        // 3. 身份路径：尝试获取 ID 进行精确比对
+        val delegate = viewTypeRegistry.getDelegate(oldType)
 
-        // 1. 尝试从 DSL 获取 ID
-        @Suppress("UNCHECKED_CAST")
-        val oldId = delegate.getStableId(oldItem)
-        @Suppress("UNCHECKED_CAST")
-        val newId = delegate.getStableId(newItem)
+        // 统一裁决 (优先 Delegate -> 其次 Registry)
+        val oldKey = getStableId(oldItem, delegate)
+        val newKey = getStableId(newItem, delegate)
 
-        // 2. 核心分支：如果定义了 ID 规则，则严格按照 ID 判断
-        if (oldId != null && newId != null) {
-            return oldId == newId
+        if (oldKey != null && newKey != null) {
+            return oldKey == newKey
         }
 
-        // 3. 兜底分支：没有定义 ID，回退到对象的 equals 比较
-        // 这对于 Kotlin data class 也是可用的，虽然性能略低于 ID 对比，
-        // 但作为默认行为是符合直觉的。
+        // 4. 兜底路径
         return SmartDiffCallback.areItemsTheSame(oldItem, newItem)
     }
 
@@ -179,14 +190,14 @@ class AdapterController {
      */
     fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
         // 1. 获取 ViewType (O(1) 查找)
-        val oldType = registry.getItemViewType(oldItem)
-        val newType = registry.getItemViewType(newItem)
+        val oldType = viewTypeRegistry.getItemViewType(oldItem)
+        val newType = viewTypeRegistry.getItemViewType(newItem)
 
         // 2. 如果类型变了（比如从 Text 变成了 Image），肯定不是同一个内容
         if (oldType != newType) return false
 
         // 3. 找到 Delegate，让 Delegate 自己去比对内容
-        val delegate = registry.getDelegate(oldType)
+        val delegate = viewTypeRegistry.getDelegate(oldType)
         return delegate.areContentsTheSame(oldItem, newItem)
     }
 
@@ -194,18 +205,18 @@ class AdapterController {
      * 代理 DiffUtil.Callback.getChangePayload
      */
     fun getChangePayload(oldItem: Any, newItem: Any): Any? {
-        val oldType = registry.getItemViewType(oldItem)
-        val newType = registry.getItemViewType(newItem)
+        val oldType = viewTypeRegistry.getItemViewType(oldItem)
+        val newType = viewTypeRegistry.getItemViewType(newItem)
 
         if (oldType != newType) return null
 
-        val delegate = registry.getDelegate(oldType)
+        val delegate = viewTypeRegistry.getDelegate(oldType)
         return delegate.getChangePayload(oldItem, newItem)
     }
 
     fun getDelegate(item: Any): FusionDelegate<Any, RecyclerView.ViewHolder>? {
-        val viewType = registry.getItemViewType(item)
-        return registry.getDelegateOrNull(viewType)
+        val viewType = viewTypeRegistry.getItemViewType(item)
+        return viewTypeRegistry.getDelegateOrNull(viewType)
     }
 
     // ========================================================================================
@@ -213,14 +224,14 @@ class AdapterController {
     // ========================================================================================
 
     fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        registry.getDelegateOrNull(holder.itemViewType)?.onViewRecycled(holder)
+        viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewRecycled(holder)
     }
 
     fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-        registry.getDelegateOrNull(holder.itemViewType)?.onViewAttachedToWindow(holder)
+        viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewAttachedToWindow(holder)
     }
 
     fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        registry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
+        viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
     }
 }

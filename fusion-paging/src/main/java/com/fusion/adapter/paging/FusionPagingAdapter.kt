@@ -67,14 +67,14 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, linker.getAllDelegates())
+        checkStableIdRequirement(this, clazz, linker.getAllDelegates(), core)
         core.register(clazz, linker)
     }
 
     fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
         // 1. 安全检查 (刚刚实现的逻辑)
         // 确保开启全局 StableId 时，手动 attach 的 delegate 也配置了 ID
-        checkStableIdRequirement(this, clazz, listOf(delegate))
+        checkStableIdRequirement(this, clazz, listOf(delegate), core)
 
         // 2. 构造 Linker 并注册
         val linker = TypeRouter<T>()
@@ -154,7 +154,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         val isDebug = config.isDebug
 
         return pagingData.filter { item ->
-            val isSupported = core.registry.isSupported(item)
+            val isSupported = core.viewTypeRegistry.isSupported(item)
 
             if (isSupported) {
                 true // 保留
@@ -201,31 +201,20 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun getItemId(position: Int): Long {
-        // 1. 快速前置检查
         if (!hasStableIds()) return RecyclerView.NO_ID
 
-        // 2. 数据获取
+        // Paging 特有：peek 不触发加载
         val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
         val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
 
-        // 3. 获取原始 ID (Any?)
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getStableId(item)
+        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
 
-        // --- 运行时安全兜底 (Safety Net) ---
-        if (rawId == null) {
-            // 这种情况理论上在 Debug 模式下会被注册检查拦截。
-            // 但在 Release 模式下，如果 setHasStableIds(false) 失败，
-            // 代码会走到这里。此时绝对不能返回 NO_ID 或重复 ID。
-
-            // 策略：使用 System.identityHashCode。
-            // 它在对象生命周期内是不变的，且冲突概率极低。
-            // 虽然这会让动画失效（因为每次 new 对象 ID 都变），但它能 100% 保证不 Crash。
+        if (rawKey == null) {
             return System.identityHashCode(item).toLong()
         }
 
-        // 4. 极致转换 (Delegated to Utils)
-        return mapToRecyclerViewId(rawId)
+        return mapToRecyclerViewId(rawKey)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -241,14 +230,14 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
         holder.attachFusionStaggeredSupport(layoutItem) { queryItem ->
             if (queryItem === FusionPlaceholder) {
-                core.registry.getPlaceholderDelegate()
+                core.viewTypeRegistry.getPlaceholderDelegate()
             } else {
                 core.getDelegate(queryItem)
             }
         }
         if (item == null) {
             // 绑定 Placeholder
-            val delegate = core.registry.getPlaceholderDelegate()
+            val delegate = core.viewTypeRegistry.getPlaceholderDelegate()
             delegate?.onBindViewHolder(holder, Unit, position, mutableListOf())
         } else {
             // 绑定正常数据

@@ -41,6 +41,17 @@ class RegistrationBuilder<T : Any>(val itemClass: Class<T>) {
     // 模式 B: 一对多 (Match & Map)
     // -----------------------------------------------------------------------
 
+    /**
+     * [API] 配置当前类型的 Stable ID。
+     *
+     * 在一对多场景下，这相当于默认配置。
+     * 所有通过此 Scope 注册的 Delegate，如果未定义自己的 ID，将使用此规则。
+     */
+    fun stableId(block: (T) -> Any?) {
+        // 将配置传递给底层的 Linker (TypeRouter)
+        linker.stableId(block)
+    }
+
     /** 定义路由规则：从 Item 中提取 Key (O(1) 查找的关键) */
     fun match(mapper: (item: T) -> Any?) {
         linker.match(mapper)

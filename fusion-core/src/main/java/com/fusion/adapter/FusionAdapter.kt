@@ -55,13 +55,13 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
 
     /** [KTX 专用接口] 注册路由连接器 */
     override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, linker.getAllDelegates())
+        checkStableIdRequirement(this, clazz, linker.getAllDelegates(), core)
         core.register(clazz, linker)
     }
 
     /** [Java/普通接口] 注册单类型委托 (一对一) */
     fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        checkStableIdRequirement(this, clazz, listOf(delegate))
+        checkStableIdRequirement(this, clazz, listOf(delegate), core)
         val linker = TypeRouter<T>()
         linker.map(Unit, delegate)
         core.register(clazz, linker)
@@ -169,32 +169,29 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     }
 
     override fun getItemId(position: Int): Long {
+        // 1. 性能开关
         if (!hasStableIds()) return RecyclerView.NO_ID
 
-        // 这里的 items 是内部的 ArrayList<Any>
+        // 2. 边界检查
         if (position !in items.indices) return RecyclerView.NO_ID
 
+        // 3. 获取数据与 Delegate
         val item = items[position]
-        // FusionAdapter 可能会包含 Placeholder (Unit/FusionPlaceholder)
-        // core.getDelegate 会处理好这些逻辑
         val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
 
+        // 4. [核心修改] 调用 Controller 的裁决方法
+        // 它会依次查找：Delegate.getUniqueKey -> IdentityRegistry.getUniqueKey
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getStableId(item)
+        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
 
-        // --- 运行时安全兜底 (Safety Net) ---
-        if (rawId == null) {
-            // 这种情况理论上在 Debug 模式下会被注册检查拦截。
-            // 但在 Release 模式下，如果 setHasStableIds(false) 失败，
-            // 代码会走到这里。此时绝对不能返回 NO_ID 或重复 ID。
-
-            // 策略：使用 System.identityHashCode。
-            // 它在对象生命周期内是不变的，且冲突概率极低。
-            // 虽然这会让动画失效（因为每次 new 对象 ID 都变），但它能 100% 保证不 Crash。
+        // 5. 运行时安全兜底 (Safety Net)
+        // 处理 Release 模式下配置缺失且无法关闭开关的极端情况
+        if (rawKey == null) {
             return System.identityHashCode(item).toLong()
         }
 
-        return mapToRecyclerViewId(rawId)
+        // 6. 极致数值转换
+        return mapToRecyclerViewId(rawKey)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

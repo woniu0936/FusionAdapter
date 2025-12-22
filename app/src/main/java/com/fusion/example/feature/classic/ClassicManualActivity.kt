@@ -55,6 +55,7 @@ class ClassicManualActivity : AppCompatActivity() {
         // 2. [一对多] 显式注册 Linker (Router)
         // 这种写法适合不喜欢 DSL 或者需要动态构建 Router 的场景
         val messageRouter = TypeRouter<FusionMessage>()
+            .stableId { it.id }
             .match { it.msgType } // 定义分发规则
             .map(FusionMessage.TYPE_TEXT, TextMsgDelegate()) // 复用已有的 Delegate
             .map(FusionMessage.TYPE_IMAGE, ImageMsgDelegate()) // 复用已有的 Delegate

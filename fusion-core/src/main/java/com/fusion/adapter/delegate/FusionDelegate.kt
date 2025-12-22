@@ -1,6 +1,7 @@
 package com.fusion.adapter.delegate
 
 import android.view.ViewGroup
+import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.internal.PropertyWatcher1
 import com.fusion.adapter.internal.PropertyWatcher2
@@ -30,6 +31,18 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     // 使用通用接口 Watcher 存储
     private val propertyWatchers = ArrayList<Watcher<T>>()
 
+    // Level 1: Delegate 自身的 (通过 DSL map { stableId } 或重写)
+    internal var specificKeyProvider: ((T) -> Any?)? = null
+
+    // Level 2: 从 Router 继承的
+    internal var defaultKeyProvider: ((T) -> Any?)? = null
+
+    // 内部状态暴露，供 StableIdSafety 检查使用
+    // 这样外部就不需要强转泛型来检查字段是否为 null 了
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    internal val isStableIdDefined: Boolean
+        get() = specificKeyProvider != null || defaultKeyProvider != null
+
     /**
      * [唯一标识生成器]
      * 用于生成全局唯一的 ViewType Key。
@@ -38,15 +51,33 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     final fun getUniqueViewType(): Any = signature
 
     /**
-     * [核心 API] 获取 Item 的唯一标识 (Stable ID)。
-     *
-     * 作用：用于 DiffUtil 计算和 RecyclerView 动画复用。
-     *
-     * @return 返回任意具有唯一性的对象 (String, Long, Int, UUID...)。
-     *         如果返回 null，表示该 Item 没有 Stable ID。
+     * [核心逻辑] 获取 Unique Key
+     * 优先级：
+     * 1. Delegate 自身配置 (_keyProvider / getUniqueKey重写)
+     * 2. Linker 级别配置 (defaultKeyProvider)
+     * 3. null
      */
     open fun getStableId(item: T): Any? {
-        return null
+        // 1. 优先使用 Delegate 特有的
+        val specificKey = specificKeyProvider?.invoke(item)
+        if (specificKey != null) return specificKey
+
+        // 2. 其次使用 Router 共享的
+        return defaultKeyProvider?.invoke(item)
+    }
+
+    /**
+     * [API] 手动设置 ID 规则 (用于 Java 或非 DSL 场景)
+     */
+    fun setStableId(provider: (T) -> Any?) {
+        this.specificKeyProvider = provider
+    }
+
+    /**
+     * [内部 API] 供 TypeRouter 注入 Linker 级别的 ID 策略
+     */
+    internal fun attachDefaultKeyProvider(provider: (T) -> Any?) {
+        this.defaultKeyProvider = provider
     }
 
     // ============================================================================================

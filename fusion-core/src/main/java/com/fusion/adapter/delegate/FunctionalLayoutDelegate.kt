@@ -1,5 +1,3 @@
-// 文件: com/fusion/adapter/delegate/FunctionalLayoutDelegate.kt
-
 package com.fusion.adapter.delegate
 
 import androidx.annotation.LayoutRes
@@ -18,16 +16,10 @@ internal class FunctionalLayoutDelegate<T : Any>(
     override val signature: ViewSignature = dslSignature
 
     // 内部状态，对应 DSL 的配置
-    internal var idProvider: ((T) -> Any?)? = null
     private var onBindBlock: (LayoutHolder.(item: T, position: Int) -> Unit)? = null
     private var onBindPayloadRaw: (LayoutHolder.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
     private var onCreateBlock: (LayoutHolder.() -> Unit)? = null
     private var onContentSame: ((old: T, new: T) -> Boolean)? = null
-
-    // 1. 实现多态 Key
-    override fun getStableId(item: T): Any? {
-        return idProvider?.invoke(item)
-    }
 
     // 2. 实现 ViewHolder 创建回调
     override fun onViewHolderCreated(holder: LayoutHolder) {
@@ -73,11 +65,12 @@ internal class FunctionalLayoutDelegate<T : Any>(
 
     // 6. 应用 DSL 配置 (核心入口)
     fun applyDsl(dsl: LayoutDsl<T>) {
-        this.idProvider = dsl.keyProvider
         this.onBindBlock = dsl.bindBlock
         this.onBindPayloadRaw = dsl.rawPayloadBlock
         this.onCreateBlock = dsl.createBlock
         this.onContentSame = dsl.contentSameBlock
+
+        dsl.idProviderBlock?.let { setStableId(it) }
 
         // 应用 Watchers
         dsl.pendingWatchers.forEach { watcher ->

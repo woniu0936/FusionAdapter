@@ -22,9 +22,6 @@ import com.fusion.example.utils.MockDataGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-
-import kotlin.jvm.functions.Function1;
 
 public class JavaInteropActivity extends AppCompatActivity {
 
@@ -64,6 +61,7 @@ public class JavaInteropActivity extends AppCompatActivity {
         // ========================================================================
         // 语法：register(Class).dispatch(KeyMapper).map(Key, Delegate)...register()
         adapter.attachLinker(FusionMessage.class, new TypeRouter<FusionMessage>()
+                .stableId(FusionMessage::getId)
                 .match(FusionMessage::getMsgType)
                 .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
                 .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate()) // 显式调用 register 完成构建);

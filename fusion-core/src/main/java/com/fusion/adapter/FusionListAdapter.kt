@@ -78,7 +78,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
      * KTX DSL 通过此方法注入配置好的 FusionLinker。
      */
     override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, linker.getAllDelegates())
+        checkStableIdRequirement(this, clazz, linker.getAllDelegates(), core)
         core.register(clazz, linker)
     }
 
@@ -87,7 +87,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
      * 内部会自动创建一个默认的 Linker，简化非 DSL 场景的使用。
      */
     fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        checkStableIdRequirement(this, clazz, listOf(delegate))
+        checkStableIdRequirement(this, clazz, listOf(delegate), core)
         val linker = TypeRouter<T>()
         linker.map(Unit, delegate) // 默认 Key 为 Unit
         core.register(clazz, linker)
@@ -169,35 +169,22 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     }
 
     override fun getItemId(position: Int): Long {
-        // 1. 性能守卫：未开启功能直接返回，不消耗任何性能
         if (!hasStableIds()) return RecyclerView.NO_ID
 
-        // 2. 边界检查 (虽少见，但在并发更新或 Diff 计算间隙可能发生)
         val list = currentList
         if (position !in list.indices) return RecyclerView.NO_ID
 
-        // 3. 获取数据与 Delegate
         val item = list[position]
         val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
 
-        // 4. 获取原始 ID (DSL 配置)
         @Suppress("UNCHECKED_CAST")
-        val rawId = delegate.getStableId(item)
+        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
 
-        // --- 运行时安全兜底 (Safety Net) ---
-        if (rawId == null) {
-            // 这种情况理论上在 Debug 模式下会被注册检查拦截。
-            // 但在 Release 模式下，如果 setHasStableIds(false) 失败，
-            // 代码会走到这里。此时绝对不能返回 NO_ID 或重复 ID。
-
-            // 策略：使用 System.identityHashCode。
-            // 它在对象生命周期内是不变的，且冲突概率极低。
-            // 虽然这会让动画失效（因为每次 new 对象 ID 都变），但它能 100% 保证不 Crash。
+        if (rawKey == null) {
             return System.identityHashCode(item).toLong()
         }
 
-        // 5. 极致转换
-        return mapToRecyclerViewId(rawId)
+        return mapToRecyclerViewId(rawKey)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

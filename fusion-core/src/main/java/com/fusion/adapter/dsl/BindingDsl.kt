@@ -52,6 +52,21 @@ class BindingDsl<T : Any, VB : ViewBinding> {
     // 暂存所有 Watcher
     internal val pendingWatchers = ArrayList<Watcher<T>>()
 
+
+    /**
+     * 新增：配置非侵入式的 Stable ID
+     * 这是 Level 1：针对这一个具体的 layout/binding 覆盖 ID
+     *
+     * 示例：
+     * register<User, ItemUserBinding>(...) {
+     *     stableId { it.userId } // 直接使用 userId 做指纹
+     *     onBind { ... }
+     * }
+     */
+    fun stableId(block: (item: T) -> Any?) {
+        this.idProviderBlock = block
+    }
+
     /** 定义数据绑定逻辑 (简易版，不带 position) */
     fun onBind(block: VB.(item: T) -> Unit) {
         bindBlock = { item, _ -> block(item) }
@@ -185,19 +200,6 @@ class BindingDsl<T : Any, VB : ViewBinding> {
         spanSizeBlock = { item, _, scope ->
             if (condition(item)) scope.totalSpans else 1
         }
-    }
-
-    /**
-     * 新增：配置非侵入式的 Stable ID
-     *
-     * 示例：
-     * register<User, ItemUserBinding>(...) {
-     *     stableId { it.userId } // 直接使用 userId 做指纹
-     *     onBind { ... }
-     * }
-     */
-    fun stableId(block: (item: T) -> Any?) {
-        this.idProviderBlock = block
     }
 
 }

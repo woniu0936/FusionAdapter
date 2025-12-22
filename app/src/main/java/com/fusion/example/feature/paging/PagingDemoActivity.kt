@@ -42,11 +42,11 @@ class PagingDemoActivity : AppCompatActivity() {
 
             // --- 注册多类型路由 (复用之前的逻辑) ---
             register<FusionMessage> {
+                stableId { it.id }
                 match { it.msgType }
 
                 // 文本消息
                 map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
-                    stableId { it.id }
                     onBind { item ->
                         tvContent.text = item.content
                         ChatStyleHelper.bindTextMsg(this, item.isMe)
@@ -56,7 +56,6 @@ class PagingDemoActivity : AppCompatActivity() {
 
                 // 图片消息
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
-                    stableId { it.id }
                     onBind { item ->
                         ivImage.contentDescription = item.content
                         ChatStyleHelper.bindImageMsg(this, item.isMe)
@@ -66,7 +65,6 @@ class PagingDemoActivity : AppCompatActivity() {
 
                 // 系统消息
                 map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
-                    stableId { it.id }
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
             }
