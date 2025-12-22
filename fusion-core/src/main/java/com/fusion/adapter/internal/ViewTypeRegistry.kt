@@ -62,7 +62,7 @@ class ViewTypeRegistry {
         val castedDelegate = delegate as FusionDelegate<Any, RecyclerView.ViewHolder>
 
         // A. 获取全局唯一 Key (Class 或 Inflater 引用)
-        val uniqueKey = delegate.getUniqueViewType()
+        val uniqueKey = delegate.viewTypeKey
 
         // B. 从全局池获取/生成 ID (核心安全机制)
         val viewType = GlobalViewTypePool.getId(uniqueKey)
@@ -150,7 +150,7 @@ class ViewTypeRegistry {
             ?: throw IllegalStateException("Fusion: 路由失败 (Key 未映射) -> ${clazz.simpleName}")
 
         // [Step 5] 获取 ID
-        val uniqueKey = delegate.getUniqueViewType()
+        val uniqueKey = delegate.viewTypeKey
         val id = GlobalViewTypePool.getId(uniqueKey)
 
         // [添加日志] 关键！打印 Key 和 ID
@@ -159,7 +159,7 @@ class ViewTypeRegistry {
                 ✅ [GetViewType] Resolved:
                    Item: ${clazz.simpleName}
                    Delegate: ${delegate.javaClass.simpleName} @${System.identityHashCode(delegate)}
-                   UniqueKey: $uniqueKey
+                   viewTypeKey: $uniqueKey
                    GlobalID: $id
             """.trimIndent()
         }

@@ -6,7 +6,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.core.R
 import com.fusion.adapter.internal.ClassSignature
-import com.fusion.adapter.internal.ViewSignature
 import com.fusion.adapter.internal.Watcher
 import com.fusion.adapter.internal.click
 import kotlin.reflect.KProperty1
@@ -33,7 +32,7 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
      *
      * 性能：this::class.java 是原生操作，极快。
      */
-    override val signature: ViewSignature = ClassSignature(this::class.java)
+    override val viewTypeKey: Any = ClassSignature(this::class.java)
 
     // 点击事件回调 (View, Item, Position)
     var onItemClick: ((view: VB, item: T, position: Int) -> Unit)? = null

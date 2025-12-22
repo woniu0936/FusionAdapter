@@ -22,11 +22,7 @@ import com.fusion.adapter.internal.Watcher
  */
 abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
 
-    /**
-     * [身份签名]
-     * 必须由子类提供唯一的身份标识。
-     */
-    abstract val signature: ViewSignature
+    abstract val viewTypeKey: Any
 
     // 使用通用接口 Watcher 存储
     private val propertyWatchers = ArrayList<Watcher<T>>()
@@ -42,13 +38,6 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal val isStableIdDefined: Boolean
         get() = specificKeyProvider != null || defaultKeyProvider != null
-
-    /**
-     * [唯一标识生成器]
-     * 用于生成全局唯一的 ViewType Key。
-     *
-     */
-    final fun getUniqueViewType(): Any = signature
 
     /**
      * [核心逻辑] 获取 Unique Key

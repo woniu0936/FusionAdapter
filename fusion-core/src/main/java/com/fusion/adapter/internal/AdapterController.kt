@@ -119,7 +119,7 @@ class AdapterController {
                Item Type: ${item.javaClass.name}
                ViewType ID: $viewType
                Found Delegate: ${delegate?.javaClass?.simpleName} @${System.identityHashCode(delegate)}
-               Delegate Key: ${delegate?.getUniqueViewType()}
+               Delegate Key: ${delegate?.viewTypeKey}
         """.trimIndent()
         }
         if (delegate == null) {

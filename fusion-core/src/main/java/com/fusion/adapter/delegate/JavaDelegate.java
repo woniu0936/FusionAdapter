@@ -11,7 +11,6 @@ import androidx.viewbinding.ViewBinding;
 import com.fusion.adapter.core.R;
 import com.fusion.adapter.internal.ClassSignature;
 import com.fusion.adapter.internal.FusionViewUtil;
-import com.fusion.adapter.internal.ViewSignature;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -37,7 +36,7 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     private OnItemClickListener<T, VB> clickListener;
     private OnItemLongClickListener<T, VB> longClickListener;
 
-    private final ViewSignature signature = new ClassSignature(this.getClass());
+    private final Object viewTypeKey = new ClassSignature(this.getClass());
 
     /**
      * [生命周期] 创建 ViewBinding
@@ -70,7 +69,6 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     // RecyclerView 适配层
     // =======================================================================================
 
-
     @Override
     @Nullable
     public Object getStableId(@NotNull T item) {
@@ -78,8 +76,9 @@ public abstract class JavaDelegate<T, VB extends ViewBinding>
     }
 
     @Override
-    public @NotNull ViewSignature getSignature() {
-        return signature;
+    @NotNull
+    public Object getViewTypeKey() {
+        return viewTypeKey;
     }
 
     @NonNull

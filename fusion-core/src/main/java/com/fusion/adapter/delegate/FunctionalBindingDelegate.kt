@@ -32,7 +32,7 @@ internal class FunctionalBindingDelegate<T : Any, VB : ViewBinding>(
 
     var onCreate: (VB.() -> Unit)? = null
 
-    override val signature: ViewSignature = dslSignature
+    override val viewTypeKey: ViewSignature = dslSignature
 
     override fun onBind(binding: VB, item: T, position: Int) {
         onBind?.invoke(binding, item, position)

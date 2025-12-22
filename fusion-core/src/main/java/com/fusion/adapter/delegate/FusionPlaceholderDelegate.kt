@@ -12,7 +12,7 @@ import com.fusion.adapter.internal.ViewSignature
 abstract class FusionPlaceholderDelegate<VH : RecyclerView.ViewHolder> : FusionDelegate<Any, VH>() {
 
     // Placeholder 依然通过 ViewType ID 匹配，Signature 保持自身 Class 即可
-    override val signature: ViewSignature = ClassSignature(this::class.java)
+    override val viewTypeKey: ViewSignature = ClassSignature(this::class.java)
 
     abstract fun onCreatePlaceholderViewHolder(parent: ViewGroup): VH
 

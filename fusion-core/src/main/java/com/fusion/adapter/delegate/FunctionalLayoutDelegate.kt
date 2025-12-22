@@ -13,7 +13,7 @@ internal class FunctionalLayoutDelegate<T : Any>(
     @LayoutRes layoutResId: Int
 ) : LayoutDelegate<T>(layoutResId) {
 
-    override val signature: ViewSignature = dslSignature
+    override val viewTypeKey: ViewSignature = dslSignature
 
     // 内部状态，对应 DSL 的配置
     private var onBindBlock: (LayoutHolder.(item: T, position: Int) -> Unit)? = null

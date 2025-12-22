@@ -15,7 +15,7 @@ abstract class LayoutDelegate<T : Any>(
     @LayoutRes private val layoutResId: Int
 ) : FusionDelegate<T, LayoutHolder>() {
 
-    override val signature: ViewSignature = ClassSignature(this::class.java)
+    override val viewTypeKey: Any = ClassSignature(this::class.java)
 
     private var onItemClickListener: ((View, T, Int) -> Unit)? = null
     private var onItemLongClickListener: ((View, T, Int) -> Boolean)? = null
