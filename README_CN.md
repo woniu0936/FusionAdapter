@@ -55,9 +55,9 @@ FusionAdapter 与业界主流库的深度对比：
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:fusion-core:0.5.0")
+    implementation("io.github.woniu0936:fusion-core:0.6.0")
     // 可选：原生 Paging 3 支持
-    implementation("io.github.woniu0936:fusion-paging:0.5.0")
+    implementation("io.github.woniu0936:fusion-paging:0.6.0")
 }
 ```
 
