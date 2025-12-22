@@ -89,7 +89,7 @@ class ViewTypeRegistry {
      */
     fun isSupported(item: Any): Boolean {
         // 特殊处理：如果是显式的 Placeholder 对象
-        if (item === FusionPlaceholder) {
+        if (item is FusionPlaceholder) {
             return hasPlaceholderDelegate
         }
         val clazz = item.javaClass
@@ -120,7 +120,7 @@ class ViewTypeRegistry {
      */
     fun getItemViewType(item: Any): Int {
         // 特殊处理 Placeholder
-        if (item === FusionPlaceholder) {
+        if (item is FusionPlaceholder) {
             if (hasPlaceholderDelegate) return TYPE_PLACEHOLDER
             throw IllegalStateException("Fusion: FusionPlaceholder used but no PlaceholderDelegate registered.")
         }

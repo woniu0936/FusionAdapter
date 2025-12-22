@@ -1,7 +1,8 @@
-package com.fusion.adapter.delegate
+package com.fusion.adapter.placeholder
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.internal.ClassSignature
 import com.fusion.adapter.internal.ViewSignature
 
@@ -25,5 +26,16 @@ abstract class FusionPlaceholderDelegate<VH : RecyclerView.ViewHolder> : FusionD
     }
 
     open fun onBindPlaceholder(holder: VH) {}
+
+    /**
+     * [Stable ID 支持]
+     * 直接返回 Placeholder 实例自带的唯一 ID。
+     */
+    override fun getStableId(item: Any): Any? {
+        if (item is FusionPlaceholder) {
+            return item.id
+        }
+        return super.getStableId(item)
+    }
 
 }

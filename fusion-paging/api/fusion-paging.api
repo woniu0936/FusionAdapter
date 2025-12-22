@@ -15,7 +15,7 @@ public class FusionPagingAdapter : androidx/recyclerview/widget/RecyclerView$Ada
 	public final fun peek (I)Ljava/lang/Object;
 	public final fun refresh ()V
 	public final fun registerPlaceholder (ILkotlin/jvm/functions/Function1;)V
-	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionPlaceholderDelegate;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
 	public static synthetic fun registerPlaceholder$default (LFusionPagingAdapter;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun removeLoadStateListener (Lkotlin/jvm/functions/Function1;)V
 	public final fun removeOnPagesUpdatedListener (Lkotlin/jvm/functions/Function0;)V

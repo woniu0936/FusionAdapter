@@ -16,7 +16,7 @@ import com.fusion.adapter.Fusion
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.delegate.FusionPlaceholderDelegate
+import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport

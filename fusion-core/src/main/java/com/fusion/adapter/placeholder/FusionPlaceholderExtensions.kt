@@ -9,7 +9,7 @@ import java.util.Collections
 // ============================================================================================
 
 fun FusionListAdapter.submitPlaceholders(count: Int = 5, commitCallback: Runnable? = null) {
-    val placeholders = Collections.nCopies(count, FusionPlaceholder)
+    val placeholders = List(count) { FusionPlaceholder() }
     this.submitList(placeholders, commitCallback)
 }
 
@@ -22,7 +22,7 @@ fun FusionListAdapter.clear(commitCallback: Runnable? = null) {
 // ============================================================================================
 
 fun FusionAdapter.setPlaceholders(count: Int = 5) {
-    val placeholders = Collections.nCopies(count, FusionPlaceholder)
+    val placeholders = List(count) { FusionPlaceholder() }
     this.setItems(placeholders)
 }
 
