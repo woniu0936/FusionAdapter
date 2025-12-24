@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.fusion.adapter.FusionListAdapter;
+import com.fusion.adapter.internal.RouterConfiguration;
 import com.fusion.adapter.internal.TypeRouter;
 import com.fusion.example.databinding.ActivityRecyclerBinding;
 import com.fusion.example.feature.java.delegate.JavaMsgImageDelegate;
@@ -53,20 +54,20 @@ public class JavaInteropActivity extends AppCompatActivity {
         // ========================================================================
         // 场景 1: 一对一注册 (Simple Registration)
         // ========================================================================
-        // 语法：register(Class).to(Delegate)
-        adapter.attachDelegate(TextItem.class, new JavaTextDelegate());
+        adapter.registerDelegate(TextItem.class, new JavaTextDelegate());
 
         // ========================================================================
-        // 场景 2: 一对多路由注册 (Complex Routing)
+        // 场景 2: 一对多路由注册 (Complex Routing) - 使用全新 Builder API
         // ========================================================================
-        // 语法：register(Class).dispatch(KeyMapper).map(Key, Delegate)...register()
-        adapter.attachLinker(FusionMessage.class, new TypeRouter<FusionMessage>()
+        TypeRouter<FusionMessage> messageRouter = new TypeRouter.Builder<FusionMessage>()
                 .stableId(FusionMessage::getId)
                 .match(FusionMessage::getMsgType)
                 .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
-                .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate()) // 显式调用 register 完成构建);
-                .map(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())); // 显式调用 register 完成构建);
+                .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate())
+                .map(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())
+                .build();
 
+        adapter.registerRouter(FusionMessage.class, messageRouter);
     }
 
     private void loadData() {

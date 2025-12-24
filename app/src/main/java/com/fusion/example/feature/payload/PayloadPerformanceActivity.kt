@@ -27,7 +27,7 @@ class PayloadPerformanceActivity : AppCompatActivity() {
         binding.fabAdd.visibility = View.GONE
 
         // 1. 注册核心 Delegate (Class 方式)
-        adapter.attachDelegate(SocialPost::class.java, SocialPostDelegate { post ->
+        adapter.registerDelegate(SocialPost::class.java, SocialPostDelegate { post ->
             toggleLike(post)
         })
 

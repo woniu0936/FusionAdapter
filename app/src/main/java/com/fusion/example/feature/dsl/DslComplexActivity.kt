@@ -3,12 +3,10 @@ package com.fusion.example.feature.dsl
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.fusion.adapter.paging.register
 import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
-import com.fusion.example.databinding.ItemImageBinding.inflate
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.databinding.ItemMsgSystemBinding
 import com.fusion.example.databinding.ItemMsgTextBinding
@@ -40,7 +38,8 @@ class DslComplexActivity : AppCompatActivity() {
             register<FusionMessage> {
                 stableId { it.id }
                 match { it.msgType }
-                // 文本消息
+                
+                // ✅ 现在库支持直接在 map 中书写逻辑了
                 map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content
@@ -49,7 +48,6 @@ class DslComplexActivity : AppCompatActivity() {
                     onItemClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
-                // 图片消息
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         ivImage.contentDescription = item.content
@@ -58,7 +56,6 @@ class DslComplexActivity : AppCompatActivity() {
                     onItemClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
-                // 系统消息
                 map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }

@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.paging.register
+import com.fusion.adapter.register
 import com.fusion.adapter.paging.setupFusionPaging
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
@@ -40,12 +40,11 @@ class PagingDemoActivity : AppCompatActivity() {
         // 使用 setupFusionPaging DSL，体验与普通列表完全一致
         val pagingAdapter = binding.recyclerView.setupFusionPaging<FusionMessage> {
 
-            // --- 注册多类型路由 (复用之前的逻辑) ---
+            // --- 注册多类型路由 (内联逻辑) ---
             register<FusionMessage> {
                 stableId { it.id }
                 match { it.msgType }
 
-                // 文本消息
                 map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content
@@ -54,7 +53,6 @@ class PagingDemoActivity : AppCompatActivity() {
                     onItemClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
-                // 图片消息
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         ivImage.contentDescription = item.content
@@ -63,7 +61,6 @@ class PagingDemoActivity : AppCompatActivity() {
                     onItemClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
-                // 系统消息
                 map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
