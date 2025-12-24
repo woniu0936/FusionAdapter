@@ -1,8 +1,11 @@
 package com.fusion.adapter.internal
 
 import androidx.annotation.RestrictTo
+import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.DiffKeyProvider
+import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.delegate.LayoutDelegate
 import java.util.Collections
 
 /**
@@ -56,6 +59,69 @@ class TypeRouter<T : Any> internal constructor(
         fun <T : Any> create(delegate: FusionDelegate<T, *>): TypeRouter<T> {
             val config = RouterConfiguration<T>()
             config.mappings[Unit] = delegate // 默认 Key 为 Unit
+            return TypeRouter(config)
+        }
+    }
+
+    // ========================================================================================
+    // 🔥 Java / Manual API Support (Builder Pattern)
+    // ========================================================================================
+
+    /**
+     * 标准 Builder 模式，专为 Java 和非 DSL 场景设计。
+     * 用法：
+     * new TypeRouter.Builder<T>()
+     *     .match(item -> item.type)
+     *     .map(TYPE_A, delegateA)
+     *     .build();
+     */
+    class Builder<T : Any> {
+        private val config = RouterConfiguration<T>()
+
+        /**
+         * 配置路由分发规则 (Matcher)。
+         */
+        fun match(matcher: DiffKeyProvider<T>): Builder<T> {
+            config.matcher = matcher
+            return this
+        }
+
+        /**
+         * 配置全局 Stable ID。
+         */
+        fun stableId(provider: (T) -> Any?): Builder<T> {
+            config.defaultIdProvider = provider
+            return this
+        }
+
+        /**
+         * 注册映射关系。
+         */
+        fun map(key: Any?, delegate: FusionDelegate<T, *>): Builder<T> {
+            config.mappings[key] = delegate
+            return this
+        }
+
+        /**
+         * [ViewBinding 便捷方法] 注册 BindingDelegate (带泛型检查)。
+         */
+        fun <VB : ViewBinding> map(key: Any?, delegate: BindingDelegate<T, VB>): Builder<T> {
+            config.mappings[key] = delegate
+            return this
+        }
+
+        /**
+         * [LayoutRes 便捷方法] 注册 LayoutDelegate。
+         */
+        fun map(key: Any?, delegate: LayoutDelegate<T>): Builder<T> {
+            config.mappings[key] = delegate
+            return this
+        }
+
+        /**
+         * 构建不可变的 TypeRouter 实例。
+         */
+        fun build(): TypeRouter<T> {
             return TypeRouter(config)
         }
     }

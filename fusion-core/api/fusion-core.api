@@ -475,6 +475,16 @@ public final class com/fusion/adapter/internal/TypeRouter {
 	public final fun getAllDelegates ()Ljava/util/Collection;
 }
 
+public final class com/fusion/adapter/internal/TypeRouter$Builder {
+	public fun <init> ()V
+	public final fun build ()Lcom/fusion/adapter/internal/TypeRouter;
+	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/BindingDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/LayoutDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+	public final fun match (Lcom/fusion/adapter/DiffKeyProvider;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+	public final fun stableId (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+}
+
 public final class com/fusion/adapter/internal/TypeRouter$Companion {
 	public final fun create (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeRouter;
 }
