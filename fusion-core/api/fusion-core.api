@@ -312,9 +312,11 @@ public final class com/fusion/adapter/dsl/LayoutIdDsl : com/fusion/adapter/dsl/B
 }
 
 public final class com/fusion/adapter/dsl/RouterDsl {
-	public fun <init> ()V
+	public fun <init> (Ljava/lang/Class;)V
 	public final fun build ()Lcom/fusion/adapter/internal/TypeRouter;
 	public final fun getConfig ()Lcom/fusion/adapter/internal/RouterConfiguration;
+	public final fun getItemClass ()Ljava/lang/Class;
+	public final fun map (Ljava/lang/Object;ILkotlin/jvm/functions/Function1;)V
 	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/LayoutDelegate;)V
 	public final fun match (Lkotlin/jvm/functions/Function1;)V
 	public final fun stableId (Lkotlin/jvm/functions/Function1;)V

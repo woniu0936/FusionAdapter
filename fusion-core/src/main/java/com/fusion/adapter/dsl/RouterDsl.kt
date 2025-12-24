@@ -1,9 +1,13 @@
 package com.fusion.adapter.dsl
 
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.DiffKeyProvider
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.delegate.LayoutDelegate
+import com.fusion.adapter.internal.DslAdapterFactory
 import com.fusion.adapter.internal.RouterConfiguration
 import com.fusion.adapter.internal.TypeRouter
 
@@ -15,55 +19,89 @@ import com.fusion.adapter.internal.TypeRouter
  * @param T 数据类型
  */
 @FusionDsl
-class RouterDsl<T : Any> {
+class RouterDsl<T : Any>(
+    @PublishedApi
+    internal val itemClass: Class<T>
+) {
 
-    // 内部持有纯数据配置，外部不可见
     @PublishedApi
     internal val config = RouterConfiguration<T>()
 
-    /**
-     * [必需] 配置路由分发规则 (Matcher)。
-     * 从数据项中提取特征 Key (例如: item.type, item.isHeader)。
-     *
-     * 示例: match { it.viewType }
-     */
     fun match(matcher: (item: T) -> Any?) {
         config.matcher = DiffKeyProvider(matcher)
     }
 
-    /**
-     * [可选] 配置该类型数据的全局 Stable ID 获取规则。
-     * 如果子 Delegate 没有单独配置 stableId，将默认使用此规则。
-     */
     fun stableId(block: (item: T) -> Any?) {
         config.defaultIdProvider = block
     }
 
-    /**
-     * [映射] 注册 ViewBinding 类型的委托。
-     *
-     * @param key 路由 Key (需与 match 返回值匹配)
-     * @param delegate 对应的 BindingDelegate 实例
-     */
+    // ========================================================================================
+    // 标准映射 (Mapping existing delegates)
+    // ========================================================================================
+
     inline fun <reified VB : ViewBinding> map(key: Any?, delegate: BindingDelegate<T, VB>) {
-        // 由于 reified VB 的存在，这里不仅是语法糖，更保证了泛型 VB 的类型安全
         config.mappings[key] = delegate
     }
 
-    /**
-     * [映射] 注册 Layout ID 类型的委托。
-     *
-     * @param key 路由 Key
-     * @param delegate 对应的 LayoutDelegate 实例
-     */
     fun map(key: Any?, delegate: LayoutDelegate<T>) {
         config.mappings[key] = delegate
     }
 
+    // ========================================================================================
+    // 内联映射 (Inline Mapping)
+    // ========================================================================================
+
     /**
-     * [Internal Factory]
-     * 构建不可变的运行时 Router。仅供 FusionExtensions 调用。
+     * [Inline] 注册 ViewBinding 逻辑
      */
+    inline fun <reified VB : ViewBinding> map(
+        key: Any?,
+        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        crossinline block: ViewBindingDsl<T, VB>.() -> Unit
+    ) {
+        // 1. 复用 ViewBindingDsl 解析配置
+        val dsl = ViewBindingDsl<T, VB>().apply(block)
+
+        // 2. 复用 Factory 创建 Delegate (利用 itemClass)
+        // ✅ 这里的 itemClass 现在可以被访问了
+        val delegate = DslAdapterFactory.createDelegate(
+            itemClass = this.itemClass,
+            viewBindingClass = VB::class.java,
+            inflate = inflate,
+            config = dsl.config
+        )
+
+        // 3. 注册
+        config.mappings[key] = delegate
+    }
+
+    /**
+     * [Inline] 注册 LayoutRes 逻辑
+     */
+    inline fun map(
+        key: Any?,
+        @LayoutRes layoutRes: Int,
+        crossinline block: LayoutIdDsl<T>.() -> Unit
+    ) {
+        // 1. 复用 LayoutIdDsl
+        val dsl = LayoutIdDsl<T>().apply(block)
+
+        // 2. 复用 Factory
+        // ✅ 这里的 itemClass 现在可以被访问了
+        val delegate = DslAdapterFactory.createLayoutDelegate(
+            itemClass = this.itemClass,
+            layoutRes = layoutRes,
+            config = dsl.config
+        )
+
+        // 3. 注册
+        config.mappings[key] = delegate
+    }
+
+    // ========================================================================================
+    // Build
+    // ========================================================================================
+
     @PublishedApi
     internal fun build(): TypeRouter<T> {
         return TypeRouter(config)

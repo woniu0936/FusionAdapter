@@ -72,14 +72,9 @@ inline fun <reified T : Any> RegistryOwner.register(
 inline fun <reified T : Any> RegistryOwner.register(
     block: RouterDsl<T>.() -> Unit
 ) {
-    // 1. 执行 DSL
-    val dsl = RouterDsl<T>().apply(block)
-
-    // 2. 构建不可变的 Router 运行时
-    // (RouterDsl.build() 会冻结所有映射关系)
+    // 🔥 修改点：传入 T::class.java
+    val dsl = RouterDsl(T::class.java).apply(block)
     val router = dsl.build()
-
-    // 3. 注册到 Adapter
     this.registerRouter(T::class.java, router)
 }
 
