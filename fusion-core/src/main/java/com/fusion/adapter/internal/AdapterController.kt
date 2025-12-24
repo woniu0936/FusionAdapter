@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
+import com.fusion.adapter.core.R
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.exception.UnregisteredTypeException
@@ -237,6 +238,9 @@ class AdapterController {
 
     fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewRecycled(holder)
+        holder.itemView.setTag(R.id.fusion_item_tag, null)
+        holder.itemView.setTag(R.id.fusion_binding_tag, null)
+        holder.itemView.setTag(R.id.fusion_holder_tag, null)
     }
 
     fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
