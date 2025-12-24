@@ -15,7 +15,6 @@ import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
-import com.fusion.adapter.internal.mapToRecyclerViewId
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 
 /**
@@ -172,17 +171,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         val list = currentList
         if (position !in list.indices) return RecyclerView.NO_ID
 
-        val item = list[position]
-        val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
-
-        @Suppress("UNCHECKED_CAST")
-        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
-
-        if (rawKey == null) {
-            return System.identityHashCode(item).toLong()
-        }
-
-        return mapToRecyclerViewId(rawKey)
+        return core.getItemId(list[position])
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

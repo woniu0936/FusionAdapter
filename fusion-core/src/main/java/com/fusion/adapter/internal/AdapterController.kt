@@ -142,16 +142,34 @@ class AdapterController {
     // ========================================================================================
 
     /**
-     * [ID 裁决逻辑]
-     * 核心规则：视图优先，注册中心兜底。
-     *
-     * 1. View Layer (Delegate): 如果具体视图定义了 ID (stableId/override)，优先使用。
-     *    这允许在特殊界面（如“猜你喜欢”）覆盖默认 ID。
-     * 2. Model Layer (IdentityRegistry): 如果视图没定义，使用 Adapter 级别的通用规则。
-     * 3. Null: 两者都未定义。
+     * 原名 getStableId，现在主要用于内部逻辑（如 DiffUtil 比较）。
+     * 作用：获取 Delegate 中定义的原始业务 ID (String, Int, User对象等)。
      */
-    fun getStableId(item: Any, delegate: FusionDelegate<Any, *>): Any? {
+    internal fun getRawStableId(item: Any, delegate: FusionDelegate<Any, *>): Any? {
         return delegate.getStableId(item)
+    }
+
+    /**
+     * 直接供 Adapter.getItemId() 调用。
+     * 作用：获取经过哈希防冲突处理后的 RecyclerView Long ID。
+     */
+    fun getItemId(item: Any): Long {
+        // 1. 获取 ViewType
+        val viewType = viewTypeRegistry.getItemViewType(item)
+
+        // 2. 获取 Delegate
+        val delegate = viewTypeRegistry.getDelegate(viewType)
+
+        // 3. 获取业务定义的原始 ID (可能为 null)
+        val rawKey = getRawStableId(item, delegate)
+
+        // 4. 如果用户没定义 Stable ID，回退到 Object 的 HashCode (标准 RecyclerView 行为)
+        if (rawKey == null) {
+            return System.identityHashCode(item).toLong()
+        }
+
+        // 5. [核心优化]：通过生成器转换为全局唯一 Long
+        return GlobalIdGenerator.getUniqueId(viewType, rawKey)
     }
 
     /**
@@ -159,31 +177,25 @@ class AdapterController {
      * 必须确保 ViewType 相同，否则不能复用 ViewHolder
      */
     fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        // 1. 最快路径：Java 类型不同，必然不同
         if (oldItem::class.java != newItem::class.java) return false
 
-        // 2. 结构路径：ViewType 不同，必然不同
-        // (这是你提到的逻辑，必须保留)
         val oldType = viewTypeRegistry.getItemViewType(oldItem)
         val newType = viewTypeRegistry.getItemViewType(newItem)
-        if (oldType != newType) {
-            return false
-        }
+        if (oldType != newType) return false
 
-        // 3. 身份路径：尝试获取 ID 进行精确比对
         val delegate = viewTypeRegistry.getDelegate(oldType)
 
-        // 统一裁决 (优先 Delegate -> 其次 Registry)
-        val oldKey = getStableId(oldItem, delegate)
-        val newKey = getStableId(newItem, delegate)
+        // 这里只需要比较原始 Key 即可，无需生成 Long，性能更好
+        val oldKey = getRawStableId(oldItem, delegate)
+        val newKey = getRawStableId(newItem, delegate)
 
         if (oldKey != null && newKey != null) {
             return oldKey == newKey
         }
 
-        // 4. 兜底路径
         return SmartDiffCallback.areItemsTheSame(oldItem, newItem)
     }
+
 
     /**
      * 代理 DiffUtil.Callback.areContentsTheSame

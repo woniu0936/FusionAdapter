@@ -390,8 +390,8 @@ public final class com/fusion/adapter/internal/AdapterController {
 	public final fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public final fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun getDelegate (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
+	public final fun getItemId (Ljava/lang/Object;)J
 	public final fun getItemViewType (Ljava/lang/Object;)I
-	public final fun getStableId (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Ljava/lang/Object;
 	public final fun getViewTypeRegistry ()Lcom/fusion/adapter/internal/ViewTypeRegistry;
 	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public static synthetic fun onBindViewHolder$default (Lcom/fusion/adapter/internal/AdapterController;Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;ILjava/lang/Object;)V
@@ -466,10 +466,6 @@ public final class com/fusion/adapter/internal/RouterConfiguration {
 
 public final class com/fusion/adapter/internal/StableIdSafetyKt {
 	public static final fun checkStableIdRequirement (Landroidx/recyclerview/widget/RecyclerView$Adapter;Ljava/lang/Class;Ljava/util/Collection;Lcom/fusion/adapter/internal/AdapterController;)V
-}
-
-public final class com/fusion/adapter/internal/StableIdUtilsKt {
-	public static final fun mapToRecyclerViewId (Ljava/lang/Object;)J
 }
 
 public final class com/fusion/adapter/internal/TypeRouter {

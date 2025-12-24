@@ -23,7 +23,6 @@ import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.ViewTypeRegistry
 import com.fusion.adapter.internal.checkStableIdRequirement
-import com.fusion.adapter.internal.mapToRecyclerViewId
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import kotlinx.coroutines.flow.Flow
@@ -196,20 +195,20 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun getItemId(position: Int): Long {
+        // 1. 检查是否开启了 Stable ID
         if (!hasStableIds()) return RecyclerView.NO_ID
 
-        // Paging 特有：peek 不触发加载
-        val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
-        val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
+        // 2. 获取数据 item
+        // 使用 peek(position) 而不是 getItem(position)，避免仅为了获取 ID 而触发 Paging 的网络加载
+        val item = helperAdapter.peek(position)
 
-        @Suppress("UNCHECKED_CAST")
-        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
+        // 3. 处理 Paging 3 的占位符 (null)
+        // 占位符通常没有稳定的业务 ID，返回 NO_ID 让 RecyclerView 正常处理复用即可
+        if (item == null) return RecyclerView.NO_ID
 
-        if (rawKey == null) {
-            return System.identityHashCode(item).toLong()
-        }
-
-        return mapToRecyclerViewId(rawKey)
+        // 4. [核心修改]：直接调用 AdapterController 的新 API
+        // 它会自动处理：获取 Delegate -> 获取 rawKey -> 通过 GlobalIdGenerator 生成全局唯一 Long
+        return core.getItemId(item)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

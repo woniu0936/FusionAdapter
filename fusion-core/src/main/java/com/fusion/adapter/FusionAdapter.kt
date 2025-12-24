@@ -13,7 +13,6 @@ import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
-import com.fusion.adapter.internal.mapToRecyclerViewId
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import java.util.Collections
 
@@ -172,23 +171,7 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
         // 2. 边界检查
         if (position !in items.indices) return RecyclerView.NO_ID
 
-        // 3. 获取数据与 Delegate
-        val item = items[position]
-        val delegate = core.getDelegate(item) ?: return RecyclerView.NO_ID
-
-        // 4. [核心修改] 调用 Controller 的裁决方法
-        // 它会依次查找：Delegate.getUniqueKey -> IdentityRegistry.getUniqueKey
-        @Suppress("UNCHECKED_CAST")
-        val rawKey = core.getStableId(item, delegate as FusionDelegate<Any, *>)
-
-        // 5. 运行时安全兜底 (Safety Net)
-        // 处理 Release 模式下配置缺失且无法关闭开关的极端情况
-        if (rawKey == null) {
-            return System.identityHashCode(item).toLong()
-        }
-
-        // 6. 极致数值转换
-        return mapToRecyclerViewId(rawKey)
+        return core.getItemId(items[position])
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
