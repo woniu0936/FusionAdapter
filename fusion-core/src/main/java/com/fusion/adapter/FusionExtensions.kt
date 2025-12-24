@@ -6,80 +6,81 @@ import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.delegate.FunctionalLayoutDelegate
-import com.fusion.adapter.dsl.BindingDsl
-import com.fusion.adapter.dsl.LayoutDsl
-import com.fusion.adapter.dsl.RegistrationBuilder
-import com.fusion.adapter.dsl.RouteScope
-import com.fusion.adapter.internal.DslSignature
-import com.fusion.adapter.internal.TypeRouter
+import com.fusion.adapter.dsl.LayoutIdDsl
+import com.fusion.adapter.dsl.RouterDsl
+import com.fusion.adapter.dsl.ViewBindingDsl
+import com.fusion.adapter.internal.DslAdapterFactory
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
 // ============================================================================================
 
 /**
- * [路由注册] - 适用于复杂场景 (一对多)
- * 需要在 block 中配置 match 规则和 map 映射。
+ * [Entry 1] 注册单类型 Item (ViewBinding 模式)
  *
- * @sample
- * adapter.register<Message> {
- *     match { it.type }
- *     map(TYPE_TEXT, ItemTextBinding::inflate) { ... }
- *     map(TYPE_IMAGE, ItemImageBinding::inflate) { ... }
- * }
- */
-inline fun <reified T : Any> RegistryOwner.register(
-    block: RouteScope<T>.() -> Unit
-) {
-    val scope = RouteScope(T::class.java)
-    scope.block()
-    this.attachLinker(T::class.java, scope.builder.linker)
-}
-
-/**
- * [极简注册] - 适用于简单场景 (一对一)
- * 直接绑定布局和逻辑，无需配置路由。
- *
- * @sample
- * adapter.register(ItemUserBinding::inflate) {
- *     onBind { user -> ... }
- * }
+ * @param inflate ViewBinding 的 inflate 函数引用，例如 ItemUserBinding::inflate
+ * @param block DSL 配置块
  */
 inline fun <reified T : Any, reified VB : ViewBinding> RegistryOwner.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: BindingDsl<T, VB>.() -> Unit
+    crossinline block: ViewBindingDsl<T, VB>.() -> Unit
 ) {
-    val builder = RegistrationBuilder(T::class.java)
-    builder.bind(inflate, block)
-    this.attachLinker(T::class.java, builder.linker)
+    // 1. 执行 DSL，收集纯数据配置
+    val dsl = ViewBindingDsl<T, VB>().apply(block)
+
+    // 2. 通过工厂创建不可变的 Delegate (注入 Config)
+    val delegate = DslAdapterFactory.createDelegate(
+        itemClass = T::class.java,
+        viewBindingClass = VB::class.java,
+        inflate = inflate,
+        config = dsl.config // ✅ 核心：将 DSL 产生的 Config 注入 Runtime
+    )
+
+    // 3. 注册到 Adapter (使用新接口)
+    this.registerDelegate(T::class.java, delegate)
 }
 
 /**
- * [API 扩展] 支持直接使用 Layout ID 进行注册，无需 ViewBinding。
+ * [Entry 2] 注册单类型 Item (Layout Res ID 模式)
+ *
+ * @param layoutRes 布局资源 ID
+ * @param block DSL 配置块
  */
 inline fun <reified T : Any> RegistryOwner.register(
-    @LayoutRes layoutResId: Int,
-    noinline block: LayoutDsl<T>.() -> Unit
+    @LayoutRes layoutRes: Int,
+    noinline block: LayoutIdDsl<T>.() -> Unit
 ) {
-    // 1. 创建 DSL 配置对象并执行用户的 block
-    val dsl = LayoutDsl<T>().apply(block)
+    // 1. 执行 DSL
+    val dsl = LayoutIdDsl<T>().apply(block)
 
-    // 2. 创建内部 Delegate 实现
-    // 使用 DslSignature 确保 ViewType 唯一性 (Class + LayoutRes 维度)
-    // 这里我们用 LayoutHolder::class.java 作为占位符，或者自定义一个标记类
-    val signature = DslSignature(T::class.java, Int::class.java) // Int 代表 layoutId 维度
+    // 2. 通过工厂创建不可变的 Delegate
+    val delegate = DslAdapterFactory.createLayoutDelegate(
+        itemClass = T::class.java,
+        layoutRes = layoutRes,
+        config = dsl.config
+    )
 
-    val delegate = FunctionalLayoutDelegate<T>(signature, layoutResId)
-    delegate.applyDsl(dsl)
+    // 3. 注册到 Adapter
+    this.registerDelegate(T::class.java, delegate)
+}
 
-    // 3. 安全检查 (复用之前写的 checkStableIdRequirement)
-    // 此时 delegate 已经是 FunctionalLayoutDelegate，检查逻辑能正确识别 keyProvider
-    // (注意：需要确保 attachLinker 内部调用了 checkStableIdRequirement)
-    val linker = TypeRouter<T>()
-    linker.map(Unit, delegate)
+/**
+ * [Entry 3] 注册多类型路由 (Router 模式)
+ *
+ * 适用于一个数据类型 T 对应多种视图的场景 (如: 消息列表中的 文本消息/图片消息)。
+ */
+inline fun <reified T : Any> RegistryOwner.register(
+    block: RouterDsl<T>.() -> Unit
+) {
+    // 1. 执行 DSL
+    val dsl = RouterDsl<T>().apply(block)
 
-    this.attachLinker(T::class.java, linker)
+    // 2. 构建不可变的 Router 运行时
+    // (RouterDsl.build() 会冻结所有映射关系)
+    val router = dsl.build()
+
+    // 3. 注册到 Adapter
+    this.registerRouter(T::class.java, router)
 }
 
 // ============================================================================================

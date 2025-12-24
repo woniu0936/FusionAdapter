@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="fusion_item_tag" type="id" />
+    <item name="fusion_binding_tag" type="id"/>
+    <item name="fusion_holder_tag" type="id"/>
+    <item name="fusion_item_tag" type="id"/>
 </resources>

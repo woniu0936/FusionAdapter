@@ -16,7 +16,6 @@ import com.fusion.adapter.Fusion
 import com.fusion.adapter.RegistryOwner
 import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
@@ -26,6 +25,7 @@ import com.fusion.adapter.internal.ViewTypeRegistry
 import com.fusion.adapter.internal.checkStableIdRequirement
 import com.fusion.adapter.internal.mapToRecyclerViewId
 import com.fusion.adapter.placeholder.FusionPlaceholder
+import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -66,20 +66,15 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         })
     }
 
-    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, linker.getAllDelegates(), core)
-        core.register(clazz, linker)
+    override fun <T : Any> registerRouter(clazz: Class<T>, router: TypeRouter<T>) {
+        checkStableIdRequirement(this, clazz, router.getAllDelegates(), core)
+        core.register(clazz, router)
     }
 
-    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        // 1. 安全检查 (刚刚实现的逻辑)
-        // 确保开启全局 StableId 时，手动 attach 的 delegate 也配置了 ID
+    override fun <T : Any> registerDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
         checkStableIdRequirement(this, clazz, listOf(delegate), core)
-
-        // 2. 构造 Linker 并注册
-        val linker = TypeRouter<T>()
-        linker.map(Unit, delegate)
-        core.register(clazz, linker)
+        val router = TypeRouter.create(delegate)
+        core.register(clazz, router)
     }
 
     // ------------------------------------------------------

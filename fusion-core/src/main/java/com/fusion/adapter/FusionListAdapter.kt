@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
@@ -17,6 +16,7 @@ import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
 import com.fusion.adapter.internal.mapToRecyclerViewId
+import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -74,23 +74,21 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     // ========================================================================================
 
     /**
-     * [KTX 专用接口] 注册路由连接器
-     * KTX DSL 通过此方法注入配置好的 FusionLinker。
+     * [KTX Interface] 注册路由连接器
      */
-    override fun <T : Any> attachLinker(clazz: Class<T>, linker: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, linker.getAllDelegates(), core)
-        core.register(clazz, linker)
+    override fun <T : Any> registerRouter(clazz: Class<T>, router: TypeRouter<T>) {
+        checkStableIdRequirement(this, clazz, router.getAllDelegates(), core)
+        core.register(clazz, router)
     }
 
     /**
-     * [Java/普通接口] 注册单类型委托 (一对一)
-     * 内部会自动创建一个默认的 Linker，简化非 DSL 场景的使用。
+     * [Java/Common Interface] 注册单类型委托 (一对一)
+     * 自动包装为不可变的 TypeRouter。
      */
-    fun <T : Any> attachDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+    override fun <T : Any> registerDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
         checkStableIdRequirement(this, clazz, listOf(delegate), core)
-        val linker = TypeRouter<T>()
-        linker.map(Unit, delegate) // 默认 Key 为 Unit
-        core.register(clazz, linker)
+        val router = TypeRouter.create(delegate)
+        core.register(clazz, router)
     }
 
     // ========================================================================================
@@ -220,4 +218,5 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) = core.onViewRecycled(holder)
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) = core.onViewAttachedToWindow(holder)
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) = core.onViewDetachedFromWindow(holder)
+
 }

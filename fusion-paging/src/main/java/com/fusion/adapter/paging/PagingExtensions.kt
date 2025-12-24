@@ -1,27 +1,22 @@
 package com.fusion.adapter.paging
 
 import FusionPagingAdapter
-import android.view.LayoutInflater
-import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
 import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.dsl.BindingDsl
-import com.fusion.adapter.dsl.RegistrationBuilder
-import com.fusion.adapter.dsl.RouteScope
 
 // =================================================================
-// 1. 快速启动 (Setup)
+// Paging Extensions (Cleaned)
+//
+// No register() methods here! They are inherited from RegistryOwner.
 // =================================================================
 
 /**
- * [快速启动] 初始化 FusionPagingAdapter 并绑定到 RecyclerView。
+ * [Quick Setup] Initialize FusionPagingAdapter and attach to RecyclerView.
  */
 inline fun <reified T : Any> RecyclerView.setupFusionPaging(
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(context),
-    // Block 的接收者也变成带泛型的 Adapter
     noinline block: (FusionPagingAdapter<T>.() -> Unit)? = null
 ): FusionPagingAdapter<T> {
     this.layoutManager = layoutManager
@@ -31,40 +26,8 @@ inline fun <reified T : Any> RecyclerView.setupFusionPaging(
     return adapter
 }
 
-// ============================================================================================
-// [High-Level API] - 专为 Kotlin 用户设计的 DSL 门面
-// ============================================================================================
-
 /**
- * [DSL] 统一注册入口 - 简单模式 (1对1)
- * 用户感知: adapter.register(ItemBinding::inflate) { ... }
- */
-inline fun <reified T : Any, reified VB : ViewBinding> FusionPagingAdapter<*>.register(
-    noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-    crossinline block: BindingDsl<T, VB>.() -> Unit
-) {
-    val builder = RegistrationBuilder(T::class.java)
-    builder.bind(inflate, block)
-
-    // 👇 调用底层 API
-    this.attachLinker(T::class.java, builder.linker)
-}
-
-/**
- * [DSL] 统一注册入口 - 路由模式 (1对多)
- * 用户感知: adapter.register<Message> { match ... map ... }
- */
-inline fun <reified T : Any> FusionPagingAdapter<*>.register(
-    block: RouteScope<T>.() -> Unit
-) {
-    val scope = RouteScope(T::class.java)
-    scope.block()
-
-    this.attachLinker(T::class.java, scope.builder.linker)
-}
-
-/**
- * 清空 Paging 数据。通常用于退出登录或重置搜索。
+ * Clear Paging Data. Usually used when logging out or resetting search.
  */
 fun FusionPagingAdapter<*>.clear(lifecycle: Lifecycle) {
     this.submitData(lifecycle, PagingData.empty())

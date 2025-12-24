@@ -147,7 +147,7 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     /**
      * [新增] 供 DSL 和子类使用的通用注册方法 (解决 JavaDelegate 报错)
      */
-    protected fun registerWatcher(watcher: Watcher<T>) {
+    open fun registerWatcher(watcher: Watcher<T>) {
         propertyWatchers.add(watcher)
     }
 

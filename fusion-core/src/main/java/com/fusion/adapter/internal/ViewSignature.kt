@@ -16,7 +16,7 @@ interface ViewSignature {
  */
 data class DslSignature(
     val itemClass: Class<*>,
-    val viewBindingClass: Class<*>
+    val identifier: Any
 ) : ViewSignature
 
 /**

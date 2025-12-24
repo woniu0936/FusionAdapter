@@ -3,83 +3,61 @@ package com.fusion.adapter.internal
 import androidx.annotation.RestrictTo
 import com.fusion.adapter.DiffKeyProvider
 import com.fusion.adapter.delegate.FusionDelegate
+import java.util.Collections
 
 /**
  * [TypeRouter]
- * 路由连接器。定义了 "数据 -> Key" 和 "Key -> Delegate" 的双重映射规则。
- *
- * 特性：
- * 1. O(1) 路由查找
- * 2. 支持链式调用 (Fluent API)
- *
- * @param T 数据类型
+ * 运行时路由核心。
+ * 极致重构版：不可变 (Immutable)，必须通过 DSL 或 Config 创建。
  */
-class TypeRouter<T : Any> {
+class TypeRouter<T : Any> internal constructor(
+    config: RouterConfiguration<T> // ✅ 构造函数接收 Config
+) {
+    private val keyMapper: DiffKeyProvider<T> = config.matcher
+    private val delegatesMap: Map<Any?, FusionDelegate<T, *>>
 
-    // Key 生成器：从 Item 中提取特征 Key
-    // 默认实现：返回 Unit (适用于一对一场景)
-    private var keyMapper: DiffKeyProvider<T> = DiffKeyProvider { Unit }
+    init {
+        // 1. 防御性复制 (Defensive Copy)
+        val mapCopy = HashMap(config.mappings)
 
-    // 映射表: Key -> Delegate
-    private val keyToDelegate = HashMap<Any?, FusionDelegate<T, *>>()
-
-    // 保存 Router 级别的 provider
-    private var routerLevelIdProvider: ((T) -> Any?)? = null
-
-    /**
-     * [API] 配置该类型的全局 ID 规则 (支持链式调用)
-     *
-     * @param provider ID 获取函数
-     * @return this (TypeRouter) 以支持链式调用
-     */
-    fun stableId(provider: (T) -> Any?): TypeRouter<T> {
-        this.routerLevelIdProvider = provider
-        // 立即更新已有的 delegates
-        keyToDelegate.values.forEach { it.attachDefaultKeyProvider(provider) }
-        return this
-    }
-
-    /**
-     * 配置 Key 提取规则 (Match)
-     * 支持链式调用。
-     *
-     * @param mapper Key 提取函数，例如 { it.type }
-     * @return this
-     */
-    fun match(mapper: DiffKeyProvider<T>): TypeRouter<T> {
-        this.keyMapper = mapper
-        return this
-    }
-
-    /**
-     * 建立映射关系 (Map)
-     * 支持链式调用。
-     *
-     * @param key 路由 Key，例如 1, "header", Enum.TYPE
-     * @param delegate 对应的委托实例
-     * @return this
-     */
-    fun map(key: Any?, delegate: FusionDelegate<T, *>): TypeRouter<T> {
-        routerLevelIdProvider?.let { provider ->
-            delegate.attachDefaultKeyProvider(provider)
+        // 2. 注入全局 ID Provider
+        val globalProvider = config.defaultIdProvider
+        if (globalProvider != null) {
+            mapCopy.values.forEach { it.attachDefaultKeyProvider(globalProvider) }
         }
-        keyToDelegate[key] = delegate
-        return this
+
+        // 3. 冻结 Map (不可变)
+        this.delegatesMap = Collections.unmodifiableMap(mapCopy)
     }
 
     /**
-     * [Core 内部调用] 解析 Item 对应的 Delegate
+     * [Core 内部调用] 路由解析
      */
     internal fun resolve(item: T): FusionDelegate<T, *>? {
         val key = keyMapper.map(item)
-        return keyToDelegate[key]
+        return delegatesMap[key]
     }
 
     /**
-     * [Core 内部调用] 获取所有持有的 Delegate (用于全局注册)
+     * [Core 内部调用] 获取所有 Delegate 用于注册
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     fun getAllDelegates(): Collection<FusionDelegate<T, *>> {
-        return keyToDelegate.values
+        return delegatesMap.values
     }
+
+    companion object {
+        /**
+         * [Internal Factory]
+         * 允许 fusion-paging 等子模块创建包含单个 Delegate 的默认 Router。
+         * 使用 @RestrictTo 限制外部用户调用。
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        fun <T : Any> create(delegate: FusionDelegate<T, *>): TypeRouter<T> {
+            val config = RouterConfiguration<T>()
+            config.mappings[Unit] = delegate // 默认 Key 为 Unit
+            return TypeRouter(config)
+        }
+    }
+
 }
