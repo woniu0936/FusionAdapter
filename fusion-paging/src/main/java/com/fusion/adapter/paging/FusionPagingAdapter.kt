@@ -217,11 +217,9 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = helperAdapter.getItemInternal(position)
-        // 统一瀑布流支持逻辑
-        // 如果 item 是 null，我们用 FusionPlaceholder 单例代替它去查询 Delegate
-        // 这样骨架屏也能通过重写 isFullSpan() 来控制布局了
-        val layoutItem = item ?: FusionPlaceholder
 
+        // 统一瀑布流支持逻辑
+        val layoutItem = item ?: FusionPlaceholder
         holder.attachFusionStaggeredSupport(layoutItem) { queryItem ->
             if (queryItem === FusionPlaceholder) {
                 core.viewTypeRegistry.getPlaceholderDelegate()
@@ -229,12 +227,24 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
                 core.getDelegate(queryItem)
             }
         }
+
         if (item == null) {
-            // 绑定 Placeholder
+            // 处理占位符逻辑
             val delegate = core.viewTypeRegistry.getPlaceholderDelegate()
-            delegate?.onBindViewHolder(holder, Unit, position, mutableListOf())
+            if (delegate != null) {
+                // A. 正常情况：有 Delegate，确保可见并绑定
+                holder.itemView.visibility = android.view.View.VISIBLE
+                delegate.onBindViewHolder(holder, Unit, position, mutableListOf())
+            } else {
+                // B. 异常情况：Paging 产生了 null 数据，但用户没注册占位符 Delegate
+                // [关键]: 强制隐藏 View，防止复用上一次的脏数据显示出来
+                // 注意：这里用 INVISIBLE 占位，还是 GONE 消失，取决于你的业务定义。
+                // 通常占位符是为了占坑，建议 INVISIBLE；或者直接抛出异常提醒开发者。
+                holder.itemView.visibility = android.view.View.INVISIBLE
+            }
         } else {
-            // 绑定正常数据
+            // 必须强制设置 VISIBLE，因为这个 ViewHolder 之前可能被上面的逻辑设为了 INVISIBLE
+            holder.itemView.visibility = android.view.View.VISIBLE
             core.onBindViewHolder(holder, item, position)
         }
     }
@@ -245,8 +255,13 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         } else {
             val item = helperAdapter.getItemInternal(position)
             if (item != null) {
+                // 正常数据的局部刷新
                 holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
                 core.onBindViewHolder(holder, item, position, payloads)
+            } else {
+                // 如果 item 为 null (占位符) 且收到了 payload（极少见，但理论存在），
+                // 或者是 Paging 内部状态变化，我们应该回退到主 onBind 逻辑去重绘占位符
+                onBindViewHolder(holder, position)
             }
         }
     }
