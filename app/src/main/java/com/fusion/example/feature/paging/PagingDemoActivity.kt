@@ -50,7 +50,7 @@ class PagingDemoActivity : AppCompatActivity() {
                         tvContent.text = item.content
                         ChatStyleHelper.bindTextMsg(this, item.isMe)
                     }
-                    onItemClick(100) { item -> toast("Text: ${item.id}") }
+                    onClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
                 map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
@@ -58,7 +58,7 @@ class PagingDemoActivity : AppCompatActivity() {
                         ivImage.contentDescription = item.content
                         ChatStyleHelper.bindImageMsg(this, item.isMe)
                     }
-                    onItemClick(1000) { item -> toast("Image: ${item.id}") }
+                    onClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
                 map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {

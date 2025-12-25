@@ -1,14 +1,18 @@
 package com.fusion.adapter.extensions
 
+import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.annotation.ColorRes
+import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.internal.click
@@ -151,3 +155,15 @@ fun LayoutHolder.onClick(@IdRes id: Int, debounceMs: Long? = null, action: (View
 fun LayoutHolder.onLongClick(@IdRes id: Int, action: (View) -> Boolean) {
     findView<View>(id).setOnLongClickListener(action)
 }
+
+/**
+ * 为 LayoutHolder 提供直接的 Context 访问入口
+ */
+val LayoutHolder.context: Context
+    get() = this.itemView.context
+
+fun LayoutHolder.string(@StringRes id: Int): String = context.getString(id)
+fun LayoutHolder.string(@StringRes id: Int, vararg args: Any): String = context.getString(id, *args)
+fun LayoutHolder.color(@ColorRes id: Int): Int = ContextCompat.getColor(context, id)
+fun LayoutHolder.drawable(@DrawableRes id: Int): Drawable? = ContextCompat.getDrawable(context, id)
+fun LayoutHolder.dimen(@DimenRes id: Int): Float = context.resources.getDimension(id)

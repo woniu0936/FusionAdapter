@@ -258,7 +258,6 @@ public abstract class com/fusion/adapter/delegate/LayoutDelegate : com/fusion/ad
 public class com/fusion/adapter/delegate/LayoutHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
 	public fun <init> (Landroid/view/View;)V
 	public final fun findView (I)Landroid/view/View;
-	public final fun getContext ()Landroid/content/Context;
 }
 
 public final class com/fusion/adapter/diff/SmartDiffCallback : androidx/recyclerview/widget/DiffUtil$ItemCallback {
@@ -279,12 +278,12 @@ public abstract class com/fusion/adapter/dsl/BaseItemDsl {
 	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
 	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
 	public final fun onBindWithPayloads (Lkotlin/jvm/functions/Function3;)V
+	public final fun onClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun onClick$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun onClickIndexed (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun onClickIndexed$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
 	public final fun onCreate (Lkotlin/jvm/functions/Function1;)V
-	public final fun onItemClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun onItemClick$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public final fun onItemClickIndexed (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun onItemClickIndexed$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
-	public final fun onItemLongClick (Lkotlin/jvm/functions/Function1;)V
+	public final fun onLongClick (Lkotlin/jvm/functions/Function1;)V
 	public final fun spanSize (I)V
 	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
 	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
@@ -366,10 +365,14 @@ public final class com/fusion/adapter/exception/UnregisteredTypeException : java
 }
 
 public final class com/fusion/adapter/extensions/LayoutExtensionsKt {
+	public static final fun color (Lcom/fusion/adapter/delegate/LayoutHolder;I)I
 	public static final fun configImage (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
 	public static final fun configList (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
 	public static final fun configText (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
 	public static final fun configure (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
+	public static final fun dimen (Lcom/fusion/adapter/delegate/LayoutHolder;I)F
+	public static final fun drawable (Lcom/fusion/adapter/delegate/LayoutHolder;I)Landroid/graphics/drawable/Drawable;
+	public static final fun getContext (Lcom/fusion/adapter/delegate/LayoutHolder;)Landroid/content/Context;
 	public static final fun onClick (Lcom/fusion/adapter/delegate/LayoutHolder;ILjava/lang/Long;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun onClick$default (Lcom/fusion/adapter/delegate/LayoutHolder;ILjava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun onLongClick (Lcom/fusion/adapter/delegate/LayoutHolder;ILkotlin/jvm/functions/Function1;)V
@@ -386,11 +389,22 @@ public final class com/fusion/adapter/extensions/LayoutExtensionsKt {
 	public static final fun setTextSize (Lcom/fusion/adapter/delegate/LayoutHolder;IF)V
 	public static final fun setTextStyle (Lcom/fusion/adapter/delegate/LayoutHolder;II)V
 	public static final fun setVisible (Lcom/fusion/adapter/delegate/LayoutHolder;IZ)V
+	public static final fun string (Lcom/fusion/adapter/delegate/LayoutHolder;I)Ljava/lang/String;
+	public static final fun string (Lcom/fusion/adapter/delegate/LayoutHolder;I[Ljava/lang/Object;)Ljava/lang/String;
 }
 
 public final class com/fusion/adapter/extensions/LayoutManagerExtensionsKt {
 	public static final fun attachFusionGridSupport (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$Adapter;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public static final fun attachFusionStaggeredSupport (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/fusion/adapter/extensions/ViewBindingExtensionsKt {
+	public static final fun color (Landroidx/viewbinding/ViewBinding;I)I
+	public static final fun dimen (Landroidx/viewbinding/ViewBinding;I)F
+	public static final fun drawable (Landroidx/viewbinding/ViewBinding;I)Landroid/graphics/drawable/Drawable;
+	public static final fun getContext (Landroidx/viewbinding/ViewBinding;)Landroid/content/Context;
+	public static final fun string (Landroidx/viewbinding/ViewBinding;I)Ljava/lang/String;
+	public static final fun string (Landroidx/viewbinding/ViewBinding;I[Ljava/lang/Object;)Ljava/lang/String;
 }
 
 public final class com/fusion/adapter/internal/AdapterController {

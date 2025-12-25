@@ -31,6 +31,4 @@ open class LayoutHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         return view as V
     }
 
-    // Expose context for convenience usage in DSL
-    val context = itemView.context
 }

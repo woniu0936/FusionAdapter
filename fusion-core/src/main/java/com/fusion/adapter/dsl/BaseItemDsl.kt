@@ -1,6 +1,5 @@
 package com.fusion.adapter.dsl
 
-import android.view.View
 import kotlin.reflect.KProperty1
 import com.fusion.adapter.internal.*
 
@@ -102,12 +101,12 @@ abstract class BaseItemDsl<T : Any, V : Any> {
     // Interactions
     // ============================================================================================
 
-    fun onItemClick(debounceMs: Long? = null, block: (item: T) -> Unit) {
+    fun onClick(debounceMs: Long? = null, block: (item: T) -> Unit) {
         config.clickDebounce = debounceMs
         config.onClick = { _, item, _ -> block(item) }
     }
 
-    fun onItemClickIndexed(
+    fun onClickIndexed(
         debounceMs: Long? = null,
         block: (scope: V, item: T, position: Int) -> Unit
     ) {
@@ -115,7 +114,7 @@ abstract class BaseItemDsl<T : Any, V : Any> {
         config.onClick = block
     }
 
-    fun onItemLongClick(block: (item: T) -> Boolean) {
+    fun onLongClick(block: (item: T) -> Boolean) {
         config.onLongClick = { _, item, _ -> block(item) }
     }
 
