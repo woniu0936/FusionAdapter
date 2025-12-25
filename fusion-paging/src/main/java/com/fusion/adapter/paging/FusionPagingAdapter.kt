@@ -26,6 +26,8 @@ import com.fusion.adapter.internal.ViewTypeRegistry
 import com.fusion.adapter.internal.checkStableIdRequirement
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
+import com.fusion.adapter.placeholder.SkeletonOwner
+import com.fusion.adapter.placeholder.SkeletonDsl
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -36,7 +38,7 @@ import kotlinx.coroutines.flow.Flow
  * 2. [Performance] 支持 StableId 接口，大幅提升 RecyclerView 更新性能。
  * 3. [Architecture] 严格遵循 Paging3 代理模式，补全了 LoadState/ConcatAdapter 支持。
  */
-open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
+open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner, SkeletonOwner {
 
     // 复用已有的核心引擎
     @PublishedApi
@@ -82,53 +84,47 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     // ------------------------------------------------------
 
     /**
-     * 注册占位符 (ViewBinding 模式)
+     * [Java/Kotlin 通用] 底层注册
      */
-    inline fun <reified VB : ViewBinding> registerPlaceholder(
-        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline onBind: (VB) -> Unit = {}
+    override fun registerSkeletonDelegate(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerSkeleton(delegate)
+    }
+
+    /**
+     * [Java 友好] 布局 ID 注册
+     */
+    override fun registerSkeleton(@LayoutRes layoutResId: Int) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
+                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+                return LayoutHolder(view)
+            }
+        }
+        core.registerSkeleton(delegate)
+    }
+
+    /**
+     * [Kotlin 极致] 专用 DSL 注册
+     * 使用 SkeletonDsl 而不是通用的 ViewBindingDsl
+     */
+    override fun <VB : ViewBinding> registerSkeleton(
+        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        block: (SkeletonDsl<VB>.() -> Unit)?
     ) {
+        val dsl = SkeletonDsl<VB>()
+        block?.invoke(dsl)
+
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
             override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
             }
 
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                onBind(holder.binding)
+                // 这里的 item 传 FusionPlaceholder 实例，但 DSL 内部已经屏蔽了
+                dsl.getConfiguration().onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-        core.registerPlaceholder(delegate)
-    }
-
-    /**
-     * 注册占位符 (LayoutRes 模式)
-     * 使用 LayoutHolder，与库中的 LayoutDelegate 保持一致。
-     *
-     * @param layoutResId 布局资源 ID
-     * @param onBind 可选的绑定回调（用于初始化 View，如开始动画）
-     */
-    fun registerPlaceholder(
-        @LayoutRes layoutResId: Int,
-        onBind: (LayoutHolder.() -> Unit)? = null
-    ) {
-        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
-                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
-                return LayoutHolder(view)
-            }
-
-            override fun onBindPlaceholder(holder: LayoutHolder) {
-                onBind?.invoke(holder)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    /**
-     * ✅ Java 兼容
-     */
-    fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerPlaceholder(delegate)
+        core.registerSkeleton(delegate)
     }
 
     suspend fun submitData(pagingData: PagingData<T>) {
@@ -169,6 +165,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     fun retry() = helperAdapter.retry()
+
     fun refresh() = helperAdapter.refresh()
 
     // 获取快照 (List)
@@ -219,32 +216,29 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = helperAdapter.getItemInternal(position)
 
-        // 统一瀑布流支持逻辑
-        val layoutItem = item ?: FusionPlaceholder
-        holder.attachFusionStaggeredSupport(layoutItem) { queryItem ->
-            if (queryItem === FusionPlaceholder) {
-                core.viewTypeRegistry.getPlaceholderDelegate()
+        // [修复] 必须实例化对象，并使用 is 判断类型
+        val bindItem = item ?: FusionPlaceholder()
+
+        holder.attachFusionStaggeredSupport(bindItem) { queryItem ->
+            if (queryItem is FusionPlaceholder) {
+                core.getSkeletonDelegate()
             } else {
                 core.getDelegate(queryItem)
             }
         }
 
         if (item == null) {
-            // 处理占位符逻辑
-            val delegate = core.viewTypeRegistry.getPlaceholderDelegate()
+            val delegate = core.getSkeletonDelegate()
             if (delegate != null) {
-                // A. 正常情况：有 Delegate，确保可见并绑定
                 holder.itemView.visibility = View.VISIBLE
-                delegate.onBindViewHolder(holder, Unit, position, mutableListOf())
+                // [修复] 安全泛型转换
+                @Suppress("UNCHECKED_CAST")
+                (delegate as FusionDelegate<Any, RecyclerView.ViewHolder>)
+                    .onBindViewHolder(holder, bindItem, position, mutableListOf())
             } else {
-                // B. 异常情况：Paging 产生了 null 数据，但用户没注册占位符 Delegate
-                // [关键]: 强制隐藏 View，防止复用上一次的脏数据显示出来
-                // 注意：这里用 INVISIBLE 占位，还是 GONE 消失，取决于你的业务定义。
-                // 通常占位符是为了占坑，建议 INVISIBLE；或者直接抛出异常提醒开发者。
                 holder.itemView.visibility = View.INVISIBLE
             }
         } else {
-            // 必须强制设置 VISIBLE，因为这个 ViewHolder 之前可能被上面的逻辑设为了 INVISIBLE
             holder.itemView.visibility = View.VISIBLE
             core.onBindViewHolder(holder, item, position)
         }
@@ -256,12 +250,9 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         } else {
             val item = helperAdapter.getItemInternal(position)
             if (item != null) {
-                // 正常数据的局部刷新
                 holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
                 core.onBindViewHolder(holder, item, position, payloads)
             } else {
-                // 如果 item 为 null (占位符) 且收到了 payload（极少见，但理论存在），
-                // 或者是 Paging 内部状态变化，我们应该回退到主 onBind 逻辑去重绘占位符
                 onBindViewHolder(holder, position)
             }
         }

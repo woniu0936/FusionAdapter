@@ -18,7 +18,10 @@ import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.FusionExecutors
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
+import com.fusion.adapter.placeholder.SkeletonOwner
+import com.fusion.adapter.placeholder.SkeletonDsl
 
 /**
  * [FusionListAdapter] - 自动挡
@@ -37,7 +40,7 @@ import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
  * adapter.register(UserDelegate())
  * adapter.submitList(users)
  */
-open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
+open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner, SkeletonOwner {
 
     // 核心引擎
     @PublishedApi
@@ -96,59 +99,42 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         core.register(clazz, router)
     }
 
-    // ========================================================================================
-    // 数据操作
-    // ========================================================================================
+    override fun registerSkeletonDelegate(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerSkeleton(delegate)
+    }
 
-    /**
-     * 注册占位符 (ViewBinding 模式)
-     */
-    inline fun <reified VB : ViewBinding> registerPlaceholder(
-        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline onBind: (VB) -> Unit = {}
+    override fun registerSkeleton(@LayoutRes layoutResId: Int) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
+                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+                return LayoutHolder(view)
+            }
+        }
+        core.registerSkeleton(delegate)
+    }
+
+    override fun <VB : ViewBinding> registerSkeleton(
+        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        block: (SkeletonDsl<VB>.() -> Unit)?
     ) {
+        val dsl = SkeletonDsl<VB>()
+        block?.invoke(dsl)
+
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
             override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
             }
 
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                onBind(holder.binding)
+                dsl.config.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-        core.registerPlaceholder(delegate)
+        core.registerSkeleton(delegate)
     }
 
-    /**
-     * 注册占位符 (LayoutRes 模式)
-     * 使用 LayoutHolder，与库中的 LayoutDelegate 保持一致。
-     *
-     * @param layoutResId 布局资源 ID
-     * @param onBind 可选的绑定回调（用于初始化 View，如开始动画）
-     */
-    fun registerPlaceholder(
-        @LayoutRes layoutResId: Int,
-        onBind: (LayoutHolder.() -> Unit)? = null
-    ) {
-        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
-                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
-                return LayoutHolder(view)
-            }
-
-            override fun onBindPlaceholder(holder: LayoutHolder) {
-                onBind?.invoke(holder)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    /**
-     * ✅ Java 兼容
-     */
-    fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerPlaceholder(delegate)
-    }
+    // ========================================================================================
+    // 数据操作
+    // ========================================================================================
 
     /**
      * 提交数据 (Double Async)

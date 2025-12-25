@@ -15,7 +15,10 @@ import com.fusion.adapter.internal.AdapterController
 import com.fusion.adapter.internal.FusionExecutors
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
+import com.fusion.adapter.placeholder.SkeletonOwner
+import com.fusion.adapter.placeholder.SkeletonDsl
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -28,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * 2. 追求极致性能的简单列表
  * 3. 需要精确控制 notifyItemMoved 等动画的场景 (拖拽排序)
  */
-open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner {
+open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner, SkeletonOwner {
 
     // 核心引擎
     @PublishedApi
@@ -78,56 +81,48 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     // ========================================================================================
     // 数据操作 (Manual)
     // ========================================================================================
+    /**
+     * [Java/Kotlin 通用] 底层注册
+     */
+    override fun registerSkeletonDelegate(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerSkeleton(delegate)
+    }
 
     /**
-     * 注册占位符 (ViewBinding 模式)
+     * [Java 友好] 布局 ID 注册
      */
-    inline fun <reified VB : ViewBinding> registerPlaceholder(
-        noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        crossinline onBind: (VB) -> Unit = {}
+    override fun registerSkeleton(@LayoutRes layoutResId: Int) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
+                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+                return LayoutHolder(view)
+            }
+        }
+        core.registerSkeleton(delegate)
+    }
+
+    /**
+     * [Kotlin 极致] 专用 DSL 注册
+     * 使用 SkeletonDsl 而不是通用的 ViewBindingDsl
+     */
+    override fun <VB : ViewBinding> registerSkeleton(
+        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        block: (SkeletonDsl<VB>.() -> Unit)?
     ) {
+        val dsl = SkeletonDsl<VB>()
+        block?.invoke(dsl)
+
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
             override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
             }
 
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                onBind(holder.binding)
+                // 这里的 item 传 FusionPlaceholder 实例，但 DSL 内部已经屏蔽了
+                dsl.config.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-        core.registerPlaceholder(delegate)
-    }
-
-    /**
-     * 注册占位符 (LayoutRes 模式)
-     * 使用 LayoutHolder，与库中的 LayoutDelegate 保持一致。
-     *
-     * @param layoutResId 布局资源 ID
-     * @param onBind 可选的绑定回调（用于初始化 View，如开始动画）
-     */
-    fun registerPlaceholder(
-        @LayoutRes layoutResId: Int,
-        onBind: (LayoutHolder.() -> Unit)? = null
-    ) {
-        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
-                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
-                return LayoutHolder(view)
-            }
-
-            override fun onBindPlaceholder(holder: LayoutHolder) {
-                onBind?.invoke(holder)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    /**
-     * ✅ Java 兼容：注册占位符实例
-     * Java 用户可以通过 new FusionPlaceholderDelegate<Binding>() { ... } 来调用
-     */
-    fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerPlaceholder(delegate)
+        core.registerSkeleton(delegate)
     }
 
     /**

@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.register
+import com.fusion.example.R
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.delegate.ImageMsgDelegate
 import com.fusion.example.delegate.SimpleLayoutDelegate
@@ -74,9 +75,7 @@ class ClassicManualActivity : AppCompatActivity() {
 
         // --- 场景 3: 占位符注册 (Placeholder) ---
         // 使用普通函数注册布局资源作为占位符
-        adapter.registerPlaceholder(com.fusion.example.R.layout.item_simple_layout) {
-            // 可选：在这里通过 findViewById 等方式初始化占位视图
-        }
+        adapter.registerSkeleton(R.layout.item_simple_layout)
     }
 
     private fun setupInteractions() {

@@ -1,5 +1,6 @@
 package com.fusion.adapter.dsl
 
+import androidx.annotation.RestrictTo
 import kotlin.reflect.KProperty1
 import com.fusion.adapter.internal.*
 
@@ -17,6 +18,15 @@ abstract class BaseItemDsl<T : Any, V : Any> {
     // 内部持有配置，外部不可见
     @PublishedApi
     internal val config = ItemConfiguration<T, V>()
+
+    /**
+     * [架构修复] 跨模块访问桥梁
+     * 允许 fusion-paging 等子模块获取配置，但对普通用户隐藏。
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun getConfiguration(): ItemConfiguration<T, V> {
+        return config
+    }
 
     // ============================================================================================
     // Core Identity & Diff

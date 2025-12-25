@@ -9,6 +9,7 @@ import com.fusion.adapter.core.R
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.diff.SmartDiffCallback
 import com.fusion.adapter.exception.UnregisteredTypeException
+import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder
 import java.util.Collections
 
@@ -71,8 +72,18 @@ class AdapterController {
         }
     }
 
-    fun registerPlaceholder(delegate: FusionDelegate<*, *>) {
+    /**
+     *  统一注册入口
+     */
+    fun registerSkeleton(delegate: FusionPlaceholderDelegate<*>) {
         viewTypeRegistry.registerPlaceholder(delegate)
+    }
+
+    /**
+     *  获取骨架屏 Delegate
+     */
+    fun getSkeletonDelegate(): FusionPlaceholderDelegate<*>? {
+        return viewTypeRegistry.getPlaceholderDelegate() as? FusionPlaceholderDelegate<*>
     }
 
     /**
