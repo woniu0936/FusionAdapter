@@ -3,213 +3,77 @@ package com.fusion.adapter.delegate
 import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.internal.PropertyWatcher1
-import com.fusion.adapter.internal.PropertyWatcher2
-import com.fusion.adapter.internal.PropertyWatcher3
-import com.fusion.adapter.internal.PropertyWatcher4
-import com.fusion.adapter.internal.PropertyWatcher5
-import com.fusion.adapter.internal.PropertyWatcher6
-import com.fusion.adapter.internal.ViewSignature
-import com.fusion.adapter.internal.Watcher
+import com.fusion.adapter.internal.PropertyObserver
+import com.fusion.adapter.internal.PropertyObserver1
+import com.fusion.adapter.internal.PropertyObserver2
+import com.fusion.adapter.internal.PropertyObserver3
+import com.fusion.adapter.internal.PropertyObserver4
+import com.fusion.adapter.internal.PropertyObserver5
+import com.fusion.adapter.internal.PropertyObserver6
+import com.fusion.adapter.internal.ViewTypeKey
 
 /**
  * [FusionDelegate]
- * 纯粹的 UI 渲染器。
- *
- * 设计原则 (SOLID):
- * 1. SRP (单一职责): 只负责创建和绑定 View，不持有 Adapter 引用，不处理数据 Diff。
- * 2. OCP (开闭原则): 通过 getUniqueViewType 支持扩展 ID 生成策略。
  */
 abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
+    abstract val viewTypeKey: ViewTypeKey
+    private val propertyObservers = ArrayList<PropertyObserver<T>>()
 
-    abstract val viewTypeKey: Any
+    internal var specificUniqueKeyExtractor: ((T) -> Any?)? = null
+    internal var defaultUniqueKeyExtractor: ((T) -> Any?)? = null
 
-    // 使用通用接口 Watcher 存储
-    private val propertyWatchers = ArrayList<Watcher<T>>()
-
-    // Level 1: Delegate 自身的 (通过 DSL map { stableId } 或重写)
-    internal var specificKeyProvider: ((T) -> Any?)? = null
-
-    // Level 2: 从 Router 继承的
-    internal var defaultKeyProvider: ((T) -> Any?)? = null
-
-    // 内部状态暴露，供 StableIdSafety 检查使用
-    // 这样外部就不需要强转泛型来检查字段是否为 null 了
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal val isStableIdDefined: Boolean
-        get() = specificKeyProvider != null || defaultKeyProvider != null
+    internal val isUniqueKeyDefined: Boolean
+        get() = specificUniqueKeyExtractor != null ||
+                defaultUniqueKeyExtractor != null ||
+                isManualUniqueKeyDefined
 
-    /**
-     * [核心逻辑] 获取 Unique Key
-     * 优先级：
-     * 1. Delegate 自身配置 (_keyProvider / getUniqueKey重写)
-     * 2. Linker 级别配置 (defaultKeyProvider)
-     * 3. null
-     */
-    open fun getStableId(item: T): Any? {
-        // 1. 优先使用 Delegate 特有的
-        val specificKey = specificKeyProvider?.invoke(item)
-        if (specificKey != null) return specificKey
+    protected open val isManualUniqueKeyDefined: Boolean = false
 
-        // 2. 其次使用 Router 共享的
-        return defaultKeyProvider?.invoke(item)
+    open fun getUniqueKey(item: T): Any? {
+        return specificUniqueKeyExtractor?.invoke(item) ?: defaultUniqueKeyExtractor?.invoke(item)
     }
 
-    /**
-     * [API] 手动设置 ID 规则 (用于 Java 或非 DSL 场景)
-     */
-    fun setStableId(provider: (T) -> Any?) {
-        this.specificKeyProvider = provider
+    fun setUniqueKey(extractor: (T) -> Any?) {
+        this.specificUniqueKeyExtractor = extractor
     }
 
-    /**
-     * [内部 API] 供 TypeRouter 注入 Linker 级别的 ID 策略
-     */
-    internal fun attachDefaultKeyProvider(provider: (T) -> Any?) {
-        this.defaultKeyProvider = provider
+    internal fun attachDefaultUniqueKeyProvider(provider: (T) -> Any?) {
+        this.defaultUniqueKeyExtractor = provider
     }
 
-    // ============================================================================================
-    // Layout Strategy (核心布局策略)
-    // ============================================================================================
-
-    /**
-     * [Java/Kotlin Override]
-     * 子类重写此方法以定义 Grid 布局中占用的列数。
-     * 默认返回 1。
-     */
-    open fun onSpanSize(item: T, position: Int, totalSpans: Int): Int {
-        return 1
-    }
-
-    /**
-     * [Java/Kotlin Override]
-     * 子类重写此方法以定义是否在 Staggered 布局中强制占满全屏。
-     * 默认返回 false。
-     */
-    open fun isFullSpan(item: T): Boolean {
-        return false
-    }
-
-    // ============================================================================================
-    // Internal Configuration (DSL 注入点)
-    // ============================================================================================
-
-    // 内部持有的 DSL 配置策略 (优先级高于 Override)
+    // --- Layout Strategy ---
+    open fun onSpanSize(item: T, position: Int, totalSpans: Int): Int = 1
+    open fun isFullSpan(item: T): Boolean = false
     internal var configSpanSize: ((item: T, position: Int, totalSpans: Int) -> Int)? = null
     internal var configFullSpan: ((item: T) -> Boolean)? = null
 
-    /**
-     * [Internal Dispatch]
-     * 核心调度逻辑：DSL 配置 > 子类重写 > 默认值
-     */
-    internal fun resolveSpanSize(item: T, position: Int, totalSpans: Int): Int {
-        return configSpanSize?.invoke(item, position, totalSpans)
-            ?: onSpanSize(item, position, totalSpans)
-    }
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun resolveSpanSize(item: T, position: Int, totalSpans: Int): Int =
+        configSpanSize?.invoke(item, position, totalSpans) ?: onSpanSize(item, position, totalSpans)
 
-    /**
-     * [Internal Dispatch]
-     */
-    @PublishedApi
-    internal fun resolveFullSpan(item: T): Boolean {
-        return configFullSpan?.invoke(item)
-            ?: isFullSpan(item)
-    }
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun resolveFullSpan(item: T): Boolean = configFullSpan?.invoke(item) ?: isFullSpan(item)
 
-    /**
-     * [修复报错] 这里的 override 去掉，或者确认父类有定义。
-     * 通常 FusionDelegate 是顶层类，所以应该是 open fun，而不是 override。
-     * 如果你之前定义了父接口，请确保签名一致。这里假设它是基类。
-     */
+    // --- LifeCycle ---
+    abstract fun onCreateViewHolder(parent: ViewGroup): VH
+    abstract fun onBindViewHolder(holder: VH, item: T, position: Int, payloads: MutableList<Any>)
+
+    open fun areContentsTheSame(oldItem: T, newItem: T): Boolean = oldItem == newItem
     open fun getChangePayload(oldItem: T, newItem: T): Any? {
-        // 1. 如果没有注册观察者，直接返回 null (触发全量刷新)
-        // [修复报错] 不要调用 super.getChangePayload，因为 Any 没有这个方法
-        if (propertyWatchers.isEmpty()) {
-            return null
-        }
-
-        // 2. 遍历检测属性变化
-        val payloads = ArrayList<Any>()
-        // 使用 indices 避免 iterator 创建，极致性能
-        for (i in propertyWatchers.indices) {
-            val watcher = propertyWatchers[i]
-            val result = watcher.checkChange(oldItem, newItem)
-            if (result != null) {
-                payloads.add(result)
-            }
-        }
-
-        // 3. 如果有属性变化，返回 List<Watcher>；否则返回 null
+        if (propertyObservers.isEmpty()) return null
+        val payloads = propertyObservers.mapNotNull { it.checkChange(oldItem, newItem) }
         return if (payloads.isNotEmpty()) payloads else null
     }
 
-    /**
-     * [新增] 供 DSL 和子类使用的通用注册方法 (解决 JavaDelegate 报错)
-     */
-    open fun registerWatcher(watcher: Watcher<T>) {
-        propertyWatchers.add(watcher)
-    }
-
-    /** 1 参数 */
-    protected fun <P> registerDataWatcher(getter: (T) -> P, action: VH.(P) -> Unit) {
-        registerWatcher(PropertyWatcher1(getter, action))
-    }
-
-    /** 2 参数 */
-    protected fun <P1, P2> registerDataWatcher(
-        g1: (T) -> P1, g2: (T) -> P2,
-        action: VH.(P1, P2) -> Unit
-    ) {
-        registerWatcher(PropertyWatcher2(g1, g2, action))
-    }
-
-    /** 3 参数 */
-    protected fun <P1, P2, P3> registerDataWatcher(
-        g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3,
-        action: VH.(P1, P2, P3) -> Unit
-    ) {
-        registerWatcher(PropertyWatcher3(g1, g2, g3, action))
-    }
-
-    /** 4 参数 */
-    protected fun <P1, P2, P3, P4> registerDataWatcher(
-        g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, g4: (T) -> P4,
-        action: VH.(P1, P2, P3, P4) -> Unit
-    ) {
-        registerWatcher(PropertyWatcher4(g1, g2, g3, g4, action))
-    }
-
-    /** 5 参数 */
-    protected fun <P1, P2, P3, P4, P5> registerDataWatcher(
-        g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, g4: (T) -> P4, g5: (T) -> P5,
-        action: VH.(P1, P2, P3, P4, P5) -> Unit
-    ) {
-        registerWatcher(PropertyWatcher5(g1, g2, g3, g4, g5, action))
-    }
-
-    /** 6 参数 */
-    protected fun <P1, P2, P3, P4, P5, P6> registerDataWatcher(
-        g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, g4: (T) -> P4, g5: (T) -> P5, g6: (T) -> P6,
-        action: VH.(P1, P2, P3, P4, P5, P6) -> Unit
-    ) {
-        registerWatcher(PropertyWatcher6(g1, g2, g3, g4, g5, g6, action))
-    }
-
-    /**
-     * [修复报错] 统一分发逻辑
-     */
-    protected fun dispatchHandledPayloads(holder: VH, item: T, payloads: List<Any>): Boolean {
-        if (propertyWatchers.isEmpty()) return false
-
+    protected fun dispatchHandledPayloads(receiver: Any, item: T, payloads: List<Any>): Boolean {
         var handled = false
         for (rawPayload in payloads) {
             val items = if (rawPayload is List<*>) rawPayload else listOf(rawPayload)
             for (p in items) {
-                // 判断是否是我们的 Watcher
-                if (p is Watcher<*>) {
+                if (p is PropertyObserver<*>) {
                     @Suppress("UNCHECKED_CAST")
-                    (p as Watcher<T>).execute(holder, item)
+                    (p as PropertyObserver<T>).execute(receiver, item)
                     handled = true
                 }
             }
@@ -217,14 +81,55 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
         return handled
     }
 
-    // Diff 相关 (默认实现)
-    open fun areContentsTheSame(oldItem: T, newItem: T): Boolean = oldItem == newItem
+    open fun addObserver(observer: PropertyObserver<T>) {
+        propertyObservers.add(observer)
+    }
 
-    // UI 相关 (必须实现)
-    abstract fun onCreateViewHolder(parent: ViewGroup): VH
-    abstract fun onBindViewHolder(holder: VH, item: T, position: Int, payloads: MutableList<Any>)
+    @Suppress("UNCHECKED_CAST")
+    open fun <P> registerPropertyObserver(g1: (T) -> P, action: VH.(P) -> Unit) {
+        addObserver(PropertyObserver1(g1) { value -> (this as VH).action(value) })
+    }
 
-    // 生命周期 (可选)
+    @Suppress("UNCHECKED_CAST")
+    open fun <P1, P2> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, action: VH.(P1, P2) -> Unit) {
+        addObserver(PropertyObserver2(g1, g2) { v1, v2 -> (this as VH).action(v1, v2) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun <P1, P2, P3> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, action: VH.(P1, P2, P3) -> Unit) {
+        addObserver(PropertyObserver3(g1, g2, g3) { v1, v2, v3 -> (this as VH).action(v1, v2, v3) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun <P1, P2, P3, P4> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, g4: (T) -> P4, action: VH.(P1, P2, P3, P4) -> Unit) {
+        addObserver(PropertyObserver4(g1, g2, g3, g4) { v1, v2, v3, v4 -> (this as VH).action(v1, v2, v3, v4) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun <P1, P2, P3, P4, P5> registerPropertyObserver(
+        g1: (T) -> P1,
+        g2: (T) -> P2,
+        g3: (T) -> P3,
+        g4: (T) -> P4,
+        g5: (T) -> P5,
+        action: VH.(P1, P2, P3, P4, P5) -> Unit
+    ) {
+        addObserver(PropertyObserver5(g1, g2, g3, g4, g5) { v1, v2, v3, v4, v5 -> (this as VH).action(v1, v2, v3, v4, v5) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun <P1, P2, P3, P4, P5, P6> registerPropertyObserver(
+        g1: (T) -> P1,
+        g2: (T) -> P2,
+        g3: (T) -> P3,
+        g4: (T) -> P4,
+        g5: (T) -> P5,
+        g6: (T) -> P6,
+        action: VH.(P1, P2, P3, P4, P5, P6) -> Unit
+    ) {
+        addObserver(PropertyObserver6(g1, g2, g3, g4, g5, g6) { v1, v2, v3, v4, v5, v6 -> (this as VH).action(v1, v2, v3, v4, v5, v6) })
+    }
+
     open fun onViewRecycled(holder: VH) {}
     open fun onViewAttachedToWindow(holder: VH) {}
     open fun onViewDetachedFromWindow(holder: VH) {}

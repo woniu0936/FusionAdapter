@@ -7,12 +7,12 @@ import com.fusion.example.utils.ChatStyleHelper
 
 class ImageMsgDelegate : BindingDelegate<FusionMessage, ItemMsgImageBinding>(ItemMsgImageBinding::inflate) {
 
-    override fun getStableId(item: FusionMessage): Any? {
-        return item.id
+    init {
+        setUniqueKey { it.id }
     }
 
     override fun onBind(binding: ItemMsgImageBinding, item: FusionMessage, position: Int) {
+        binding.ivImage.contentDescription = item.content
         ChatStyleHelper.bindImageMsg(binding, item.isMe)
     }
-
 }

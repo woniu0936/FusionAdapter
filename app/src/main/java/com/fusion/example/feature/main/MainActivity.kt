@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         fullStatusBar(binding.root)
 
-        // 1. [经典模式] FusionAdapter + attachLinker + 手动数据管理
+        // 1. [经典模式] FusionAdapter + registerDispatcher + 手动数据管理
         binding.btnClassic.setOnClickListener {
             startActivity(Intent(this, ClassicManualActivity::class.java))
         }
@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, StaggeredFullSpanActivity::class.java))
         }
 
-        // 4. [性能更新] bindPayload 局部刷新
+        // 4. [性能更新] onPayload 局部刷新
         binding.btnPayload.setOnClickListener {
             startActivity(Intent(this, PayloadPerformanceActivity::class.java))
         }

@@ -3,7 +3,7 @@ package com.fusion.example.feature.dsl
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.fusion.adapter.register
+import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
@@ -18,12 +18,6 @@ import com.fusion.example.utils.ChatStyleHelper
 import com.fusion.example.utils.MockDataGenerator
 import com.fusion.example.utils.fullStatusBar
 
-/**
- * 现代 DSL 模式
- * 1. 自动 Diff (FusionListAdapter)
- * 2. 声明式注册 (register)
- * 3. 混合 1对1 和 1对多
- */
 class DslComplexActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRecyclerBinding
 
@@ -34,13 +28,12 @@ class DslComplexActivity : AppCompatActivity() {
         fullStatusBar(binding.root)
 
         val adapter = binding.recyclerView.setupFusion {
-            // [1对多] 路由
-            register<FusionMessage> {
-                stableId { it.id }
-                match { it.msgType }
-                
-                // ✅ 现在库支持直接在 map 中书写逻辑了
-                map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+            // 1. 注册 FusionMessage (1对多路由)
+            setup<FusionMessage> {
+                uniqueKey { it.id }
+                viewTypeKey { it.msgType }
+
+                dispatch(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content
                         ChatStyleHelper.bindTextMsg(this, item.isMe)
@@ -48,7 +41,7 @@ class DslComplexActivity : AppCompatActivity() {
                     onClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
-                map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                dispatch(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         ivImage.contentDescription = item.content
                         ChatStyleHelper.bindImageMsg(this, item.isMe)
@@ -56,31 +49,30 @@ class DslComplexActivity : AppCompatActivity() {
                     onClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
-                map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                dispatch(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
             }
 
-            // [1对1] 直接绑定
-            register<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
-                stableId { it.id }
+            // 2. 注册 TextItem (1对1)
+            setup<TextItem, ItemTextBinding>(ItemTextBinding::inflate) {
+                uniqueKey { it.id }
                 onBind { item ->
                     tvContent.text = item.content
-                    cardRoot.setCardBackgroundColor(0xFFF0F0F0.toInt())
                 }
             }
 
-            register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
-                stableId { it.id }
+            setup<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                uniqueKey { it.id }
                 onBind { item ->
                     ChatStyleHelper.bindStandaloneImage(this)
                     tvDesc.text = "Image ID: ${item.id}"
+                    // 演示修改高度
                     ivImage.layoutParams.height = 400
                 }
             }
         }
 
-        // 提交异构数据
         adapter.submitList(MockDataGenerator.createComplexStream(60))
     }
 

@@ -15,7 +15,6 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.LayoutHolder
-import com.fusion.adapter.internal.click
 
 // =================================================================
 // 1. 批量配置 (Batch Configuration) - 解决重复 ID 的终极方案

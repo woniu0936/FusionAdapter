@@ -1,92 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Fusion Crash Demo"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#1D1B20"
-        android:layout_marginBottom="16dp"/>
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <!-- 使用 Pink Container 对应的深色系文字来显示警告 -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Current Mode: DEBUG (Fail-Fast)"
-        android:textStyle="bold"
-        android:textColor="#8C1D18"
-        android:layout_marginBottom="8dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Fusion Crash Demo"
+            android:textColor="#1D1B20"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Description: Adding an unregistered 'UnknownItem' will trigger sanitization logic."
-        android:textColor="#49454F"
-        android:layout_marginBottom="24dp"/>
+        <!-- 使用 Pink Container 对应的深色系文字来显示警告 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Current Mode: DEBUG (Fail-Fast)"
+            android:textColor="#8C1D18"
+            android:textStyle="bold" />
 
-    <!--
-        Button 1: Crash (Danger)
-        Background: #FFD8E4 (Pink Container)
-        Text Color: #3E001D (深红/深褐，保证浅色背景上的可读性)
-    -->
-    <Button
-        android:id="@+id/btn_crash"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="💣  Trigger Crash (Unsafe)"
-        android:backgroundTint="#FFD8E4"
-        android:textColor="#3E001D"
-        android:textStyle="bold"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Description: Adding an unregistered 'UnknownItem' will trigger sanitization logic."
+            android:textColor="#49454F" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Click above to crash the app immediately."
-        android:textSize="12sp"
-        android:textColor="#49454F"
-        android:gravity="center"
-        android:layout_marginBottom="24dp"/>
+        <!--
+            Button 1: Crash (Danger)
+            Background: #FFD8E4 (Pink Container)
+            Text Color: #3E001D (深红/深褐，保证浅色背景上的可读性)
+        -->
+        <Button
+            android:id="@+id/btn_crash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#FFD8E4"
+            android:text="💣  Trigger Crash (Unsafe)"
+            android:textColor="#3E001D"
+            android:textStyle="bold" />
 
-    <!--
-        Button 2: Safe Catch
-        Background: #C3EFD0 (Green Container)
-        Text Color: #00210E (深绿，保证浅色背景上的可读性)
-        ⚠️ 修复了 '&' 为 '&amp;'
-    -->
-    <Button
-        android:id="@+id/btn_catch_crash"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🛡️  Trigger &amp; Catch (Safe)"
-        android:backgroundTint="#C3EFD0"
-        android:textColor="#00210E"
-        android:textStyle="bold"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:text="Click above to crash the app immediately."
+            android:textColor="#49454F"
+            android:textSize="12sp" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Verifies that UnregisteredTypeException is thrown."
-        android:textSize="12sp"
-        android:textColor="#49454F"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        <!--
+            Button 2: Safe Catch
+            Background: #C3EFD0 (Green Container)
+            Text Color: #00210E (深绿，保证浅色背景上的可读性)
+            ⚠️ 修复了 '&' 为 '&amp;'
+        -->
+        <Button
+            android:id="@+id/btn_catch_crash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#C3EFD0"
+            android:text="🛡️  Trigger &amp; Catch (Safe)"
+            android:textColor="#00210E"
+            android:textStyle="bold" />
 
-    <!--
-        RecyclerView Background
-        Color: #E6E0E9 (Surface Variant - 和你给的色系一致)
-    -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#E6E0E9"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="Verifies that UnregisteredTypeException is thrown."
+            android:textColor="#49454F"
+            android:textSize="12sp" />
 
-</LinearLayout>
+        <!--
+            RecyclerView Background
+            Color: #E6E0E9 (Surface Variant - 和你给的色系一致)
+        -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#E6E0E9" />
+
+    </LinearLayout>
+</FrameLayout>

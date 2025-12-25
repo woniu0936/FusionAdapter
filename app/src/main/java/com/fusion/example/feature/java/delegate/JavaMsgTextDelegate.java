@@ -1,25 +1,19 @@
 package com.fusion.example.feature.java.delegate;
 
-
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.fusion.adapter.delegate.JavaDelegate;
-import com.fusion.adapter.internal.ViewSignature;
 import com.fusion.example.databinding.ItemMsgTextBinding;
 import com.fusion.example.model.FusionMessage;
 import com.fusion.example.utils.ChatStyleHelper;
-
-import org.jetbrains.annotations.NotNull;
 
 public class JavaMsgTextDelegate extends JavaDelegate<FusionMessage, ItemMsgTextBinding> {
 
     @Override
     @Nullable
-    public Object getStableId(@NonNull FusionMessage item) {
+    public Object getUniqueKey(@NonNull FusionMessage item) {
         return item.getId();
     }
 
@@ -30,9 +24,8 @@ public class JavaMsgTextDelegate extends JavaDelegate<FusionMessage, ItemMsgText
     }
 
     @Override
-    protected void onBind(@NonNull ItemMsgTextBinding binding, @NonNull FusionMessage item, int position) {
+    protected void onBind(@NonNull ItemMsgTextBinding binding, @NonNull FusionMessage item) {
         binding.tvContent.setText(item.getContent());
         ChatStyleHelper.INSTANCE.bindTextMsg(binding, item.isMe());
     }
-
 }

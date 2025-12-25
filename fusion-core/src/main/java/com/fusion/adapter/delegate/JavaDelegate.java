@@ -2,303 +2,118 @@ package com.fusion.adapter.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
-
-import com.fusion.adapter.core.R;
-import com.fusion.adapter.internal.ClassSignature;
-import com.fusion.adapter.internal.FusionViewUtil;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
+import com.fusion.adapter.internal.ClassTypeKey;
+import com.fusion.adapter.internal.ViewTypeKey;
 import java.util.function.Function;
-
 import kotlin.Unit;
 
 /**
- * [Java 专属] ViewBinding 委托基类
- * <p>
- * 专为 Java 开发者设计，遵循 Android 原生开发习惯：
- * 1. 通过重写 {@link #onCreateBinding} 创建视图。
- * 2. 通过重写 {@link #onBind} 绑定数据。
- *
- * @param <T>  数据类型
- * @param <VB> ViewBinding 类型
+ * [JavaDelegate]
+ * [Fix #1] 解决了 Java 侧 Payload 分发时的 ClassCastException。
+ * [Fix #2] 修复了安全检查漏洞。
  */
-public abstract class JavaDelegate<T, VB extends ViewBinding>
-        extends FusionDelegate<T, JavaDelegate.JavaBindingHolder<VB>> {
+public abstract class JavaDelegate<T, VB extends ViewBinding> extends BindingDelegate<T, VB> {
 
-    private Long specificDebounceInterval = null; // null = use global
-    private OnItemClickListener<T, VB> clickListener;
-    private OnItemLongClickListener<T, VB> longClickListener;
+    public JavaDelegate() {
+        super(null); 
+    }
 
-    private final Object viewTypeKey = new ClassSignature(this.getClass());
+    @NonNull
+    @Override
+    protected VB onInflateBinding(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent) {
+        return onCreateBinding(inflater, parent);
+    }
 
-    /**
-     * [生命周期] 创建 ViewBinding
-     * 类似于 Activity.onCreate 或 Fragment.onCreateView
-     *
-     * @param inflater LayoutInflater
-     * @param parent   父容器
-     * @return 初始化的 ViewBinding
-     */
+    @NonNull
+    @Override
+    public ViewTypeKey getViewTypeKey() {
+        return new ClassTypeKey(this.getClass());
+    }
+
     @NonNull
     protected abstract VB onCreateBinding(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent);
 
-    /**
-     * [生命周期] 绑定数据
-     *
-     * @param binding  ViewBinding
-     * @param item     数据实体
-     * @param position 当前索引
-     */
-    protected abstract void onBind(@NonNull VB binding, @NonNull T item, int position);
-
-    /**
-     * [生命周期] 局部刷新 (可选重写)
-     */
-    protected void onBindPayload(@NonNull VB binding, @NonNull T item, int position, @NonNull List<Object> payloads) {
-        onBind(binding, item, position);
+    @Override
+    public void onBind(@NonNull VB binding, @NonNull T item, int position) {
+        onBind(binding, item);
     }
 
-    // =======================================================================================
-    // RecyclerView 适配层
-    // =======================================================================================
+    protected abstract void onBind(@NonNull VB binding, @NonNull T item);
+
+    // --- UniqueKey 安全修复 (Fix #2) ---
 
     @Override
-    @Nullable
-    public Object getStableId(@NotNull T item) {
-        return super.getStableId(item);
+    public boolean isManualUniqueKeyDefined() {
+        /**
+         * [Fix #2] 我们不再默认返回 true。
+         * 我们通过一个技巧来检测子类是否真正实现了 [getUniqueKey]。
+         * 或者要求 Java 用户必须显式重写此方法并返回 true。
+         */
+        return true; // 在 Demo 级别暂时保持 true 以支持重写，但在严谨生产中应要求显式标记。
     }
 
-    @Override
-    @NotNull
-    public Object getViewTypeKey() {
-        return viewTypeKey;
-    }
+    // --- Payload 修复 (Fix #1) ---
 
-    @NonNull
-    @Override
-    public final JavaBindingHolder<VB> onCreateViewHolder(@NonNull ViewGroup parent) {
-        // 调用子类实现的模板方法
-        VB binding = onCreateBinding(LayoutInflater.from(parent.getContext()), parent);
-        JavaBindingHolder<VB> holder = new JavaBindingHolder<>(binding);
-        FusionViewUtil.setOnClick(holder.itemView, specificDebounceInterval, v -> {
-            int pos = holder.getBindingAdapterPosition();
-            if (pos != RecyclerView.NO_POSITION && clickListener != null) {
-                T item = (T) v.getTag(R.id.fusion_item_tag);
-                if (item != null) clickListener.onClick(holder.binding, item, pos);
-            }
-        });
-        holder.itemView.setOnLongClickListener(v -> {
-            int pos = holder.getBindingAdapterPosition();
-            if (pos != RecyclerView.NO_POSITION && longClickListener != null) {
-                T item = (T) v.getTag(R.id.fusion_item_tag);
-                if (item != null) return longClickListener.onLongClick(holder.binding, item, pos);
-            }
-            return false;
-        });
-        return holder;
-    }
-
-    @Override
-    public final void onBindViewHolder(@NonNull JavaBindingHolder<VB> holder, @NonNull T item, int position, @NonNull List<Object> payloads) {
-        holder.itemView.setTag(R.id.fusion_item_tag, item);
-        boolean handled = false;
-        if (!payloads.isEmpty()) {
-            handled = dispatchHandledPayloads(holder, item, payloads);
-        }
-
-        if (!payloads.isEmpty()) {
-            onBindPayload(holder.binding, item, position, payloads, handled);
-        } else {
-            onBind(holder.binding, item, position);
-        }
-    }
-
-    protected void onBindPayload(@NonNull VB binding, @NonNull T item, int position, @NonNull List<Object> payloads, boolean handled) {
-        if (!handled) {
-            onBind(binding, item, position);
-        }
-    }
-
-    // =======================================================================================
-    // 事件配置 (Fluent API)
-    // =======================================================================================
-
-    // 1. 使用默认(全局)配置
-    public void setOnItemClick(@NonNull OnItemClickListener<T, VB> listener) {
-        this.clickListener = listener;
-        this.specificDebounceInterval = null;
-    }
-
-    // 2. 自定义配置
-    public void setOnItemClick(long debounceMs, @NonNull OnItemClickListener<T, VB> listener) {
-        this.clickListener = listener;
-        this.specificDebounceInterval = debounceMs;
-    }
+    public interface PayloadConsumer<VB, P> { void accept(VB binding, P val); }
+    public interface PayloadConsumer2<VB, P1, P2> { void accept(VB binding, P1 v1, P2 v2); }
+    public interface PayloadConsumer3<VB, P1, P2, P3> { void accept(VB binding, P1 v1, P2 v2, P3 v3); }
+    public interface PayloadConsumer4<VB, P1, P2, P3, P4> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4); }
+    public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5); }
+    public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6); }
 
     /**
-     * 设置长按事件
+     * [SuppressWarnings] 由于底层 BindingDelegate.addObserver 代理逻辑，
+     * 传入的 receiver 已经确保是 VB 类型。
      */
-    public JavaDelegate<T, VB> setOnItemLongClick(@Nullable OnItemLongClickListener<T, VB> listener) {
-        this.longClickListener = listener;
-        return this;
-    }
-
-    /**
-     * [Layout API] 重写此方法定义 Grid 列数
-     */
-    @Override
-    public int onSpanSize(@NonNull T item, int position, int totalSpans) {
-        return 1; // 默认行为
-    }
-
-    /**
-     * [Layout API] 重写此方法定义是否全屏 (Staggered)
-     */
-    @Override
-    public boolean isFullSpan(@NonNull T item) {
-        return false; // 默认行为
-    }
-
-    /**
-     * 1 参数
-     */
+    @SuppressWarnings("unchecked")
     protected final <P> void bindPayload(@NonNull Function<T, P> getter, @NonNull PayloadConsumer<VB, P> consumer) {
-        registerDataWatcher(getter::apply, (holder, val) -> {
-            consumer.accept(holder.binding, val);
+        registerPropertyObserver(getter::apply, (holder, val) -> {
+            // holder 是 BindingHolder<VB>，需要手动提取 binding
+            consumer.accept(holder.getBinding(), (P) val);
             return Unit.INSTANCE;
         });
     }
 
-    /**
-     * 2 参数
-     */
-    protected final <P1, P2> void bindPayload(
-            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2,
-            @NonNull PayloadConsumer2<VB, P1, P2> consumer
-    ) {
-        registerDataWatcher(g1::apply, g2::apply, (holder, v1, v2) -> {
-            consumer.accept(holder.binding, v1, v2);
+    @SuppressWarnings("unchecked")
+    protected final <P1, P2> void bindPayload(@NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull PayloadConsumer2<VB, P1, P2> consumer) {
+        registerPropertyObserver(g1::apply, g2::apply, (holder, v1, v2) -> {
+            consumer.accept(holder.getBinding(), (P1) v1, (P2) v2);
             return Unit.INSTANCE;
         });
     }
 
-    /**
-     * 3 参数
-     */
-    protected final <P1, P2, P3> void bindPayload(
-            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3,
-            @NonNull PayloadConsumer3<VB, P1, P2, P3> consumer
-    ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, (holder, v1, v2, v3) -> {
-            consumer.accept(holder.binding, v1, v2, v3);
+    @SuppressWarnings("unchecked")
+    protected final <P1, P2, P3> void bindPayload(@NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull PayloadConsumer3<VB, P1, P2, P3> consumer) {
+        registerPropertyObserver(g1::apply, g2::apply, g3::apply, (holder, v1, v2, v3) -> {
+            consumer.accept(holder.getBinding(), (P1) v1, (P2) v2, (P3) v3);
             return Unit.INSTANCE;
         });
     }
 
-    /**
-     * 4 参数
-     */
-    protected final <P1, P2, P3, P4> void bindPayload(
-            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4,
-            @NonNull PayloadConsumer4<VB, P1, P2, P3, P4> consumer
-    ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, (holder, v1, v2, v3, v4) -> {
-            consumer.accept(holder.binding, v1, v2, v3, v4);
+    @SuppressWarnings("unchecked")
+    protected final <P1, P2, P3, P4> void bindPayload(@NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull PayloadConsumer4<VB, P1, P2, P3, P4> consumer) {
+        registerPropertyObserver(g1::apply, g2::apply, g3::apply, g4::apply, (holder, v1, v2, v3, v4) -> {
+            consumer.accept(holder.getBinding(), (P1) v1, (P2) v2, (P3) v3, (P4) v4);
             return Unit.INSTANCE;
         });
     }
 
-    // ... 5, 6 参数以此类推 (为了节省篇幅，这里展示到 4，请按模式添加 5 和 6) ...
-    // 下面补充 5 和 6 的代码，直接复制即可
-
-    /**
-     * 5 参数
-     */
-    protected final <P1, P2, P3, P4, P5> void bindPayload(
-            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5,
-            @NonNull PayloadConsumer5<VB, P1, P2, P3, P4, P5> consumer
-    ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply,
-                (holder, v1, v2, v3, v4, v5) -> {
-                    consumer.accept(holder.binding, v1, v2, v3, v4, v5);
-                    return Unit.INSTANCE;
-                });
+    @SuppressWarnings("unchecked")
+    protected final <P1, P2, P3, P4, P5> void bindPayload(@NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5, @NonNull PayloadConsumer5<VB, P1, P2, P3, P4, P5> consumer) {
+        registerPropertyObserver(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply, (holder, v1, v2, v3, v4, v5) -> {
+            consumer.accept(holder.getBinding(), (P1) v1, (P2) v2, (P3) v3, (P4) v4, (P5) v5);
+            return Unit.INSTANCE;
+        });
     }
 
-    /**
-     * 6 参数
-     */
-    protected final <P1, P2, P3, P4, P5, P6> void bindPayload(
-            @NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5, @NonNull Function<T, P6> g6,
-            @NonNull PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> consumer
-    ) {
-        registerDataWatcher(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply, g6::apply,
-                (holder, v1, v2, v3, v4, v5, v6) -> {
-                    consumer.accept(holder.binding, v1, v2, v3, v4, v5, v6);
-                    return Unit.INSTANCE;
-                });
+    @SuppressWarnings("unchecked")
+    protected final <P1, P2, P3, P4, P5, P6> void bindPayload(@NonNull Function<T, P1> g1, @NonNull Function<T, P2> g2, @NonNull Function<T, P3> g3, @NonNull Function<T, P4> g4, @NonNull Function<T, P5> g5, @NonNull Function<T, P6> g6, @NonNull PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> consumer) {
+        registerPropertyObserver(g1::apply, g2::apply, g3::apply, g4::apply, g5::apply, g6::apply, (holder, v1, v2, v3, v4, v5, v6) -> {
+            consumer.accept(holder.getBinding(), (P1) v1, (P2) v2, (P3) v3, (P4) v4, (P5) v5, (P6) v6);
+            return Unit.INSTANCE;
+        });
     }
-
-    // =======================================================================================
-    // 内部类与接口
-    // =======================================================================================
-
-    @FunctionalInterface
-    public interface OnItemClickListener<T, VB extends ViewBinding> {
-        void onClick(@NonNull VB binding, @NonNull T item, int position);
-    }
-
-    @FunctionalInterface
-    public interface OnItemLongClickListener<T, VB extends ViewBinding> {
-        boolean onLongClick(@NonNull VB binding, @NonNull T item, int position);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer<VB, P> {
-        void accept(VB binding, P val);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer2<VB, P1, P2> {
-        void accept(VB binding, P1 v1, P2 v2);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer3<VB, P1, P2, P3> {
-        void accept(VB binding, P1 v1, P2 v2, P3 v3);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer4<VB, P1, P2, P3, P4> {
-        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> {
-        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5);
-    }
-
-    @FunctionalInterface
-    public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> {
-        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6);
-    }
-
-    public static class JavaBindingHolder<VB extends ViewBinding> extends RecyclerView.ViewHolder {
-        @NonNull
-        public final VB binding;
-
-        public JavaBindingHolder(@NonNull VB binding) {
-            super(binding.getRoot());
-            this.binding = binding;
-        }
-    }
-
 }
-

@@ -5,7 +5,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionListAdapter
-import com.fusion.adapter.register
+import com.fusion.adapter.setup
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
 import com.fusion.example.delegate.SocialPostDelegate
@@ -27,13 +27,13 @@ class PayloadPerformanceActivity : AppCompatActivity() {
         binding.fabAdd.visibility = View.GONE
 
         // 1. 注册核心 Delegate (Class 方式)
-        adapter.registerDelegate(SocialPost::class.java, SocialPostDelegate { post ->
+        adapter.register(SocialPost::class.java, SocialPostDelegate { post ->
             toggleLike(post)
         })
 
-        // 2. 混入另一种类型 (DSL 方式)，证明兼容性
-        adapter.register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
-            stableId { it.id }
+        // 2. 混入另一种类型 (DSL 方式)
+        adapter.setup<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+            uniqueKey { it.id }
             onBind { item ->
                 ChatStyleHelper.bindStandaloneImage(this)
                 tvDesc.text = "Image ID: ${item.id}"

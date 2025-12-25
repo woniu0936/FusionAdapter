@@ -16,7 +16,7 @@ class DemoApp : Application() {
                 Log.e("Fusion", "Unknown type: " + item.javaClass, e);
             }
             setGlobalDebounceInterval(300)
-            setDefaultStableIds(true)
+            setDefaultItemIdEnabled(true)
         }
     }
 

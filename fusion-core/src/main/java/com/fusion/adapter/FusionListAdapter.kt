@@ -3,6 +3,7 @@ package com.fusion.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import androidx.annotation.MainThread
 import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
@@ -10,61 +11,40 @@ import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.delegate.BindingHolder
+import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
-import com.fusion.adapter.extensions.attachFusionGridSupport
-import com.fusion.adapter.extensions.attachFusionStaggeredSupport
-import com.fusion.adapter.internal.AdapterController
-import com.fusion.adapter.internal.FusionExecutors
-import com.fusion.adapter.internal.TypeRouter
-import com.fusion.adapter.internal.checkStableIdRequirement
+import com.fusion.adapter.extensions.setupGridSupport
+import com.fusion.adapter.extensions.setupStaggeredSupport
+import com.fusion.adapter.internal.FusionCore
+import com.fusion.adapter.internal.FusionDispatcher
+import com.fusion.adapter.internal.TypeDispatcher
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
-import com.fusion.adapter.placeholder.SkeletonOwner
-import com.fusion.adapter.placeholder.SkeletonDsl
+import com.fusion.adapter.placeholder.PlaceholderConfigurator
+import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
+import com.fusion.adapter.placeholder.PlaceholderRegistry
 
 /**
- * [FusionListAdapter] - 自动挡
- *
- * 基于 AsyncListDiffer 实现，内置 Smart Diff 策略。
- * 适合 MVVM 架构，配合 ViewModel 和 LiveData/Flow 使用。
- *
- * 特性：
- * 1. O(1) 路由分发
- * 2. 自动计算 Diff (支持 FusionStableId)
- * 3. 自动分发 Payload 局部刷新
- * 4. 生命周期全托管
- *
- * @sample
- * val adapter = FusionListAdapter()
- * adapter.register(UserDelegate())
- * adapter.submitList(users)
+ * [FusionListAdapter]
+ * 自动挡适配器。
  */
-open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), RegistryOwner, SkeletonOwner {
+open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), FusionRegistry, PlaceholderRegistry {
 
-    // 核心引擎
     @PublishedApi
-    internal val core = AdapterController()
-
-    // 注入 FusionExecutors，使用标准 Java Executor 接口
+    internal val core = FusionCore()
     private val differ: AsyncListDiffer<Any> = AsyncListDiffer(
         ListUpdateCallbackWrapper(this),
-        AsyncDifferConfig.Builder(FusionDiffCallback(core))
-            .setBackgroundThreadExecutor(FusionExecutors.backgroundExecutorAdapter)
-            .build()
+        AsyncDifferConfig.Builder(FusionDiffCallback(core)).setBackgroundThreadExecutor(FusionDispatcher.backgroundExecutorAdapter).build()
     )
 
     init {
-        if (Fusion.getConfig().defaultStableId) {
+        if (Fusion.getConfig().defaultItemIdEnabled) {
             setHasStableIds(true)
         }
     }
 
-    // ========================================================================================
-    // 内部类
-    // ========================================================================================
-
-    private class FusionDiffCallback(private val core: AdapterController) : DiffUtil.ItemCallback<Any>() {
+    private class FusionDiffCallback(private val core: FusionCore) : DiffUtil.ItemCallback<Any>() {
         override fun areItemsTheSame(old: Any, new: Any) = core.areItemsTheSame(old, new)
         override fun areContentsTheSame(old: Any, new: Any) = core.areContentsTheSame(old, new)
         override fun getChangePayload(old: Any, new: Any) = core.getChangePayload(old, new)
@@ -77,138 +57,128 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         override fun onChanged(position: Int, count: Int, payload: Any?) = adapter.notifyItemRangeChanged(position, count, payload)
     }
 
-    // ========================================================================================
-    // 注册接口 (API)
-    // ========================================================================================
-
-    /**
-     * [KTX Interface] 注册路由连接器
-     */
-    override fun <T : Any> registerRouter(clazz: Class<T>, router: TypeRouter<T>) {
-        checkStableIdRequirement(this, clazz, router.getAllDelegates(), core)
-        core.register(clazz, router)
+    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
+        core.registerDispatcher(clazz, dispatcher)
     }
 
-    /**
-     * [Java/Common Interface] 注册单类型委托 (一对一)
-     * 自动包装为不可变的 TypeRouter。
-     */
-    override fun <T : Any> registerDelegate(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        checkStableIdRequirement(this, clazz, listOf(delegate), core)
-        val router = TypeRouter.create(delegate)
-        core.register(clazz, router)
+    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val dispatcher = TypeDispatcher.create(delegate)
+        core.registerDispatcher(clazz, dispatcher)
     }
 
-    override fun registerSkeletonDelegate(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerSkeleton(delegate)
+    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
+        core.registerPlaceholder(delegate)
     }
 
-    override fun registerSkeleton(@LayoutRes layoutResId: Int) {
+    override fun registerPlaceholder(@LayoutRes layoutResId: Int) {
         val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): LayoutHolder {
-                val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
-                return LayoutHolder(view)
+            override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
+                return LayoutHolder(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
             }
+
+            override fun onBindPlaceholder(holder: LayoutHolder) {}
         }
-        core.registerSkeleton(delegate)
+        core.registerPlaceholder(delegate)
     }
 
-    override fun <VB : ViewBinding> registerSkeleton(
-        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
-        block: (SkeletonDsl<VB>.() -> Unit)?
-    ) {
-        val dsl = SkeletonDsl<VB>()
-        block?.invoke(dsl)
-
+    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) {
+        val scope = PlaceholderDefinitionScope<VB>(); block?.invoke(scope)
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
-            override fun onCreatePlaceholderViewHolder(parent: ViewGroup): BindingHolder<VB> {
+            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
             }
 
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                dsl.config.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
+                val itemConfiguration = scope.getConfiguration()
+                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-        core.registerSkeleton(delegate)
+        core.registerPlaceholder(delegate)
     }
 
-    // ========================================================================================
-    // 数据操作
-    // ========================================================================================
+    /**
+     * Java API 实现
+     */
+    override fun <VB : ViewBinding> registerPlaceholder(
+        inflater: BindingInflater<VB>,
+        configurator: PlaceholderConfigurator<VB>?
+    ) {
+        // 1. 创建 Scope
+        val scope = PlaceholderDefinitionScope<VB>()
+        // 2. 让 Java 用户配置 Scope
+        configurator?.configure(scope)
+
+        // 3. 创建 Delegate
+        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
+            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
+                // 使用 Java 传入的 BindingInflater
+                val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
+                return BindingHolder(binding)
+            }
+
+            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
+                val itemConfiguration = scope.getConfiguration()
+                // 执行绑定
+                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
+            }
+        }
+
+        // 4. 注册到 Core
+        core.registerPlaceholder(delegate)
+    }
 
     /**
-     * 提交数据 (Double Async)
-     * 利用 FusionExecutors 在后台线程完成 "Sanitize" 和 "Diff" 两步操作。
+     * 异步提交数据 (Default)
      */
     fun submitList(list: List<Any>?, commitCallback: Runnable? = null) {
-        val rawList = list ?: emptyList()
-
-        // 1. 先投递到后台线程进行清洗
-        FusionExecutors.runInBackground {
-            val safeList = core.sanitize(rawList)
-
-            // 2. 将清洗后的数据交给 Differ
-            // Differ 内部会检测到当前已经在 BackgroundExecutor 上，
-            // 因此会直接继续进行 Diff 计算，高效且无额外线程切换。
+        val rawList = if (list == null) emptyList() else ArrayList(list)
+        FusionDispatcher.dispatch {
+            val safeList = core.filter(rawList)
             differ.submitList(safeList, commitCallback)
         }
     }
 
-    /** 获取当前数据列表 (只读) */
-    val currentList: List<Any>
-        get() = differ.currentList
+    /**
+     * [setItems] 同步过滤更新 (对应 FusionAdapter.setItems)
+     * 明确语义：立即过滤，然后进行异步 Diff。
+     */
+    @MainThread
+    fun setItems(list: List<Any>?, commitCallback: Runnable? = null) {
+        val rawList = if (list == null) emptyList() else ArrayList(list)
+        val safeList = core.filter(rawList)
+        differ.submitList(safeList, commitCallback)
+    }
 
-    // ========================================================================================
-    // RecyclerView.Adapter 实现委托
-    // ========================================================================================
-
+    val currentList: List<Any> get() = differ.currentList
     override fun getItemCount(): Int = differ.currentList.size
-
-    override fun getItemViewType(position: Int): Int {
-        return core.getItemViewType(differ.currentList[position])
-    }
-
+    override fun getItemViewType(position: Int): Int = core.getItemViewType(differ.currentList[position])
     override fun getItemId(position: Int): Long {
-        if (!hasStableIds()) return RecyclerView.NO_ID
-
-        val list = currentList
-        if (position !in list.indices) return RecyclerView.NO_ID
-
-        return core.getItemId(list[position])
+        if (!hasStableIds() || position !in currentList.indices) return RecyclerView.NO_ID
+        return core.getItemId(currentList[position])
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return core.onCreateViewHolder(parent, viewType)
-    }
-
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = differ.currentList[position]
-        holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+        holder.setupStaggeredSupport(item) { core.getDelegate(it) }
         core.onBindViewHolder(holder, item, position)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
-        if (payloads.isEmpty()) {
-            onBindViewHolder(holder, position)
-        } else {
+        if (payloads.isEmpty()) onBindViewHolder(holder, position)
+        else {
             val item = differ.currentList[position]
-            holder.attachFusionStaggeredSupport(item) { core.getDelegate(it) }
+            holder.setupStaggeredSupport(item) { core.getDelegate(it) }
             core.onBindViewHolder(holder, item, position, payloads)
         }
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-        recyclerView.attachFusionGridSupport(
-            adapter = this,
-            getItem = { pos -> if (pos in differ.currentList.indices) differ.currentList[pos] else null },
-            getDelegate = { item -> core.getDelegate(item) }
-        )
+        recyclerView.setupGridSupport(this, { pos -> if (pos in currentList.indices) currentList[pos] else null }, { core.getDelegate(it) })
     }
 
-    // --- 生命周期分发 (防止内存泄漏) ---
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) = core.onViewRecycled(holder)
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) = core.onViewAttachedToWindow(holder)
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) = core.onViewDetachedFromWindow(holder)
-
 }

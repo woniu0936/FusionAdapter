@@ -3,7 +3,7 @@ package com.fusion.example.feature.layout
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.fusion.adapter.register
+import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
@@ -28,8 +28,8 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
         val adapter = binding.recyclerView.setupFusion(layoutManager) {
 
             // 类型 A: 标题 (Header) -> 强制全宽
-            register<HeaderItem, ItemTextBinding>(ItemTextBinding::inflate) {
-                stableId { it.title }
+            setup<HeaderItem, ItemTextBinding>(ItemTextBinding::inflate) {
+                uniqueKey { it.title }
                 onBind { item ->
                     tvContent.text = "--- ${item.title} ---"
                     tvContent.textSize = 18f
@@ -42,8 +42,8 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
             }
 
             // 类型 B: 图片内容 (Content) -> 瀑布流
-            register<StaggeredItem, ItemImageBinding>(ItemImageBinding::inflate) {
-                stableId { it.height }
+            setup<StaggeredItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                uniqueKey { it.height }
                 onBind { item ->
                     ChatStyleHelper.bindStandaloneImage(this)
                     tvDesc.text = "H:${item.height}px"

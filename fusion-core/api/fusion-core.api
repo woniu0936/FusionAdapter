@@ -1,19 +1,13 @@
-public abstract interface class com/fusion/adapter/DiffKeyProvider {
-	public abstract fun map (Ljava/lang/Object;)Ljava/lang/Object;
-}
-
 public final class com/fusion/adapter/Fusion {
 	public static final field INSTANCE Lcom/fusion/adapter/Fusion;
 	public static final fun getConfig ()Lcom/fusion/adapter/FusionConfig;
 	public static final fun initialize (Lcom/fusion/adapter/FusionConfig;)V
 }
 
-public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/RegistryOwner, com/fusion/adapter/placeholder/SkeletonOwner {
+public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/FusionRegistry, com/fusion/adapter/placeholder/PlaceholderRegistry {
 	public fun <init> ()V
-	public final fun addItems (Ljava/util/List;)V
-	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
+	public final fun getCore ()Lcom/fusion/adapter/internal/FusionCore;
 	public final fun getCurrentItems ()Ljava/util/List;
-	public final fun getItem (I)Ljava/lang/Object;
 	public fun getItemCount ()I
 	public fun getItemId (I)J
 	public fun getItemViewType (I)I
@@ -26,11 +20,12 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public fun registerDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun registerRouter (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
-	public fun registerSkeleton (I)V
-	public fun registerSkeleton (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
-	public fun registerSkeletonDelegate (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
+	public fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
+	public fun registerPlaceholder (I)V
+	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
+	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+	public fun registerPlaceholder (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
 	public final fun removeItem (I)V
 	public final fun setItems (Ljava/util/List;)V
 	public final fun setItemsAsync (Ljava/util/List;Lcom/fusion/adapter/FusionAdapter$OnItemsChangedListener;)V
@@ -42,7 +37,7 @@ public abstract interface class com/fusion/adapter/FusionAdapter$OnItemsChangedL
 }
 
 public final class com/fusion/adapter/FusionConfig {
-	public final field defaultStableId Z
+	public final field defaultItemIdEnabled Z
 	public final field errorListener Lcom/fusion/adapter/exception/ErrorListener;
 	public final field globalDebounceInterval J
 	public final field isDebug Z
@@ -53,27 +48,23 @@ public final class com/fusion/adapter/FusionConfig$Builder {
 	public fun <init> ()V
 	public final fun build ()Lcom/fusion/adapter/FusionConfig;
 	public final fun setDebug (Z)Lcom/fusion/adapter/FusionConfig$Builder;
-	public final fun setDefaultStableIds (Z)Lcom/fusion/adapter/FusionConfig$Builder;
+	public final fun setDefaultItemIdEnabled (Z)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setErrorListener (Lcom/fusion/adapter/exception/ErrorListener;)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setGlobalDebounceInterval (J)Lcom/fusion/adapter/FusionConfig$Builder;
 }
 
 public final class com/fusion/adapter/FusionExtensionsKt {
-	public static final fun autoScrollToBottom (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$Adapter;)V
-	public static final fun initialize (Lcom/fusion/adapter/Fusion;Lkotlin/jvm/functions/Function1;)V
-	public static final fun plusAssign (Lcom/fusion/adapter/FusionListAdapter;Ljava/lang/Object;)V
-	public static final fun plusAssign (Lcom/fusion/adapter/FusionListAdapter;Ljava/util/List;)V
-	public static final fun setItemsSuspending (Lcom/fusion/adapter/FusionAdapter;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun setupFusion (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/FusionListAdapter;
-	public static synthetic fun setupFusion$default (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fusion/adapter/FusionListAdapter;
-	public static final fun setupFusionManual (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/FusionAdapter;
-	public static synthetic fun setupFusionManual$default (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fusion/adapter/FusionAdapter;
-	public static final fun submitListSuspending (Lcom/fusion/adapter/FusionListAdapter;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun setup (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/FusionListAdapter;
+	public static synthetic fun setup$default (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$LayoutManager;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fusion/adapter/FusionListAdapter;
 }
 
-public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/RegistryOwner, com/fusion/adapter/placeholder/SkeletonOwner {
+public final class com/fusion/adapter/FusionKt {
+	public static final fun initialize (Lcom/fusion/adapter/Fusion;Lkotlin/jvm/functions/Function1;)V
+}
+
+public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/FusionRegistry, com/fusion/adapter/placeholder/PlaceholderRegistry {
 	public fun <init> ()V
-	public final fun getCore ()Lcom/fusion/adapter/internal/AdapterController;
+	public final fun getCore ()Lcom/fusion/adapter/internal/FusionCore;
 	public final fun getCurrentList ()Ljava/util/List;
 	public fun getItemCount ()I
 	public fun getItemId (I)J
@@ -85,40 +76,60 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public fun registerDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun registerRouter (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
-	public fun registerSkeleton (I)V
-	public fun registerSkeleton (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
-	public fun registerSkeletonDelegate (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
+	public fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
+	public fun registerPlaceholder (I)V
+	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
+	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+	public fun registerPlaceholder (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
+	public final fun setItems (Ljava/util/List;Ljava/lang/Runnable;)V
+	public static synthetic fun setItems$default (Lcom/fusion/adapter/FusionListAdapter;Ljava/util/List;Ljava/lang/Runnable;ILjava/lang/Object;)V
 	public final fun submitList (Ljava/util/List;Ljava/lang/Runnable;)V
 	public static synthetic fun submitList$default (Lcom/fusion/adapter/FusionListAdapter;Ljava/util/List;Ljava/lang/Runnable;ILjava/lang/Object;)V
 }
 
-public abstract interface class com/fusion/adapter/RegistryOwner {
-	public abstract fun registerDelegate (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public abstract fun registerRouter (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+public abstract interface class com/fusion/adapter/FusionRegistry {
+	public abstract fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
+	public abstract fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
+}
+
+public abstract interface class com/fusion/adapter/ItemKeyProvider {
+	public abstract fun getKey (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/adapter/delegate/FusionDelegate {
+	public fun <init> ()V
 	public fun <init> (Lcom/fusion/adapter/delegate/BindingInflater;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
-	public fun getViewTypeKey ()Ljava/lang/Object;
+	public synthetic fun <init> (Lcom/fusion/adapter/delegate/BindingInflater;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun addObserver (Lcom/fusion/adapter/internal/PropertyObserver;)V
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
 	public abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
-	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onBindPartial (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/BindingHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public fun onCreate (Landroidx/viewbinding/ViewBinding;)V
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/BindingHolder;
-	protected fun onViewHolderCreated (Landroidx/viewbinding/ViewBinding;)V
-	public fun registerWatcher (Lcom/fusion/adapter/internal/Watcher;)V
-	public final fun setOnItemClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun setOnItemClick$default (Lcom/fusion/adapter/delegate/BindingDelegate;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	protected fun onInflateBinding (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function7;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function6;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function5;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+	public final fun setOnItemClick (Lcom/fusion/adapter/delegate/BindingDelegate$OnItemClickListener;)V
+	public final fun setOnItemClick (Ljava/lang/Long;Lcom/fusion/adapter/delegate/BindingDelegate$OnItemClickListener;)V
 	public final fun setOnItemLongClick (Lkotlin/jvm/functions/Function3;)V
+}
+
+public abstract interface class com/fusion/adapter/delegate/BindingDelegate$OnItemClickListener {
+	public abstract fun onItemClick (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 }
 
 public final class com/fusion/adapter/delegate/BindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
@@ -130,49 +141,50 @@ public abstract interface class com/fusion/adapter/delegate/BindingInflater {
 	public abstract fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Landroidx/viewbinding/ViewBinding;
 }
 
-public final class com/fusion/adapter/delegate/FunctionalBindingDelegate : com/fusion/adapter/delegate/BindingDelegate {
-	public fun <init> (Lcom/fusion/adapter/internal/DslSignature;Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/dsl/ItemConfiguration;)V
-	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public fun getViewTypeKey ()Ljava/lang/Object;
+public final class com/fusion/adapter/delegate/DslBindingDelegate : com/fusion/adapter/delegate/BindingDelegate {
+	public fun <init> (Lcom/fusion/adapter/internal/DslTypeKey;Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/dsl/ItemConfiguration;)V
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
 	public fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
-	public fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onBindPartial (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onCreate (Landroidx/viewbinding/ViewBinding;)V
 }
 
-public final class com/fusion/adapter/delegate/FunctionalLayoutDelegate : com/fusion/adapter/delegate/LayoutDelegate {
-	public fun <init> (Lcom/fusion/adapter/internal/DslSignature;ILcom/fusion/adapter/dsl/ItemConfiguration;)V
-	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public fun getViewTypeKey ()Ljava/lang/Object;
+public final class com/fusion/adapter/delegate/DslLayoutDelegate : com/fusion/adapter/delegate/LayoutDelegate {
+	public fun <init> (Lcom/fusion/adapter/internal/DslTypeKey;ILcom/fusion/adapter/dsl/ItemConfiguration;)V
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
 	public fun onBind (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;)V
-	public fun onBindPayload (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;Z)V
-	public fun onViewHolderCreated (Lcom/fusion/adapter/delegate/LayoutHolder;)V
+	public fun onBindPartial (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onCreate (Lcom/fusion/adapter/delegate/LayoutHolder;)V
 }
 
 public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> ()V
+	public fun addObserver (Lcom/fusion/adapter/internal/PropertyObserver;)V
 	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	protected final fun dispatchHandledPayloads (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Ljava/util/List;)Z
+	protected final fun dispatchHandledPayloads (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/List;)Z
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
-	public abstract fun getViewTypeKey ()Ljava/lang/Object;
+	public fun getUniqueKey (Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
 	public fun isFullSpan (Ljava/lang/Object;)Z
+	protected fun isManualUniqueKeyDefined ()Z
 	public abstract fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public abstract fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public fun onSpanSize (Ljava/lang/Object;II)I
 	public fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function7;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function6;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function5;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
-	protected final fun registerDataWatcher (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
-	public fun registerWatcher (Lcom/fusion/adapter/internal/Watcher;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function7;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function6;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function5;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public fun registerPropertyObserver (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public final fun resolveFullSpan (Ljava/lang/Object;)Z
-	public final fun setStableId (Lkotlin/jvm/functions/Function1;)V
+	public final fun resolveSpanSize (Ljava/lang/Object;II)I
+	public final fun setUniqueKey (Lkotlin/jvm/functions/Function1;)V
 }
 
-public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adapter/delegate/FusionDelegate {
+public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adapter/delegate/BindingDelegate {
 	public fun <init> ()V
 	protected final fun bindPayload (Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer2;)V
@@ -180,34 +192,12 @@ public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adap
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer4;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer5;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer6;)V
-	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
-	public fun getViewTypeKey ()Ljava/lang/Object;
-	public fun isFullSpan (Ljava/lang/Object;)Z
-	protected abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
-	protected fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;)V
-	protected fun onBindPayload (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;ILjava/util/List;Z)V
-	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
-	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/JavaDelegate$JavaBindingHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public fun isManualUniqueKeyDefined ()Z
+	protected abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;)V
+	public fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 	protected abstract fun onCreateBinding (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
-	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
-	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/JavaDelegate$JavaBindingHolder;
-	public fun onSpanSize (Ljava/lang/Object;II)I
-	public fun setOnItemClick (JLcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
-	public fun setOnItemClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemClickListener;)V
-	public fun setOnItemLongClick (Lcom/fusion/adapter/delegate/JavaDelegate$OnItemLongClickListener;)Lcom/fusion/adapter/delegate/JavaDelegate;
-}
-
-public class com/fusion/adapter/delegate/JavaDelegate$JavaBindingHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
-	public final field binding Landroidx/viewbinding/ViewBinding;
-	public fun <init> (Landroidx/viewbinding/ViewBinding;)V
-}
-
-public abstract interface class com/fusion/adapter/delegate/JavaDelegate$OnItemClickListener {
-	public abstract fun onClick (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
-}
-
-public abstract interface class com/fusion/adapter/delegate/JavaDelegate$OnItemLongClickListener {
-	public abstract fun onLongClick (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)Z
+	protected fun onInflateBinding (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
 }
 
 public abstract interface class com/fusion/adapter/delegate/JavaDelegate$PayloadConsumer {
@@ -236,23 +226,27 @@ public abstract interface class com/fusion/adapter/delegate/JavaDelegate$Payload
 
 public abstract class com/fusion/adapter/delegate/LayoutDelegate : com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> (I)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
-	protected final fun bindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
-	public fun getViewTypeKey ()Ljava/lang/Object;
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
 	public abstract fun onBind (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;)V
-	public fun onBindPayload (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;Z)V
+	public fun onBindPartial (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;Z)V
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public fun onCreate (Lcom/fusion/adapter/delegate/LayoutHolder;)V
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Lcom/fusion/adapter/delegate/LayoutHolder;
-	public fun onViewHolderCreated (Lcom/fusion/adapter/delegate/LayoutHolder;)V
-	public final fun setOnItemClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun setOnItemClick$default (Lcom/fusion/adapter/delegate/LayoutDelegate;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
+	protected final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
+	public final fun setOnItemClick (Lcom/fusion/adapter/delegate/LayoutDelegate$OnItemClickListener;)V
+	public final fun setOnItemClick (Ljava/lang/Long;Lcom/fusion/adapter/delegate/LayoutDelegate$OnItemClickListener;)V
 	public final fun setOnItemLongClick (Lkotlin/jvm/functions/Function3;)V
+}
+
+public abstract interface class com/fusion/adapter/delegate/LayoutDelegate$OnItemClickListener {
+	public abstract fun onItemClick (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;I)V
 }
 
 public class com/fusion/adapter/delegate/LayoutHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
@@ -260,34 +254,18 @@ public class com/fusion/adapter/delegate/LayoutHolder : androidx/recyclerview/wi
 	public final fun findView (I)Landroid/view/View;
 }
 
-public final class com/fusion/adapter/diff/SmartDiffCallback : androidx/recyclerview/widget/DiffUtil$ItemCallback {
-	public static final field INSTANCE Lcom/fusion/adapter/diff/SmartDiffCallback;
-	public fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+public class com/fusion/adapter/dsl/BindingDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
+	public fun <init> ()V
 }
 
-public abstract class com/fusion/adapter/dsl/BaseItemDsl {
-	public fun <init> ()V
-	public final fun areContentsTheSame (Lkotlin/jvm/functions/Function2;)V
-	public final fun fullSpan ()V
-	public final fun fullSpanIf (Lkotlin/jvm/functions/Function1;)V
-	public final fun getConfig ()Lcom/fusion/adapter/dsl/ItemConfiguration;
-	public final fun getConfiguration ()Lcom/fusion/adapter/dsl/ItemConfiguration;
-	public final fun onBind (Lkotlin/jvm/functions/Function2;)V
-	public final fun onBindIndexed (Lkotlin/jvm/functions/Function3;)V
-	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
-	public final fun onBindPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
-	public final fun onBindWithPayloads (Lkotlin/jvm/functions/Function3;)V
-	public final fun onClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun onClick$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public final fun onClickIndexed (Ljava/lang/Long;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun onClickIndexed$default (Lcom/fusion/adapter/dsl/BaseItemDsl;Ljava/lang/Long;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
-	public final fun onCreate (Lkotlin/jvm/functions/Function1;)V
-	public final fun onLongClick (Lkotlin/jvm/functions/Function1;)V
-	public final fun spanSize (I)V
-	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
-	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
+public final class com/fusion/adapter/dsl/DispatcherScope {
+	public fun <init> (Ljava/lang/Class;)V
+	public final fun build ()Lcom/fusion/adapter/internal/TypeDispatcher;
+	public final fun dispatch (Ljava/lang/Object;Lcom/fusion/adapter/delegate/LayoutDelegate;)V
+	public final fun getConfig ()Lcom/fusion/adapter/internal/DispatcherConfiguration;
+	public final fun getItemClass ()Ljava/lang/Class;
+	public final fun uniqueKey (Lkotlin/jvm/functions/Function1;)V
+	public final fun viewTypeKey (Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract interface annotation class com/fusion/adapter/dsl/FusionDsl : java/lang/annotation/Annotation {
@@ -297,68 +275,62 @@ public final class com/fusion/adapter/dsl/ItemConfiguration {
 	public fun <init> ()V
 	public final fun getClickDebounce ()Ljava/lang/Long;
 	public final fun getDiffCallback ()Lkotlin/jvm/functions/Function2;
+	public final fun getItemKey ()Lkotlin/jvm/functions/Function1;
+	public final fun getObservers ()Ljava/util/ArrayList;
 	public final fun getOnBind ()Lkotlin/jvm/functions/Function3;
-	public final fun getOnBindWithPayloads ()Lkotlin/jvm/functions/Function4;
+	public final fun getOnBindPayloads ()Lkotlin/jvm/functions/Function4;
 	public final fun getOnClick ()Lkotlin/jvm/functions/Function3;
 	public final fun getOnCreate ()Lkotlin/jvm/functions/Function1;
 	public final fun getOnLongClick ()Lkotlin/jvm/functions/Function3;
 	public final fun getSpanSize ()Lkotlin/jvm/functions/Function3;
-	public final fun getStableId ()Lkotlin/jvm/functions/Function1;
-	public final fun getWatchers ()Ljava/util/ArrayList;
 	public final fun setClickDebounce (Ljava/lang/Long;)V
 	public final fun setDiffCallback (Lkotlin/jvm/functions/Function2;)V
+	public final fun setItemKey (Lkotlin/jvm/functions/Function1;)V
 	public final fun setOnBind (Lkotlin/jvm/functions/Function3;)V
-	public final fun setOnBindWithPayloads (Lkotlin/jvm/functions/Function4;)V
+	public final fun setOnBindPayloads (Lkotlin/jvm/functions/Function4;)V
 	public final fun setOnClick (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnCreate (Lkotlin/jvm/functions/Function1;)V
 	public final fun setOnLongClick (Lkotlin/jvm/functions/Function3;)V
 	public final fun setSpanSize (Lkotlin/jvm/functions/Function3;)V
-	public final fun setStableId (Lkotlin/jvm/functions/Function1;)V
 }
 
-public final class com/fusion/adapter/dsl/LayoutIdDsl : com/fusion/adapter/dsl/BaseItemDsl {
+public abstract class com/fusion/adapter/dsl/ItemDefinitionScope {
+	public fun <init> ()V
+	public final fun fullSpanIf (Lkotlin/jvm/functions/Function1;)V
+	public final fun getConfig ()Lcom/fusion/adapter/dsl/ItemConfiguration;
+	public final fun getConfiguration ()Lcom/fusion/adapter/dsl/ItemConfiguration;
+	public final fun onBind (Lkotlin/jvm/functions/Function2;)V
+	public final fun onBindIndexed (Lkotlin/jvm/functions/Function3;)V
+	public final fun onBindPayloads (Lkotlin/jvm/functions/Function3;)V
+	public final fun onClick (Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun onClick$default (Lcom/fusion/adapter/dsl/ItemDefinitionScope;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun onCreate (Lkotlin/jvm/functions/Function1;)V
+	public final fun onLongClick (Lkotlin/jvm/functions/Function1;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function2;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function3;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function4;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function5;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function6;)V
+	public final fun onPayload (Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/reflect/KProperty1;Lkotlin/jvm/functions/Function7;)V
+	public final fun spanSize (Lkotlin/jvm/functions/Function3;)V
+	public final fun uniqueKey (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/fusion/adapter/dsl/LayoutDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
 	public fun <init> ()V
 }
 
-public final class com/fusion/adapter/dsl/RouterDsl {
-	public fun <init> (Ljava/lang/Class;)V
-	public final fun build ()Lcom/fusion/adapter/internal/TypeRouter;
-	public final fun getConfig ()Lcom/fusion/adapter/internal/RouterConfiguration;
-	public final fun getItemClass ()Ljava/lang/Class;
-	public final fun map (Ljava/lang/Object;ILkotlin/jvm/functions/Function1;)V
-	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/LayoutDelegate;)V
-	public final fun match (Lkotlin/jvm/functions/Function1;)V
-	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
-}
-
-public final class com/fusion/adapter/dsl/SpanScope {
-	public static final synthetic fun box-impl (I)Lcom/fusion/adapter/dsl/SpanScope;
-	public static fun constructor-impl (I)I
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (ILjava/lang/Object;)Z
-	public static final fun equals-impl0 (II)Z
-	public static final fun getFull-impl (I)I
-	public static final fun getHalf-impl (I)I
-	public static final fun getQuarter-impl (I)I
-	public static final fun getThird-impl (I)I
+public final class com/fusion/adapter/dsl/SpanSizeScope {
+	public fun <init> (I)V
 	public final fun getTotalSpans ()I
-	public fun hashCode ()I
-	public static fun hashCode-impl (I)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (I)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()I
-}
-
-public class com/fusion/adapter/dsl/ViewBindingDsl : com/fusion/adapter/dsl/BaseItemDsl {
-	public fun <init> ()V
 }
 
 public abstract interface class com/fusion/adapter/exception/ErrorListener {
 	public abstract fun onError (Ljava/lang/Object;Ljava/lang/Exception;)V
 }
 
-public final class com/fusion/adapter/exception/MissingStableIdException : java/lang/RuntimeException {
-	public fun <init> (Ljava/lang/Class;)V
+public final class com/fusion/adapter/exception/MissingUniqueKeyException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Class;Ljava/lang/Class;)V
 }
 
 public final class com/fusion/adapter/exception/UnregisteredTypeException : java/lang/RuntimeException {
@@ -395,8 +367,8 @@ public final class com/fusion/adapter/extensions/LayoutExtensionsKt {
 }
 
 public final class com/fusion/adapter/extensions/LayoutManagerExtensionsKt {
-	public static final fun attachFusionGridSupport (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$Adapter;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
-	public static final fun attachFusionStaggeredSupport (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
+	public static final fun setupGridSupport (Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$Adapter;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public static final fun setupStaggeredSupport (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class com/fusion/adapter/extensions/ViewBindingExtensionsKt {
@@ -408,50 +380,45 @@ public final class com/fusion/adapter/extensions/ViewBindingExtensionsKt {
 	public static final fun string (Landroidx/viewbinding/ViewBinding;I[Ljava/lang/Object;)Ljava/lang/String;
 }
 
-public final class com/fusion/adapter/internal/AdapterController {
-	public fun <init> ()V
-	public final fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public final fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public final fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	public final fun getDelegate (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
-	public final fun getItemId (Ljava/lang/Object;)J
-	public final fun getItemViewType (Ljava/lang/Object;)I
-	public final fun getSkeletonDelegate ()Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;
-	public final fun getViewTypeRegistry ()Lcom/fusion/adapter/internal/ViewTypeRegistry;
-	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
-	public static synthetic fun onBindViewHolder$default (Lcom/fusion/adapter/internal/AdapterController;Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;ILjava/lang/Object;)V
-	public final fun onCreateViewHolder (Landroid/view/ViewGroup;I)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
-	public final fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public final fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public final fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
-	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
-	public final fun registerSkeleton (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
-	public final fun sanitize (Ljava/util/List;)Ljava/util/List;
+public final class com/fusion/adapter/extensions/ViewExtensionsKt {
+	public static final fun getItem (Landroid/view/View;)Ljava/lang/Object;
+	public static final fun getItem (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)Ljava/lang/Object;
+	public static final fun setItem (Landroid/view/View;Ljava/lang/Object;)V
+	public static final fun setItem (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;)V
 }
 
-public final class com/fusion/adapter/internal/ClassSignature : com/fusion/adapter/internal/ViewSignature {
+public final class com/fusion/adapter/internal/ClassTypeKey : com/fusion/adapter/internal/ViewTypeKey {
 	public fun <init> (Ljava/lang/Class;)V
 	public final fun component1 ()Ljava/lang/Class;
-	public final fun copy (Ljava/lang/Class;)Lcom/fusion/adapter/internal/ClassSignature;
-	public static synthetic fun copy$default (Lcom/fusion/adapter/internal/ClassSignature;Ljava/lang/Class;ILjava/lang/Object;)Lcom/fusion/adapter/internal/ClassSignature;
+	public final fun copy (Ljava/lang/Class;)Lcom/fusion/adapter/internal/ClassTypeKey;
+	public static synthetic fun copy$default (Lcom/fusion/adapter/internal/ClassTypeKey;Ljava/lang/Class;ILjava/lang/Object;)Lcom/fusion/adapter/internal/ClassTypeKey;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDelegateClass ()Ljava/lang/Class;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/fusion/adapter/internal/DslAdapterFactory {
-	public static final field INSTANCE Lcom/fusion/adapter/internal/DslAdapterFactory;
-	public final fun createDelegate (Ljava/lang/Class;Ljava/lang/Class;Lkotlin/jvm/functions/Function3;Lcom/fusion/adapter/dsl/ItemConfiguration;)Lcom/fusion/adapter/delegate/FunctionalBindingDelegate;
-	public final fun createLayoutDelegate (Ljava/lang/Class;ILcom/fusion/adapter/dsl/ItemConfiguration;)Lcom/fusion/adapter/delegate/FunctionalLayoutDelegate;
+public final class com/fusion/adapter/internal/DispatcherConfiguration {
+	public fun <init> ()V
+	public final fun getMappings ()Ljava/util/LinkedHashMap;
+	public final fun getUniqueItemKeyProvider ()Lcom/fusion/adapter/ItemKeyProvider;
+	public final fun getViewTypeExtractor ()Lcom/fusion/adapter/ItemKeyProvider;
+	public final fun setUniqueItemKeyProvider (Lcom/fusion/adapter/ItemKeyProvider;)V
+	public final fun setViewTypeExtractor (Lcom/fusion/adapter/ItemKeyProvider;)V
 }
 
-public final class com/fusion/adapter/internal/DslSignature : com/fusion/adapter/internal/ViewSignature {
+public final class com/fusion/adapter/internal/DslAdapterFactory {
+	public static final field INSTANCE Lcom/fusion/adapter/internal/DslAdapterFactory;
+	public final fun createDelegate (Ljava/lang/Class;Ljava/lang/Class;Lkotlin/jvm/functions/Function3;Lcom/fusion/adapter/dsl/ItemConfiguration;)Lcom/fusion/adapter/delegate/DslBindingDelegate;
+	public final fun createLayoutDelegate (Ljava/lang/Class;ILcom/fusion/adapter/dsl/ItemConfiguration;)Lcom/fusion/adapter/delegate/DslLayoutDelegate;
+}
+
+public final class com/fusion/adapter/internal/DslTypeKey : com/fusion/adapter/internal/ViewTypeKey {
 	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
 	public final fun component1 ()Ljava/lang/Class;
 	public final fun component2 ()Ljava/lang/Object;
-	public final fun copy (Ljava/lang/Class;Ljava/lang/Object;)Lcom/fusion/adapter/internal/DslSignature;
-	public static synthetic fun copy$default (Lcom/fusion/adapter/internal/DslSignature;Ljava/lang/Class;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fusion/adapter/internal/DslSignature;
+	public final fun copy (Ljava/lang/Class;Ljava/lang/Object;)Lcom/fusion/adapter/internal/DslTypeKey;
+	public static synthetic fun copy$default (Lcom/fusion/adapter/internal/DslTypeKey;Ljava/lang/Class;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fusion/adapter/internal/DslTypeKey;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getIdentifier ()Ljava/lang/Object;
 	public final fun getItemClass ()Ljava/lang/Class;
@@ -459,16 +426,26 @@ public final class com/fusion/adapter/internal/DslSignature : com/fusion/adapter
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/fusion/adapter/internal/FusionViewUtil {
-	public static final field DEFAULT_DEBOUNCE_INTERVAL J
-	public static final fun click (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;)V
-	public static final fun click (Landroid/view/View;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun click$default (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;ILjava/lang/Object;)V
-	public static synthetic fun click$default (Landroid/view/View;Ljava/lang/Long;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun findItemInternal (Landroid/view/View;)Ljava/lang/Object;
-	public static final fun setOnClick (Landroid/view/View;Landroid/view/View$OnClickListener;)V
-	public static final fun setOnClick (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;)V
-	public static synthetic fun setOnClick$default (Landroid/view/View;Ljava/lang/Long;Landroid/view/View$OnClickListener;ILjava/lang/Object;)V
+public final class com/fusion/adapter/internal/FusionCore {
+	public fun <init> ()V
+	public final fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public final fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public final fun enforceUniqueKeys (Ljava/lang/Class;Ljava/util/Collection;)V
+	public final fun filter (Ljava/util/List;)Ljava/util/List;
+	public final fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun getDelegate (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
+	public final fun getItemId (Ljava/lang/Object;)J
+	public final fun getItemViewType (Ljava/lang/Object;)I
+	public final fun getPlaceholderDelegate ()Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;
+	public final fun getViewTypeRegistry ()Lcom/fusion/adapter/internal/ViewTypeRegistry;
+	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
+	public static synthetic fun onBindViewHolder$default (Lcom/fusion/adapter/internal/FusionCore;Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;ILjava/lang/Object;)V
+	public final fun onCreateViewHolder (Landroid/view/ViewGroup;I)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
+	public final fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public final fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
+	public final fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
 }
 
 public final class com/fusion/adapter/internal/LoggerKt {
@@ -480,39 +457,33 @@ public final class com/fusion/adapter/internal/LoggerKt {
 	public static final fun logW (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 }
 
-public final class com/fusion/adapter/internal/RouterConfiguration {
-	public fun <init> ()V
-	public final fun getDefaultIdProvider ()Lkotlin/jvm/functions/Function1;
-	public final fun getMappings ()Ljava/util/LinkedHashMap;
-	public final fun getMatcher ()Lcom/fusion/adapter/DiffKeyProvider;
-	public final fun setDefaultIdProvider (Lkotlin/jvm/functions/Function1;)V
-	public final fun setMatcher (Lcom/fusion/adapter/DiffKeyProvider;)V
+public abstract interface class com/fusion/adapter/internal/PropertyObserver {
+	public abstract fun checkChange (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun execute (Ljava/lang/Object;Ljava/lang/Object;)V
 }
 
-public final class com/fusion/adapter/internal/StableIdSafetyKt {
-	public static final fun checkStableIdRequirement (Landroidx/recyclerview/widget/RecyclerView$Adapter;Ljava/lang/Class;Ljava/util/Collection;Lcom/fusion/adapter/internal/AdapterController;)V
-}
-
-public final class com/fusion/adapter/internal/TypeRouter {
-	public static final field Companion Lcom/fusion/adapter/internal/TypeRouter$Companion;
+public final class com/fusion/adapter/internal/TypeDispatcher {
+	public static final field Companion Lcom/fusion/adapter/internal/TypeDispatcher$Companion;
 	public final fun getAllDelegates ()Ljava/util/Collection;
 }
 
-public final class com/fusion/adapter/internal/TypeRouter$Builder {
+public final class com/fusion/adapter/internal/TypeDispatcher$Builder {
 	public fun <init> ()V
-	public final fun build ()Lcom/fusion/adapter/internal/TypeRouter;
-	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/BindingDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
-	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
-	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/LayoutDelegate;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
-	public final fun match (Lcom/fusion/adapter/DiffKeyProvider;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
-	public final fun stableId (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/internal/TypeRouter$Builder;
+	public final fun addDelegate (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun build ()Lcom/fusion/adapter/internal/TypeDispatcher;
+	public final fun delegate (Ljava/lang/Object;Lcom/fusion/adapter/delegate/BindingDelegate;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun delegate (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun setUniqueKey (Lcom/fusion/adapter/ItemKeyProvider;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun setViewType (Lcom/fusion/adapter/ItemKeyProvider;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun uniqueKey (Lcom/fusion/adapter/ItemKeyProvider;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
+	public final fun viewType (Lcom/fusion/adapter/ItemKeyProvider;)Lcom/fusion/adapter/internal/TypeDispatcher$Builder;
 }
 
-public final class com/fusion/adapter/internal/TypeRouter$Companion {
-	public final fun create (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeRouter;
+public final class com/fusion/adapter/internal/TypeDispatcher$Companion {
+	public final fun create (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/TypeDispatcher;
 }
 
-public abstract interface class com/fusion/adapter/internal/ViewSignature {
+public abstract interface class com/fusion/adapter/internal/ViewTypeKey {
 }
 
 public final class com/fusion/adapter/internal/ViewTypeRegistry {
@@ -524,16 +495,11 @@ public final class com/fusion/adapter/internal/ViewTypeRegistry {
 	public final fun getItemViewType (Ljava/lang/Object;)I
 	public final fun getPlaceholderDelegate ()Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun isSupported (Ljava/lang/Object;)Z
-	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeRouter;)V
+	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
 	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionDelegate;)V
 }
 
 public final class com/fusion/adapter/internal/ViewTypeRegistry$Companion {
-}
-
-public abstract interface class com/fusion/adapter/internal/Watcher {
-	public abstract fun checkChange (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	public abstract fun execute (Ljava/lang/Object;Ljava/lang/Object;)V
 }
 
 public final class com/fusion/adapter/placeholder/FusionPlaceholder {
@@ -547,39 +513,50 @@ public final class com/fusion/adapter/placeholder/FusionPlaceholder$Companion {
 
 public abstract class com/fusion/adapter/placeholder/FusionPlaceholderDelegate : com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> ()V
-	public fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
-	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewSignature;
-	public synthetic fun getViewTypeKey ()Ljava/lang/Object;
-	public fun onBindPlaceholder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
+	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public abstract fun onBindPlaceholder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
-	public abstract fun onCreatePlaceholderViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
-	public final fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 }
 
 public final class com/fusion/adapter/placeholder/FusionPlaceholderExtensionsKt {
-	public static final fun hideSkeleton (Lcom/fusion/adapter/FusionAdapter;)V
-	public static final fun showSkeleton (Lcom/fusion/adapter/FusionAdapter;I)V
-	public static final fun showSkeleton (Lcom/fusion/adapter/FusionListAdapter;I)V
-	public static synthetic fun showSkeleton$default (Lcom/fusion/adapter/FusionAdapter;IILjava/lang/Object;)V
-	public static synthetic fun showSkeleton$default (Lcom/fusion/adapter/FusionListAdapter;IILjava/lang/Object;)V
+	public static final fun appendPlaceholders (Lcom/fusion/adapter/FusionAdapter;I)V
+	public static final fun appendPlaceholders (Lcom/fusion/adapter/FusionListAdapter;I)V
+	public static synthetic fun appendPlaceholders$default (Lcom/fusion/adapter/FusionAdapter;IILjava/lang/Object;)V
+	public static synthetic fun appendPlaceholders$default (Lcom/fusion/adapter/FusionListAdapter;IILjava/lang/Object;)V
+	public static final fun clearPlaceholders (Lcom/fusion/adapter/FusionAdapter;)V
+	public static final fun clearPlaceholders (Lcom/fusion/adapter/FusionListAdapter;)V
+	public static final fun showPlaceholders (Lcom/fusion/adapter/FusionAdapter;I)V
+	public static final fun showPlaceholders (Lcom/fusion/adapter/FusionListAdapter;I)V
+	public static synthetic fun showPlaceholders$default (Lcom/fusion/adapter/FusionAdapter;IILjava/lang/Object;)V
+	public static synthetic fun showPlaceholders$default (Lcom/fusion/adapter/FusionListAdapter;IILjava/lang/Object;)V
 }
 
 public final class com/fusion/adapter/placeholder/FusionPlaceholderViewHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
 	public fun <init> (Landroid/view/ViewGroup;)V
 }
 
-public final class com/fusion/adapter/placeholder/SkeletonDsl : com/fusion/adapter/dsl/ViewBindingDsl {
+public abstract interface class com/fusion/adapter/placeholder/PlaceholderBinder {
+	public abstract fun bind (Landroidx/viewbinding/ViewBinding;)V
+}
+
+public abstract interface class com/fusion/adapter/placeholder/PlaceholderConfigurator {
+	public abstract fun configure (Lcom/fusion/adapter/placeholder/PlaceholderDefinitionScope;)V
+}
+
+public final class com/fusion/adapter/placeholder/PlaceholderDefinitionScope : com/fusion/adapter/dsl/BindingDefinitionScope {
 	public fun <init> ()V
+	public final fun onBind (Lcom/fusion/adapter/placeholder/PlaceholderBinder;)V
 	public final fun onBind (Lkotlin/jvm/functions/Function1;)V
 }
 
-public abstract interface class com/fusion/adapter/placeholder/SkeletonOwner {
-	public abstract fun registerSkeleton (I)V
-	public abstract fun registerSkeleton (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
-	public abstract fun registerSkeletonDelegate (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+public abstract interface class com/fusion/adapter/placeholder/PlaceholderRegistry {
+	public abstract fun registerPlaceholder (I)V
+	public abstract fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
+	public abstract fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
+	public abstract fun registerPlaceholder (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
 }
 
-public final class com/fusion/adapter/placeholder/SkeletonOwner$DefaultImpls {
-	public static synthetic fun registerSkeleton$default (Lcom/fusion/adapter/placeholder/SkeletonOwner;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+public final class com/fusion/adapter/placeholder/PlaceholderRegistry$DefaultImpls {
+	public static synthetic fun registerPlaceholder$default (Lcom/fusion/adapter/placeholder/PlaceholderRegistry;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 

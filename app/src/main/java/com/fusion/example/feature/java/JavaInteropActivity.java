@@ -10,8 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.fusion.adapter.FusionListAdapter;
-import com.fusion.adapter.internal.RouterConfiguration;
-import com.fusion.adapter.internal.TypeRouter;
+import com.fusion.adapter.internal.TypeDispatcher;
 import com.fusion.example.databinding.ActivityRecyclerBinding;
 import com.fusion.example.feature.java.delegate.JavaMsgImageDelegate;
 import com.fusion.example.feature.java.delegate.JavaMsgSystemDelegate;
@@ -52,37 +51,33 @@ public class JavaInteropActivity extends AppCompatActivity {
 
     private void setupRegistration() {
         // ========================================================================
-        // 场景 1: 一对一注册 (Simple Registration)
+        // 场景 1: 一对一注册
         // ========================================================================
-        adapter.registerDelegate(TextItem.class, new JavaTextDelegate());
+        adapter.register(TextItem.class, new JavaTextDelegate());
 
         // ========================================================================
-        // 场景 2: 一对多路由注册 (Complex Routing) - 使用全新 Builder API
+        // 场景 2: 一对多路由注册 - 使用全新 Dispatcher API
         // ========================================================================
-        TypeRouter<FusionMessage> messageRouter = new TypeRouter.Builder<FusionMessage>()
-                .stableId(FusionMessage::getId)
-                .match(FusionMessage::getMsgType)
-                .map(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
-                .map(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate())
-                .map(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())
+        TypeDispatcher<FusionMessage> messageDispatcher = new TypeDispatcher.Builder<FusionMessage>()
+                .uniqueKey(FusionMessage::getId)
+                .viewType(FusionMessage::getMsgType)
+                .delegate(FusionMessage.TYPE_TEXT, new JavaMsgTextDelegate())
+                .delegate(FusionMessage.TYPE_IMAGE, new JavaMsgImageDelegate())
+                .delegate(FusionMessage.TYPE_SYSTEM, new JavaMsgSystemDelegate())
                 .build();
 
-        adapter.registerRouter(FusionMessage.class, messageRouter);
+        adapter.registerDispatcher(FusionMessage.class, messageDispatcher);
     }
 
     private void loadData() {
         List<Object> items = new ArrayList<>();
 
-        // 1. 添加一些 TextItem
         items.add(new TextItem("100", "Hello from Java World"));
         items.add(new TextItem("101", "FusionAdapter v3.0 works great in Java!"));
 
-        // 2. 添加混合的 FusionMessage (调用 Kotlin 的 Mock 工具)
-        // 注意：MockDataGenerator 返回的是 List<FusionMessage>，需要转一下或直接addAll
         List<FusionMessage> chatList = MockDataGenerator.INSTANCE.createChatList(60, 0);
         items.addAll(chatList);
 
-        // 3. 提交数据
         adapter.submitList(items, null);
     }
 }

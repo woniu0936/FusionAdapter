@@ -1,32 +1,37 @@
 package com.fusion.adapter.delegate
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.core.R
-import com.fusion.adapter.internal.ClassSignature
+import com.fusion.adapter.extensions.getItem
+import com.fusion.adapter.extensions.setItem
+import com.fusion.adapter.internal.ClassTypeKey
+import com.fusion.adapter.internal.ViewTypeKey
 import kotlin.reflect.KProperty1
 
 /**
  * [LayoutDelegate]
- * Base class for Layout ID based delegates.
  */
 abstract class LayoutDelegate<T : Any>(
     @LayoutRes private val layoutResId: Int
 ) : FusionDelegate<T, LayoutHolder>() {
 
-    override val viewTypeKey: Any = ClassSignature(this::class.java)
-
-    // Click listeners using LayoutHolder instead of raw View
+    override val viewTypeKey: ViewTypeKey = ClassTypeKey(this::class.java)
     private var onItemClickListener: ((holder: LayoutHolder, item: T, position: Int) -> Unit)? = null
     private var onItemLongClickListener: ((holder: LayoutHolder, item: T, position: Int) -> Boolean)? = null
     private var clickDebounceMs: Long? = null
 
-    fun setOnItemClick(debounceMs: Long? = null, listener: (holder: LayoutHolder, item: T, position: Int) -> Unit) {
-        this.clickDebounceMs = debounceMs
-        this.onItemClickListener = listener
+    fun interface OnItemClickListener<T> {
+        fun onItemClick(holder: LayoutHolder, item: T, position: Int)
+    }
+
+    fun setOnItemClick(listener: OnItemClickListener<T>) {
+        this.onItemClickListener = { h, i, p -> listener.onItemClick(h, i, p) }; this.clickDebounceMs = null
+    }
+
+    fun setOnItemClick(debounceMs: Long?, listener: OnItemClickListener<T>) {
+        this.onItemClickListener = { h, i, p -> listener.onItemClick(h, i, p) }; this.clickDebounceMs = debounceMs
     }
 
     fun setOnItemLongClick(listener: (holder: LayoutHolder, item: T, position: Int) -> Boolean) {
@@ -36,126 +41,88 @@ abstract class LayoutDelegate<T : Any>(
     final override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
         val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
         val holder = LayoutHolder(view)
-
-        // Setup Tag for O(1) Retrieval
-        view.setTag(R.id.fusion_holder_tag, holder)
-
         if (onItemClickListener != null) {
-            holder.itemView.click(clickDebounceMs) { v ->
-                val position = holder.bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    @Suppress("UNCHECKED_CAST")
-                    val item = v.getTag(R.id.fusion_item_tag) as? T
-                    if (item != null) {
-                        onItemClickListener?.invoke(holder, item, position)
-                    }
+            holder.itemView.setOnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = it.getItem<T>()
+                    if (item != null) onItemClickListener?.invoke(holder, item, pos)
                 }
             }
         }
-
         if (onItemLongClickListener != null) {
-            holder.itemView.setOnLongClickListener { v ->
-                val position = holder.bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    @Suppress("UNCHECKED_CAST")
-                    val item = v.getTag(R.id.fusion_item_tag) as? T
-                    if (item != null) {
-                        return@setOnLongClickListener onItemLongClickListener?.invoke(holder, item, position) == true
-                    }
+            holder.itemView.setOnLongClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = it.getItem<T>()
+                    if (item != null) return@setOnLongClickListener onItemLongClickListener?.invoke(holder, item, pos) == true
                 }
                 false
             }
         }
-
-        onViewHolderCreated(holder)
-        return holder
+        onCreate(holder); return holder
     }
 
-    open fun onViewHolderCreated(holder: LayoutHolder) {}
-
+    open fun onCreate(holder: LayoutHolder) {}
     abstract fun LayoutHolder.onBind(item: T)
 
     final override fun onBindViewHolder(holder: LayoutHolder, item: T, position: Int, payloads: MutableList<Any>) {
-        holder.itemView.setTag(R.id.fusion_item_tag, item)
-
+        holder.setItem(item)
         if (payloads.isNotEmpty()) {
             val handled = dispatchHandledPayloads(holder, item, payloads)
-            onBindPayload(holder, item, position, payloads, handled)
-        } else {
-            holder.onBind(item)
-        }
+            onBindPartial(holder, item, position, payloads, handled)
+        } else holder.onBind(item)
     }
 
-    open fun onBindPayload(
-        holder: LayoutHolder,
-        item: T,
-        position: Int,
-        payloads: MutableList<Any>,
-        handled: Boolean
-    ) {
-        if (!handled) {
-            // Fallback to full bind
-            holder.onBind(item)
-        }
+    open fun onBindPartial(holder: LayoutHolder, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
+        if (!handled) holder.onBind(item)
     }
 
-    // --- Payload Binding Overloads (1-6 Params) ---
+    // --- onPayload 重载 (1-6 参数) ---
+    // [极致修复] 移除所有手动强转，利用基类的类型安全包装
 
-    protected fun <P> bindPayload(prop: KProperty1<T, P>, action: LayoutHolder.(P) -> Unit) {
-        registerDataWatcher(prop, action)
+    protected fun <P> onPayload(p1: KProperty1<T, P>, action: LayoutHolder.(P) -> Unit) {
+        registerPropertyObserver({ p1.get(it) }, action)
     }
 
-    protected fun <P1, P2> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>,
-        action: LayoutHolder.(P1, P2) -> Unit
-    ) {
-        registerDataWatcher(p1, p2, action)
+    protected fun <P1, P2> onPayload(p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, action: LayoutHolder.(P1, P2) -> Unit) {
+        registerPropertyObserver({ p1.get(it) }, { p2.get(it) }, action)
     }
 
-    protected fun <P1, P2, P3> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>,
-        action: LayoutHolder.(P1, P2, P3) -> Unit
-    ) {
-        registerDataWatcher(p1, p2, p3, action)
+    protected fun <P1, P2, P3> onPayload(p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, action: LayoutHolder.(P1, P2, P3) -> Unit) {
+        registerPropertyObserver({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, action)
     }
 
-    protected fun <P1, P2, P3, P4> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>,
+    protected fun <P1, P2, P3, P4> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
         action: LayoutHolder.(P1, P2, P3, P4) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4, action)
+        registerPropertyObserver({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, { p4.get(it) }, action)
     }
 
-    protected fun <P1, P2, P3, P4, P5> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>,
+    protected fun <P1, P2, P3, P4, P5> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
+        p5: KProperty1<T, P5>,
         action: LayoutHolder.(P1, P2, P3, P4, P5) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4, p5, action)
+        registerPropertyObserver({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, { p4.get(it) }, { p5.get(it) }, action)
     }
 
-    protected fun <P1, P2, P3, P4, P5, P6> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>, p6: KProperty1<T, P6>,
+    protected fun <P1, P2, P3, P4, P5, P6> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
+        p5: KProperty1<T, P5>,
+        p6: KProperty1<T, P6>,
         action: LayoutHolder.(P1, P2, P3, P4, P5, P6) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4, p5, p6, action)
-    }
-
-    private inline fun View.click(
-        debounce: Long?,
-        crossinline block: (View) -> Unit
-    ) {
-        // 获取全局默认值，这里假设是 500ms，你可以换成 FusionConfig.globalDebounce
-        val safeDebounce = debounce ?: 500L
-
-        this.setOnClickListener(object : View.OnClickListener {
-            private var lastClickTime: Long = 0
-            override fun onClick(v: View) {
-                val now = System.currentTimeMillis()
-                if (now - lastClickTime > safeDebounce) {
-                    lastClickTime = now
-                    block(v)
-                }
-            }
-        })
+        registerPropertyObserver({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, { p4.get(it) }, { p5.get(it) }, { p6.get(it) }, action)
     }
 }

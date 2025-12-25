@@ -62,7 +62,7 @@
 # ----------------------------------------------------------------------------
 # 5. 资源与反射 (Resources & Reflection)
 # ----------------------------------------------------------------------------
-# Fusion 内部使用了 findItemInternal 和 tag (R.id.fusion_item_tag)。
+# Fusion 内部使用了 getItem 和 tag (R.id.fusion_item_tag)。
 # 虽然 consumer-rules 不能直接控制资源压缩 (shrinkResources)，
 # 但我们要确保 Fusion 内部使用的资源 ID 字段名不被混淆，防止反射查找 ID 失败。
 -keepclassmembers class **.R$id {

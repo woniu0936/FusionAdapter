@@ -2,10 +2,8 @@ package com.fusion.example.feature.java.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.example.databinding.ItemMsgImageBinding;
 import com.fusion.example.model.FusionMessage;
@@ -15,7 +13,7 @@ public class JavaMsgImageDelegate extends JavaDelegate<FusionMessage, ItemMsgIma
 
     @Override
     @Nullable
-    public Object getStableId(@NonNull FusionMessage item) {
+    public Object getUniqueKey(@NonNull FusionMessage item) {
         return item.getId();
     }
 
@@ -26,8 +24,8 @@ public class JavaMsgImageDelegate extends JavaDelegate<FusionMessage, ItemMsgIma
     }
 
     @Override
-    protected void onBind(@NonNull ItemMsgImageBinding binding, @NonNull FusionMessage item, int position) {
-        binding.ivImage.setContentDescription("Java Image: " + item.getId());
+    protected void onBind(@NonNull ItemMsgImageBinding binding, @NonNull FusionMessage item) {
+        binding.ivImage.setContentDescription(item.getContent());
         ChatStyleHelper.INSTANCE.bindImageMsg(binding, item.isMe());
     }
 }

@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.register
+import com.fusion.adapter.setup
 import com.fusion.adapter.paging.setupFusionPaging
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemImageBinding
@@ -34,18 +34,18 @@ class PagingDemoActivity : AppCompatActivity() {
         fullStatusBar(binding.root)
         binding.fabAdd.visibility = View.GONE
 
-        // =================================================================
-        // 1. 初始化 FusionPagingAdapter
-        // =================================================================
-        // 使用 setupFusionPaging DSL，体验与普通列表完全一致
+        // 使用 setupFusionPaging DSL
         val pagingAdapter = binding.recyclerView.setupFusionPaging<FusionMessage> {
 
-            // --- 注册多类型路由 (内联逻辑) ---
-            register<FusionMessage> {
-                stableId { it.id }
-                match { it.msgType }
+            // register -> setup
+            setup<FusionMessage> {
+                // stableId -> uniqueKey
+                uniqueKey { it.id }
+                // match -> viewType
+                viewTypeKey { it.msgType }
 
-                map(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
+                // map -> dispatch
+                dispatch(FusionMessage.TYPE_TEXT, ItemMsgTextBinding::inflate) {
                     onBind { item ->
                         tvContent.text = item.content
                         ChatStyleHelper.bindTextMsg(this, item.isMe)
@@ -53,7 +53,7 @@ class PagingDemoActivity : AppCompatActivity() {
                     onClick(100) { item -> toast("Text: ${item.id}") }
                 }
 
-                map(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
+                dispatch(FusionMessage.TYPE_IMAGE, ItemMsgImageBinding::inflate) {
                     onBind { item ->
                         ivImage.contentDescription = item.content
                         ChatStyleHelper.bindImageMsg(this, item.isMe)
@@ -61,13 +61,13 @@ class PagingDemoActivity : AppCompatActivity() {
                     onClick(1000) { item -> toast("Image: ${item.id}") }
                 }
 
-                map(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
+                dispatch(FusionMessage.TYPE_SYSTEM, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
             }
 
-            register<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
-                stableId { it.id }
+            setup<ImageItem, ItemImageBinding>(ItemImageBinding::inflate) {
+                uniqueKey { it.id }
                 onBind { item ->
                     ChatStyleHelper.bindStandaloneImage(this)
                     tvDesc.text = "Extra Type: ${item.id}"
@@ -75,35 +75,24 @@ class PagingDemoActivity : AppCompatActivity() {
             }
         }
 
-//        binding.recyclerView.adapter = pagingAdapter
         binding.recyclerView.adapter = pagingAdapter.withLoadStateFooter(
             footer = SimpleLoadStateAdapter {
-                // 这里的 retry 会触发 PagingAdapter 的重试逻辑
                 pagingAdapter.retry()
             }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // =================================================================
-        // 2. 绑定数据流
-        // =================================================================
         lifecycleScope.launch {
             viewModel.pagingFlow.collectLatest { pagingData ->
-                // 提交 PagingData
                 pagingAdapter.submitData(pagingData)
             }
         }
 
-        // =================================================================
-        // 3. 处理加载状态 (Paging 3 标准操作)
-        // =================================================================
-        // 这里我们简单演示如何监听状态，也可以使用 withLoadStateFooter 添加底部 Loading 条
         lifecycleScope.launch {
             pagingAdapter.loadStateFlow.collectLatest { loadStates ->
                 val isRefreshing = loadStates.refresh is LoadState.Loading
                 val isAppending = loadStates.append is LoadState.Loading
 
-                // 简单的 Title 提示状态
                 title = when {
                     isRefreshing -> "Fusion Paging (Refreshing...)"
                     isAppending -> "Fusion Paging (Loading more...)"
@@ -111,10 +100,6 @@ class PagingDemoActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // 下拉刷新
-        // (假设你的布局里套了 SwipeRefreshLayout，这里只是示意)
-        // binding.swipeRefresh.setOnRefreshListener { pagingAdapter.refresh() }
     }
 
     private fun toast(msg: String) {

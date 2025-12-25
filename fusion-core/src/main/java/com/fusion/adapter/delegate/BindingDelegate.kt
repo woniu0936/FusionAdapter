@@ -1,196 +1,227 @@
 package com.fusion.adapter.delegate
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.core.R
-import com.fusion.adapter.internal.ClassSignature
-import com.fusion.adapter.internal.Watcher
+import com.fusion.adapter.extensions.getItem
+import com.fusion.adapter.extensions.setItem
+import com.fusion.adapter.internal.ClassTypeKey
+import com.fusion.adapter.internal.PropertyObserver
+import com.fusion.adapter.internal.PropertyObserver1
+import com.fusion.adapter.internal.PropertyObserver2
+import com.fusion.adapter.internal.PropertyObserver3
+import com.fusion.adapter.internal.PropertyObserver4
+import com.fusion.adapter.internal.PropertyObserver5
+import com.fusion.adapter.internal.PropertyObserver6
+import com.fusion.adapter.internal.ViewTypeKey
 import kotlin.reflect.KProperty1
 
 /**
  * [BindingDelegate]
- * Base class for ViewBinding based delegates.
- * Optimized for type safety and performance.
  */
 abstract class BindingDelegate<T : Any, VB : ViewBinding>(
-    private val inflater: BindingInflater<VB>
+    private val inflater: BindingInflater<VB>? = null
 ) : FusionDelegate<T, BindingHolder<VB>>() {
 
-    /** Default signature: UserDelegate::class */
-    override val viewTypeKey: Any = ClassSignature(this::class.java)
-
-    // Click listeners using VB instead of raw View
+    override val viewTypeKey: ViewTypeKey = ClassTypeKey(this::class.java)
     private var onItemClick: ((binding: VB, item: T, position: Int) -> Unit)? = null
     private var onItemLongClick: ((binding: VB, item: T, position: Int) -> Boolean)? = null
-
-    // Internal state, kept private
     private var clickDebounceMs: Long? = null
 
-    /**
-     * Set click listener with optional debounce.
-     * @param debounceMs Custom debounce time, null uses global default.
-     */
-    fun setOnItemClick(debounceMs: Long? = null, listener: (binding: VB, item: T, position: Int) -> Unit) {
-        this.onItemClick = listener
-        this.clickDebounceMs = debounceMs
+    fun interface OnItemClickListener<T, VB : ViewBinding> {
+        fun onItemClick(binding: VB, item: T, position: Int)
+    }
+
+    fun setOnItemClick(listener: OnItemClickListener<T, VB>) {
+        this.onItemClick = { b, i, p -> listener.onItemClick(b, i, p) }; this.clickDebounceMs = null
+    }
+
+    fun setOnItemClick(debounceMs: Long?, listener: OnItemClickListener<T, VB>) {
+        this.onItemClick = { b, i, p -> listener.onItemClick(b, i, p) }; this.clickDebounceMs = debounceMs
     }
 
     fun setOnItemLongClick(listener: (binding: VB, item: T, position: Int) -> Boolean) {
         this.onItemLongClick = listener
     }
 
+    protected open fun onInflateBinding(inflater: LayoutInflater, parent: ViewGroup): VB {
+        return this.inflater?.inflate(inflater, parent, false)
+            ?: throw IllegalStateException("Fusion: Either provide an inflater in constructor or override onInflateBinding()")
+    }
+
     final override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-        val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = onInflateBinding(LayoutInflater.from(parent.context), parent)
         val holder = BindingHolder(binding)
-
-        // Setup Tag for O(1) Retrieval
-        holder.itemView.setTag(R.id.fusion_binding_tag, binding)
-
-        // Click Listener Setup
         if (onItemClick != null) {
-            // Use extension function `click` from Fusion library
-            holder.itemView.click(clickDebounceMs) {
+            holder.itemView.setOnClickListener {
                 val pos = holder.bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
-                    @Suppress("UNCHECKED_CAST")
-                    val item = holder.itemView.getTag(R.id.fusion_item_tag) as? T
-                    if (item != null) {
-                        onItemClick?.invoke(holder.binding, item, pos)
-                    }
+                    val item = holder.getItem<T>()
+                    if (item != null) onItemClick?.invoke(holder.binding, item, pos)
                 }
             }
         }
-
-        // Long Click Listener Setup
         if (onItemLongClick != null) {
             holder.itemView.setOnLongClickListener {
                 val pos = holder.bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
-                    @Suppress("UNCHECKED_CAST")
-                    val item = holder.itemView.getTag(R.id.fusion_item_tag) as? T
-                    if (item != null) {
-                        return@setOnLongClickListener onItemLongClick?.invoke(holder.binding, item, pos) == true
-                    }
+                    val item = holder.getItem<T>()
+                    if (item != null) return@setOnLongClickListener onItemLongClick?.invoke(holder.binding, item, pos) == true
                 }
                 false
             }
         }
-
-        onViewHolderCreated(holder.binding)
-        return holder
+        onCreate(holder.binding); return holder
     }
 
-    /** Hook for initialization, e.g. setting static listeners */
-    protected open fun onViewHolderCreated(binding: VB) {}
+    open fun onCreate(binding: VB) {}
 
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
-        holder.itemView.setTag(R.id.fusion_item_tag, item)
-
+        holder.setItem(item)
         if (payloads.isNotEmpty()) {
-            // 1. Automatic Dispatch (Property Watchers)
-            val handled = dispatchHandledPayloads(holder, item, payloads)
-
-            // 2. Manual Dispatch (Unified Callback)
-            // Even if handled=true, we still call this to allow "hybrid" logic if needed.
-            onBindPayload(holder.binding, item, position, payloads, handled)
+            // [分发核心] 传入 Binding 作为接收者
+            val handled = dispatchHandledPayloads(holder.binding, item, payloads)
+            onBindPartial(holder.binding, item, position, payloads, handled)
         } else {
             onBind(holder.binding, item, position)
         }
     }
 
-    /** Subclass Implementation: Full Bind */
     abstract fun onBind(binding: VB, item: T, position: Int)
-
-    /**
-     * Subclass Implementation: Partial Bind.
-     * Default behavior: If not handled by watchers, fallback to full bind.
-     */
-    open fun onBindPayload(
-        binding: VB,
-        item: T,
-        position: Int,
-        payloads: MutableList<Any>,
-        handled: Boolean
-    ) {
-        if (!handled) {
-            onBind(binding, item, position)
-        }
+    open fun onBindPartial(binding: VB, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
+        if (!handled) onBind(binding, item, position)
     }
 
-    // --- Property Watcher Helpers ---
-
-    // Override register to proxy holder->binding
-    override fun registerWatcher(watcher: Watcher<T>) {
-        super.registerWatcher(object : Watcher<T> {
-            override fun checkChange(oldItem: T, newItem: T) = watcher.checkChange(oldItem, newItem)
+    /**
+     * [addObserver] 代理实现
+     */
+    override fun addObserver(observer: PropertyObserver<T>) {
+        super.addObserver(object : PropertyObserver<T> {
+            override fun checkChange(oldItem: T, newItem: T) = observer.checkChange(oldItem, newItem)
             override fun execute(receiver: Any, item: T) {
-                @Suppress("UNCHECKED_CAST")
-                val holder = receiver as BindingHolder<VB>
-                watcher.execute(holder.binding, item)
+                // [核心逻辑] 无论上传来的是 Holder 还是 VB，都确保解包为 VB
+                // 这解决了 JavaDelegate 中 (VB) receiver 强转失败的问题
+                val target = if (receiver is BindingHolder<*>) receiver.binding else receiver
+                observer.execute(target, item)
             }
         })
     }
 
-    // --- Payload Binding Overloads (1-6 Params) ---
-
-    protected fun <P> bindPayload(prop: KProperty1<T, P>, action: VB.(P) -> Unit) {
-        registerDataWatcher(prop) { value -> this.binding.action(value) }
+    // --- 重写内部注册方法，显式处理 Binding 解包 (不再调用 addObserver 的包装版) ---
+    @Suppress("UNCHECKED_CAST")
+    override fun <P> registerPropertyObserver(g1: (T) -> P, action: BindingHolder<VB>.(P) -> Unit) {
+        super.addObserver(PropertyObserver1(g1) { p -> (this as BindingHolder<VB>).action(p) })
     }
 
-    protected fun <P1, P2> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>,
-        action: VB.(P1, P2) -> Unit
+    @Suppress("UNCHECKED_CAST")
+    override fun <P1, P2> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, action: BindingHolder<VB>.(P1, P2) -> Unit) {
+        super.addObserver(PropertyObserver2(g1, g2) { v1, v2 -> (this as BindingHolder<VB>).action(v1, v2) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <P1, P2, P3> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, action: BindingHolder<VB>.(P1, P2, P3) -> Unit) {
+        super.addObserver(PropertyObserver3(g1, g2, g3) { v1, v2, v3 -> (this as BindingHolder<VB>).action(v1, v2, v3) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <P1, P2, P3, P4> registerPropertyObserver(
+        g1: (T) -> P1,
+        g2: (T) -> P2,
+        g3: (T) -> P3,
+        g4: (T) -> P4,
+        action: BindingHolder<VB>.(P1, P2, P3, P4) -> Unit
     ) {
-        registerDataWatcher(p1, p2) { v1, v2 -> this.binding.action(v1, v2) }
+        super.addObserver(PropertyObserver4(g1, g2, g3, g4) { v1, v2, v3, v4 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4) })
     }
 
-    protected fun <P1, P2, P3> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>,
-        action: VB.(P1, P2, P3) -> Unit
+    @Suppress("UNCHECKED_CAST")
+    override fun <P1, P2, P3, P4, P5> registerPropertyObserver(
+        g1: (T) -> P1,
+        g2: (T) -> P2,
+        g3: (T) -> P3,
+        g4: (T) -> P4,
+        g5: (T) -> P5,
+        action: BindingHolder<VB>.(P1, P2, P3, P4, P5) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3) { v1, v2, v3 -> this.binding.action(v1, v2, v3) }
+        super.addObserver(PropertyObserver5(g1, g2, g3, g4, g5) { v1, v2, v3, v4, v5 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5) })
     }
 
-    protected fun <P1, P2, P3, P4> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>,
+    @Suppress("UNCHECKED_CAST")
+    override fun <P1, P2, P3, P4, P5, P6> registerPropertyObserver(
+        g1: (T) -> P1,
+        g2: (T) -> P2,
+        g3: (T) -> P3,
+        g4: (T) -> P4,
+        g5: (T) -> P5,
+        g6: (T) -> P6,
+        action: BindingHolder<VB>.(P1, P2, P3, P4, P5, P6) -> Unit
+    ) {
+        super.addObserver(PropertyObserver6(g1, g2, g3, g4, g5, g6) { v1, v2, v3, v4, v5, v6 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5, v6) })
+    }
+
+    // --- Kotlin DSL onPayload ---
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P> onPayload(p1: KProperty1<T, P>, action: VB.(P) -> Unit) {
+        addObserver(PropertyObserver1({ p1.get(it) }) { v1 -> (this as VB).action(v1) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P1, P2> onPayload(p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, action: VB.(P1, P2) -> Unit) {
+        addObserver(PropertyObserver2({ p1.get(it) }, { p2.get(it) }) { v1, v2 -> (this as VB).action(v1, v2) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P1, P2, P3> onPayload(p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, action: VB.(P1, P2, P3) -> Unit) {
+        addObserver(PropertyObserver3({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }) { v1, v2, v3 -> (this as VB).action(v1, v2, v3) })
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P1, P2, P3, P4> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
         action: VB.(P1, P2, P3, P4) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4) { v1, v2, v3, v4 -> this.binding.action(v1, v2, v3, v4) }
+        addObserver(PropertyObserver4({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, { p4.get(it) }) { v1, v2, v3, v4 -> (this as VB).action(v1, v2, v3, v4) })
     }
 
-    protected fun <P1, P2, P3, P4, P5> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>,
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P1, P2, P3, P4, P5> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
+        p5: KProperty1<T, P5>,
         action: VB.(P1, P2, P3, P4, P5) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4, p5) { v1, v2, v3, v4, v5 -> this.binding.action(v1, v2, v3, v4, v5) }
+        addObserver(
+            PropertyObserver5(
+                { p1.get(it) },
+                { p2.get(it) },
+                { p3.get(it) },
+                { p4.get(it) },
+                { p5.get(it) }) { v1, v2, v3, v4, v5 -> (this as VB).action(v1, v2, v3, v4, v5) })
     }
 
-    protected fun <P1, P2, P3, P4, P5, P6> bindPayload(
-        p1: KProperty1<T, P1>, p2: KProperty1<T, P2>, p3: KProperty1<T, P3>, p4: KProperty1<T, P4>, p5: KProperty1<T, P5>, p6: KProperty1<T, P6>,
+    @Suppress("UNCHECKED_CAST")
+    protected fun <P1, P2, P3, P4, P5, P6> onPayload(
+        p1: KProperty1<T, P1>,
+        p2: KProperty1<T, P2>,
+        p3: KProperty1<T, P3>,
+        p4: KProperty1<T, P4>,
+        p5: KProperty1<T, P5>,
+        p6: KProperty1<T, P6>,
         action: VB.(P1, P2, P3, P4, P5, P6) -> Unit
     ) {
-        registerDataWatcher(p1, p2, p3, p4, p5, p6) { v1, v2, v3, v4, v5, v6 -> this.binding.action(v1, v2, v3, v4, v5, v6) }
+        addObserver(
+            PropertyObserver6(
+                { p1.get(it) },
+                { p2.get(it) },
+                { p3.get(it) },
+                { p4.get(it) },
+                { p5.get(it) },
+                { p6.get(it) }) { v1, v2, v3, v4, v5, v6 -> (this as VB).action(v1, v2, v3, v4, v5, v6) })
     }
-}
-
-private inline fun View.click(
-    debounce: Long?,
-    crossinline block: (View) -> Unit
-) {
-    // 获取全局默认值，这里假设是 500ms，你可以换成 FusionConfig.globalDebounce
-    val safeDebounce = debounce ?: 500L
-
-    this.setOnClickListener(object : View.OnClickListener {
-        private var lastClickTime: Long = 0
-        override fun onClick(v: View) {
-            val now = System.currentTimeMillis()
-            if (now - lastClickTime > safeDebounce) {
-                lastClickTime = now
-                block(v)
-            }
-        }
-    })
 }

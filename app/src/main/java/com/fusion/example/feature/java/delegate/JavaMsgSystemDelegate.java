@@ -2,19 +2,17 @@ package com.fusion.example.feature.java.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
+import com.fusion.adapter.delegate.JavaDelegate;
 import com.fusion.example.databinding.ItemMsgSystemBinding;
 import com.fusion.example.model.FusionMessage;
-import com.fusion.adapter.delegate.JavaDelegate;
 
 public class JavaMsgSystemDelegate extends JavaDelegate<FusionMessage, ItemMsgSystemBinding> {
 
     @Override
     @Nullable
-    public Object getStableId(@NonNull FusionMessage item) {
+    public Object getUniqueKey(@NonNull FusionMessage item) {
         return item.getId();
     }
 
@@ -25,7 +23,7 @@ public class JavaMsgSystemDelegate extends JavaDelegate<FusionMessage, ItemMsgSy
     }
 
     @Override
-    protected void onBind(@NonNull ItemMsgSystemBinding binding, @NonNull FusionMessage item, int position) {
+    protected void onBind(@NonNull ItemMsgSystemBinding binding, @NonNull FusionMessage item) {
         binding.tvSystemMsg.setText(item.getContent());
     }
 }

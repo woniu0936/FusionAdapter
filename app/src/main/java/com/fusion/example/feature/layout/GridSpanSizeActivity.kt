@@ -3,7 +3,7 @@ package com.fusion.example.feature.layout
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
-import com.fusion.adapter.register
+import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
 import com.fusion.example.databinding.ActivityRecyclerBinding
 import com.fusion.example.databinding.ItemTextBinding
@@ -23,8 +23,8 @@ class GridSpanSizeActivity : AppCompatActivity() {
 
         // 1. 初始化 Fusion，传入 GridLayoutManager
         val adapter = binding.recyclerView.setupFusion(GridLayoutManager(this, spanCount)) {
-            register<GridSpanItem, ItemTextBinding>(ItemTextBinding::inflate) {
-                stableId { it.id }
+            setup<GridSpanItem, ItemTextBinding>(ItemTextBinding::inflate) {
+                uniqueKey { it.id }
                 onBind { item ->
                     tvContent.text = "${item.span} Span(s)"
                     // 视觉区分：不同 Span 不同颜色
