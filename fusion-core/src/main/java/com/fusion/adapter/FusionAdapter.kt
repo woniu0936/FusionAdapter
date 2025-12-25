@@ -3,6 +3,7 @@ package com.fusion.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import androidx.annotation.MainThread
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.delegate.BindingHolder
@@ -11,10 +12,12 @@ import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.FusionExecutors
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * [FusionAdapter] - 手动挡
@@ -32,7 +35,7 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
     internal val core = AdapterController()
 
     // 内部数据持有
-    private val items = ArrayList<Any>()
+    private var items: List<Any> = Collections.emptyList()
 
     /**
      * 获取当前实际渲染的数据列表 (Read-Only)
@@ -41,6 +44,15 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
      */
     val currentItems: List<Any>
         get() = Collections.unmodifiableList(items)
+
+    private val maxScheduledGeneration = AtomicInteger(0)
+
+    private var pendingTask: FusionExecutors.Cancellable? = null
+
+    // Java 回调接口
+    fun interface OnItemsChangedListener {
+        fun onItemsChanged()
+    }
 
     init {
         if (Fusion.getConfig().defaultStableId) {
@@ -118,36 +130,80 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
         core.registerPlaceholder(delegate)
     }
 
+    /**
+     * [同步] 设置数据
+     * 适用于小数据量或已经在外部处理好线程的场景。
+     */
+    @MainThread
     fun setItems(newItems: List<Any>) {
-        // ✅ 清洗
+        // 版本号自增，立即使之前的异步任务失效
+        maxScheduledGeneration.incrementAndGet()
+        pendingTask?.cancel()
+
         val safeItems = core.sanitize(newItems)
-        items.clear()
-        items.addAll(safeItems)
+        updateInternal(safeItems)
+    }
+
+    /**
+     * [异步] 设置数据 (推荐)
+     * 自动处理线程切换、数据清洗、并发乱序和内存泄漏问题。
+     */
+    fun setItemsAsync(newItems: List<Any>, listener: OnItemsChangedListener? = null) {
+        // 1. 取消上一个未完成的任务
+        pendingTask?.cancel()
+
+        // 2. 获取当前代次
+        val generation = maxScheduledGeneration.incrementAndGet()
+
+        // 3. 后台清洗
+        pendingTask = FusionExecutors.runInBackground {
+            // 如果任务被 cancel(true)，sanitize 内部会感知并提前退出
+            val safeItems = core.sanitize(newItems)
+
+            // 4. 主线程回调
+            FusionExecutors.runOnMain {
+                // 只有代次匹配，才应用结果
+                if (maxScheduledGeneration.get() == generation) {
+                    updateInternal(safeItems)
+                    listener?.onItemsChanged()
+                    pendingTask = null
+                }
+            }
+        }
+    }
+
+    private fun updateInternal(safeItems: List<Any>) {
+        this.items = safeItems
         notifyDataSetChanged()
     }
 
     fun addItems(newItems: List<Any>) {
-        // ✅ 清洗
         val safeItems = core.sanitize(newItems)
         if (safeItems.isNotEmpty()) {
-            val start = items.size
-            items.addAll(safeItems)
-            notifyItemRangeInserted(start, safeItems.size)
+            val newList = ArrayList(this.items)
+            val startPosition = newList.size
+            newList.addAll(safeItems)
+            this.items = Collections.unmodifiableList(newList)
+            notifyItemRangeInserted(startPosition, safeItems.size)
         }
     }
 
     fun insertItem(position: Int, item: Any) {
-        // 单个 Item 也要清洗（检查是否支持）
         val safeList = core.sanitize(listOf(item))
         if (safeList.isNotEmpty()) {
-            items.addAll(position, safeList)
+            if (position < 0 || position > items.size) return
+            val newList = ArrayList(this.items)
+            newList.addAll(position, safeList)
+            this.items = Collections.unmodifiableList(newList)
             notifyItemRangeInserted(position, safeList.size)
         }
     }
 
     fun removeItem(position: Int) {
         if (position in items.indices) {
-            items.removeAt(position)
+            val newList = ArrayList(this.items)
+            newList.removeAt(position)
+            this.items = Collections.unmodifiableList(newList)
             notifyItemRemoved(position)
         }
     }
@@ -203,6 +259,13 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Regi
             getItem = { pos -> if (pos in items.indices) items[pos] else null },
             getDelegate = { item -> core.getDelegate(item) }
         )
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        // 页面销毁时，立即取消 pending 任务，断开 Adapter 引用链
+        pendingTask?.cancel()
+        pendingTask = null
     }
 
     // --- 生命周期分发 ---

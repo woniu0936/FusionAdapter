@@ -3,8 +3,10 @@ package com.fusion.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.delegate.BindingHolder
@@ -13,6 +15,7 @@ import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.extensions.attachFusionGridSupport
 import com.fusion.adapter.extensions.attachFusionStaggeredSupport
 import com.fusion.adapter.internal.AdapterController
+import com.fusion.adapter.internal.FusionExecutors
 import com.fusion.adapter.internal.TypeRouter
 import com.fusion.adapter.internal.checkStableIdRequirement
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
@@ -40,6 +43,14 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     @PublishedApi
     internal val core = AdapterController()
 
+    // 注入 FusionExecutors，使用标准 Java Executor 接口
+    private val differ: AsyncListDiffer<Any> = AsyncListDiffer(
+        ListUpdateCallbackWrapper(this),
+        AsyncDifferConfig.Builder(FusionDiffCallback(core))
+            .setBackgroundThreadExecutor(FusionExecutors.backgroundExecutorAdapter)
+            .build()
+    )
+
     init {
         if (Fusion.getConfig().defaultStableId) {
             setHasStableIds(true)
@@ -47,26 +58,21 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     }
 
     // ========================================================================================
-    // DiffUtil 策略配置
+    // 内部类
     // ========================================================================================
 
-    private val diffCallback = object : DiffUtil.ItemCallback<Any>() {
-        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-            return core.areItemsTheSame(oldItem, newItem)
-        }
-
-        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
-            // 路由到 Delegate 内部判断内容是否变化
-            return core.areContentsTheSame(oldItem, newItem)
-        }
-
-        override fun getChangePayload(oldItem: Any, newItem: Any): Any? {
-            // 路由到 Delegate 获取局部刷新 Payload
-            return core.getChangePayload(oldItem, newItem)
-        }
+    private class FusionDiffCallback(private val core: AdapterController) : DiffUtil.ItemCallback<Any>() {
+        override fun areItemsTheSame(old: Any, new: Any) = core.areItemsTheSame(old, new)
+        override fun areContentsTheSame(old: Any, new: Any) = core.areContentsTheSame(old, new)
+        override fun getChangePayload(old: Any, new: Any) = core.getChangePayload(old, new)
     }
 
-    private val differ = AsyncListDiffer(this, diffCallback)
+    private class ListUpdateCallbackWrapper(private val adapter: RecyclerView.Adapter<*>) : ListUpdateCallback {
+        override fun onInserted(position: Int, count: Int) = adapter.notifyItemRangeInserted(position, count)
+        override fun onRemoved(position: Int, count: Int) = adapter.notifyItemRangeRemoved(position, count)
+        override fun onMoved(fromPosition: Int, toPosition: Int) = adapter.notifyItemMoved(fromPosition, toPosition)
+        override fun onChanged(position: Int, count: Int, payload: Any?) = adapter.notifyItemRangeChanged(position, count, payload)
+    }
 
     // ========================================================================================
     // 注册接口 (API)
@@ -144,11 +150,22 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         core.registerPlaceholder(delegate)
     }
 
+    /**
+     * 提交数据 (Double Async)
+     * 利用 FusionExecutors 在后台线程完成 "Sanitize" 和 "Diff" 两步操作。
+     */
     fun submitList(list: List<Any>?, commitCallback: Runnable? = null) {
         val rawList = list ?: emptyList()
-        // ✅ 核心：在提交给 Diff 之前清洗数据
-        val safeList = core.sanitize(rawList)
-        differ.submitList(safeList, commitCallback)
+
+        // 1. 先投递到后台线程进行清洗
+        FusionExecutors.runInBackground {
+            val safeList = core.sanitize(rawList)
+
+            // 2. 将清洗后的数据交给 Differ
+            // Differ 内部会检测到当前已经在 BackgroundExecutor 上，
+            // 因此会直接继续进行 Diff 计算，高效且无额外线程切换。
+            differ.submitList(safeList, commitCallback)
+        }
     }
 
     /** 获取当前数据列表 (只读) */

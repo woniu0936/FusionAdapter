@@ -26,23 +26,23 @@ class AdapterController {
     val viewTypeRegistry = ViewTypeRegistry()
 
     /**
-     * Sanitization
-     * 职责：剔除未注册且无 Fallback 的数据，防止 LayoutManager 崩溃或错乱。
-     * 性能：基于 Registry 缓存，耗时极低。
-     * 策略：
-     * 1. 检查 Registry 是否支持。
-     * 2. 支持 -> 放行。
-     * 3. 不支持：
-     *    - Debug 模式 -> 直接抛出异常 Crash (Fail-Fast)。
-     *    - Release 模式 -> 丢弃数据，并回调 ErrorListener 进行上报 (Fail-Safe + Observability)。
+     * 数据清洗 (Thread Safe & Interruptible)
+     * 在遍历过程中检查线程中断状态，以便快速响应取消操作。
      */
     fun sanitize(rawList: List<Any>): List<Any> {
         if (rawList.isEmpty()) return rawList
+
         val config = Fusion.getConfig()
-        var hasRemoved = false
         val safeList = ArrayList<Any>(rawList.size)
+        var hasRemoved = false
 
         for (item in rawList) {
+            // [Pro] 响应式中断：如果任务被取消，立即停止繁重的遍历
+            if (Thread.interrupted()) {
+                Log.w("Fusion", "Sanitize task interrupted.")
+                return emptyList() // 返回空列表，后续的 Generation 检查会丢弃这个结果
+            }
+
             if (viewTypeRegistry.isSupported(item)) {
                 safeList.add(item)
             } else {
@@ -50,7 +50,6 @@ class AdapterController {
                 hasRemoved = true
             }
         }
-
         return if (hasRemoved) safeList else rawList
     }
 

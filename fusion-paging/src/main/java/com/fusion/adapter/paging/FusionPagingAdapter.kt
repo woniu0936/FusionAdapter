@@ -1,4 +1,5 @@
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
 import androidx.lifecycle.Lifecycle
@@ -233,18 +234,18 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
             val delegate = core.viewTypeRegistry.getPlaceholderDelegate()
             if (delegate != null) {
                 // A. 正常情况：有 Delegate，确保可见并绑定
-                holder.itemView.visibility = android.view.View.VISIBLE
+                holder.itemView.visibility = View.VISIBLE
                 delegate.onBindViewHolder(holder, Unit, position, mutableListOf())
             } else {
                 // B. 异常情况：Paging 产生了 null 数据，但用户没注册占位符 Delegate
                 // [关键]: 强制隐藏 View，防止复用上一次的脏数据显示出来
                 // 注意：这里用 INVISIBLE 占位，还是 GONE 消失，取决于你的业务定义。
                 // 通常占位符是为了占坑，建议 INVISIBLE；或者直接抛出异常提醒开发者。
-                holder.itemView.visibility = android.view.View.INVISIBLE
+                holder.itemView.visibility = View.INVISIBLE
             }
         } else {
             // 必须强制设置 VISIBLE，因为这个 ViewHolder 之前可能被上面的逻辑设为了 INVISIBLE
-            holder.itemView.visibility = android.view.View.VISIBLE
+            holder.itemView.visibility = View.VISIBLE
             core.onBindViewHolder(holder, item, position)
         }
     }

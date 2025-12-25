@@ -10,6 +10,8 @@ import com.fusion.adapter.dsl.LayoutIdDsl
 import com.fusion.adapter.dsl.RouterDsl
 import com.fusion.adapter.dsl.ViewBindingDsl
 import com.fusion.adapter.internal.DslAdapterFactory
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 // ============================================================================================
 // Adapter 扩展入口 (API Surface)
@@ -159,4 +161,40 @@ fun RecyclerView.autoScrollToBottom(adapter: RecyclerView.Adapter<*>) {
 
 inline fun Fusion.initialize(block: FusionConfig.Builder.() -> Unit) {
     initialize(FusionConfig.Builder().apply(block).build())
+}
+
+/**
+ * Kotlin 协程扩展支持
+ * 允许在协程中以挂起的方式调用异步更新，自动处理取消。
+ */
+suspend fun FusionAdapter.setItemsSuspending(newItems: List<Any>) {
+    return suspendCancellableCoroutine { continuation ->
+        // 调用 Java 风格的异步方法
+        this.setItemsAsync(newItems) {
+            // 任务完成，恢复协程
+            if (continuation.isActive) {
+                continuation.resume(Unit)
+            }
+        }
+
+        // 如果协程被取消（例如页面关闭），尝试取消 Adapter 内部的任务
+        // 注意：Adapter 内部的 pendingTask 会在 onDetached 时自动取消，
+        // 但这里显式响应协程取消会更灵敏。
+        // (注：由于 setItemsAsync 没有暴露 Cancellable 返回值给外部，
+        // 这里主要依赖 Adapter 自身的生命周期管理，或者你可以修改 setItemsAsync 返回 Cancellable)
+    }
+}
+
+/**
+ * FusionListAdapter 的协程支持
+ * 挂起直到 Diff 计算完成且 UI 更新完毕。
+ */
+suspend fun FusionListAdapter.submitListSuspending(list: List<Any>) {
+    return suspendCancellableCoroutine { continuation ->
+        this.submitList(list) {
+            if (continuation.isActive) {
+                continuation.resume(Unit)
+            }
+        }
+    }
 }
