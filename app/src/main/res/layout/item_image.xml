@@ -6,40 +6,64 @@
     android:id="@+id/card_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
-    app:strokeColor="?attr/colorOutlineVariant"
-    app:strokeWidth="1dp"
-    app:cardBackgroundColor="?attr/colorSurface">
+    android:layout_margin="8dp"
+    style="?attr/materialCardViewFilledStyle"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
+    app:cardCornerRadius="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 图片区域：我们将在代码中设置随机色背景 -->
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivImage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
-            android:minHeight="120dp"
+            android:minHeight="160dp"
             android:scaleType="centerCrop"
-            android:src="@android:color/transparent"
-            tools:background="#FFDDDDDD"
-            android:contentDescription="Item Image" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Fusion.TopRound"
+            tools:src="@tools:sample/backgrounds/scenic" />
 
-        <!-- 描述区域 -->
-        <TextView
-            android:id="@+id/tvDesc"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurface"
-            tools:text="Image Description" />
+            android:orientation="vertical"
+            android:padding="12dp">
 
+            <TextView
+                android:id="@+id/tvDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Minimalist Desk Setup"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="$ 129.00"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorPrimary"
+                    android:textStyle="bold"/>
+
+                <com.google.android.material.button.MaterialButton
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconSize="16dp"
+                    app:iconTint="?attr/colorPrimary"/>
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

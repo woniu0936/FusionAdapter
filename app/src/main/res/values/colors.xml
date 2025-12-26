@@ -1,7 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="colorPrimary">#6750A4</color>
-    <color name="colorOutline">#79747E</color>
+    <!-- M3 Light Theme Colors -->
+    <color name="m3_primary">#005FB0</color>
+    <color name="m3_on_primary">#FFFFFF</color>
+    <color name="m3_primary_container">#D5E3FF</color>
+    <color name="m3_on_primary_container">#001C3B</color>
+    
+    <color name="m3_secondary">#565E71</color>
+    <color name="m3_on_secondary">#FFFFFF</color>
+    <color name="m3_secondary_container">#DAE2F9</color>
+    <color name="m3_on_secondary_container">#131C2B</color>
+    
+    <color name="m3_surface">#FDFBFF</color>
+    <color name="m3_on_surface">#1A1C1E</color>
+    <color name="m3_surface_variant">#E0E2EC</color>
+    <color name="m3_on_surface_variant">#44474E</color>
+    
+    <color name="m3_outline">#74777F</color>
+    <color name="m3_surface_container_low">#F7F3FA</color>
+    <color name="m3_surface_container">#F3EDF7</color>
+    <color name="m3_surface_container_high">#ECE6F0</color>
 </resources>

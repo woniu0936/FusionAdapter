@@ -7,65 +7,65 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:paddingHorizontal="16dp"
-    android:paddingVertical="4dp"
+    android:paddingVertical="6dp"
     android:clipToPadding="false"
     android:baselineAligned="false">
 
-    <!-- 左侧头像 (对方) -->
-    <ImageView
+    <!-- Receiver Avatar -->
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_avatar_left"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_marginEnd="8dp"
         android:layout_gravity="bottom"
-        android:contentDescription="Avatar"
-        tools:src="@color/holo_purple" />
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        tools:src="@tools:sample/avatars" />
 
-    <!-- 消息气泡容器，使用 weight 控制最大宽度，gravity 控制对齐 -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- 气泡卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_bubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:cardElevation="0dp"
             app:strokeWidth="0dp"
-            app:contentPadding="12dp">
+            app:cardCornerRadius="20dp">
 
             <TextView
                 android:id="@+id/tvContent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:lineSpacingMultiplier="1.1"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="10dp"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
-                tools:text="Hello! strict Material Design 3." />
+                android:lineSpacingMultiplier="1.1"
+                tools:text="Hello! This is a high-quality M3 bubble." />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 时间/状态 (可选) -->
         <TextView
             android:id="@+id/tv_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="10:30"
-            android:textSize="11sp"
-            android:layout_marginTop="2dp"
-            android:alpha="0.7"/>
+            android:layout_marginTop="4dp"
+            android:layout_marginHorizontal="4dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:alpha="0.7"
+            tools:text="10:30 AM" />
     </LinearLayout>
 
-    <!-- 右侧头像 (我) -->
-    <ImageView
+    <!-- Sender Avatar -->
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_avatar_right"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_marginStart="8dp"
         android:layout_gravity="bottom"
-        android:contentDescription="My Avatar"
-        tools:src="@color/holo_blue_light" />
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        tools:src="@tools:sample/avatars" />
 
 </LinearLayout>

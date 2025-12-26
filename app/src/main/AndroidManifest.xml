@@ -1,33 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".app.DemoApp"
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FusionAdapter">
+        android:theme="@style/Theme.FusionAdapter"
+        android:usesCleartextTraffic="true">
+        
         <activity
             android:name=".feature.main.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".feature.java.JavaInteropActivity" />
-        <activity android:name=".feature.paging.PagingDemoActivity" />
-        <activity android:name=".feature.classic.ClassicManualActivity" />
-        <activity android:name=".feature.payload.PayloadPerformanceActivity" />
-        <activity android:name=".feature.dsl.DslComplexActivity" />
-        <activity android:name=".feature.layout.GridSpanSizeActivity" />
-        <activity android:name=".feature.layout.StaggeredFullSpanActivity" />
-        <activity android:name=".feature.test.CrashTestActivity" />
+
+        <activity android:name=".feature.moments.MomentsActivity" />
+        <activity android:name=".feature.chat.ChatActivity" />
+        <activity android:name=".feature.plaza.GridSpanSizeActivity" />
+        <activity android:name=".feature.plaza.StaggeredFullSpanActivity" />
+        <activity android:name=".feature.discovery.PagingDemoActivity" />
+        <activity android:name=".feature.lab.ClassicManualActivity" />
+        <activity android:name=".feature.lab.LabJavaActivity" />
+        <activity android:name=".feature.lab.CrashTestActivity" />
+        
     </application>
 
 </manifest>

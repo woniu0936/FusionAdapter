@@ -3,64 +3,58 @@ package com.fusion.example.delegate
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.view.View
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.extensions.getItem
-import com.fusion.example.databinding.ItemSocialPostBinding
-import com.fusion.example.model.SocialPost
-import com.fusion.example.utils.M3ColorGenerator
-import com.fusion.example.utils.applyRandomAvatar
+import com.fusion.example.databinding.ItemMomentCardBinding
+import com.fusion.example.core.model.Moment
+import com.fusion.example.utils.loadUrl
 import com.google.android.material.R as MaterialR
 
 class SocialPostDelegate(
-    private val onLikeClick: (SocialPost) -> Unit
-) : BindingDelegate<SocialPost, ItemSocialPostBinding>(ItemSocialPostBinding::inflate) {
+    private val onLikeClick: (Moment) -> Unit
+) : BindingDelegate<Moment, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
 
     init {
-        // 使用 setter 注入业务主键
         setUniqueKey { it.id }
-
-        onPayload(SocialPost::isLiked, SocialPost::likeCount) { isLiked, count ->
+        onPayload(Moment::isLiked, Moment::likes) { isLiked, count ->
             updateLikeState(this, isLiked, count)
         }
     }
 
-    override fun onCreate(binding: ItemSocialPostBinding) {
+    override fun onCreate(binding: ItemMomentCardBinding) {
         binding.btnLike.setOnClickListener {
-            // 已更新为 getItem
-            val item = binding.root.getItem<SocialPost>()
+            val item = binding.root.getItem<Moment>()
             if (item != null) onLikeClick(item)
         }
     }
 
-    override fun onBind(binding: ItemSocialPostBinding, item: SocialPost, position: Int) {
-        binding.tvUsername.text = item.username
+    override fun onBind(binding: ItemMomentCardBinding, item: Moment, position: Int) {
+        binding.tvName.text = item.author.name
         binding.tvContent.text = item.content
-        binding.ivAvatar.applyRandomAvatar()
-        binding.ivMediaPlaceholder.setImageDrawable(M3ColorGenerator.randomRectDrawable(16f))
-        updateLikeState(binding, item.isLiked, item.likeCount)
+        binding.ivAvatar.loadUrl(item.author.avatar, isCircle = true)
+        
+        if (item.images.isNotEmpty()) {
+            binding.imageContainer.visibility = View.VISIBLE
+            binding.ivImage.loadUrl(item.images[0])
+        } else {
+            binding.imageContainer.visibility = View.GONE
+        }
+        
+        updateLikeState(binding, item.isLiked, item.likes)
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateLikeState(binding: ItemSocialPostBinding, isLiked: Boolean, count: Int) {
-        binding.tvLikeCount.text = "$count Likes"
+    private fun updateLikeState(binding: ItemMomentCardBinding, isLiked: Boolean, count: Int) {
+        binding.btnLike.text = count.toString()
         if (isLiked) {
+            binding.btnLike.setIconResource(android.R.drawable.btn_star_big_on)
             binding.btnLike.iconTint = ColorStateList.valueOf(Color.RED)
-            binding.tvLikeCount.setTextColor(Color.RED)
+            binding.btnLike.setTextColor(Color.RED)
         } else {
-            val color = resolveThemeColor(binding.root.context, MaterialR.attr.colorOnSurfaceVariant)
-            binding.btnLike.iconTint = ColorStateList.valueOf(color)
-            binding.tvLikeCount.setTextColor(color)
+            binding.btnLike.setIconResource(android.R.drawable.btn_star_big_off)
+            binding.btnLike.iconTint = ColorStateList.valueOf(Color.GRAY)
+            binding.btnLike.setTextColor(Color.GRAY)
         }
-
-        binding.btnLike.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100)
-            .withEndAction {
-                binding.btnLike.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
-            }.start()
-    }
-
-    private fun resolveThemeColor(context: android.content.Context, attrRes: Int): Int {
-        val typedValue = android.util.TypedValue()
-        context.theme.resolveAttribute(attrRes, typedValue, true)
-        return typedValue.data
     }
 }
