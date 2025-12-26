@@ -45,8 +45,8 @@ class ChatActivity : AppCompatActivity() {
                 dispatch(1, ItemMsgTextMeBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content 
-                        // Fix: Using robust avatar URL
-                        ivAvatarMe.loadUrl("https://i.pravatar.cc/150?u=me", isCircle = true)
+                        // Use a reliable unsplash image instead of pravatar
+                        ivAvatarMe.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
                     }
                 }
 
@@ -54,7 +54,7 @@ class ChatActivity : AppCompatActivity() {
                 dispatch(2, ItemMsgTextOtherBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content
-                        val avatarUrl = item.sender?.avatar ?: "https://i.pravatar.cc/150?u=${item.id}"
+                        val avatarUrl = item.sender?.avatar ?: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
                         ivAvatar.loadUrl(avatarUrl, isCircle = true)
                     }
                 }
@@ -70,19 +70,18 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
+        // REMOVED stackFromEnd = true to avoid jumping to bottom immediately
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { state ->
                     when (state) {
-                        is ChatState.Loading -> adapter.showPlaceholders(6)
+                        is ChatState.Loading -> adapter.showPlaceholders(16)
                         is ChatState.Success -> {
+                            Log.d("FusionChat", "Messages count: ${state.msgs.size}")
                             adapter.submitList(state.msgs)
-                            binding.recyclerView.post { 
-                                binding.recyclerView.requestLayout()
-                                binding.recyclerView.scrollToPosition(adapter.itemCount - 1)
-                            }
+                            // REMOVED auto-scrolling to bottom on load
                         }
                     }
                 }

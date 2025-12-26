@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.view.animation.OvershootInterpolator
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -15,11 +16,9 @@ import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
-import com.fusion.example.R
+import com.fusion.example.core.model.FeedItem
 import com.fusion.example.core.model.Moment
-import com.fusion.example.databinding.ActivityBaseFixedBinding
-import com.fusion.example.databinding.ItemMomentCardBinding
-import com.fusion.example.databinding.ItemMomentPlaceholderBinding
+import com.fusion.example.databinding.*
 import com.fusion.example.utils.fullStatusBar
 import com.fusion.example.utils.loadUrl
 import kotlinx.coroutines.launch
@@ -34,27 +33,69 @@ class MomentsActivity : AppCompatActivity() {
         setContentView(binding.root)
         fullStatusBar(binding.root)
         
-        binding.toolbar.title = "Social Flow"
+        binding.toolbar.title = "Feed Experience"
 
         val adapter = binding.recyclerView.setupFusion {
-            setup<Moment, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
+            
+            setup<FeedItem.TimelineHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+                uniqueKey { it.label }
+                onBind { item -> tvTitle.text = item.label }
+            }
+
+            setup<FeedItem.AdCampaign, ItemFeedAdBinding>(ItemFeedAdBinding::inflate) {
                 uniqueKey { it.id }
                 onBind { item ->
-                    tvName.text = item.author.name
-                    tvContent.text = item.content
-                    ivAvatar.loadUrl(item.author.avatar, isCircle = true)
-                    imageContainer.visibility = if (item.images.isNotEmpty()) View.VISIBLE else View.GONE
-                    if (item.images.isNotEmpty()) ivImage.loadUrl(item.images[0])
-                    btnLike.setOnClickListener { root.getItem<Moment>()?.let { vm.toggleLike(it) } }
-                    updateLikeUI(this, item.isLiked, item.likes, animate = false)
-                }
-                onPayload(Moment::isLiked, Moment::likes) { isLiked, likes ->
-                    updateLikeUI(this, isLiked, likes, animate = true)
+                    tvAdTitle.text = item.title
+                    tvAdDesc.text = item.description
+                    ivBanner.loadUrl(item.bannerUrl)
+                    btnAction.text = item.actionText
+                    btnAction.setOnClickListener { Toast.makeText(this@MomentsActivity, "Ad Clicked!", Toast.LENGTH_SHORT).show() }
                 }
             }
 
-            // [API] 使用专属骨架屏
-            registerPlaceholder(ItemMomentPlaceholderBinding::inflate) { onBind { _: Any -> } }
+            setup<FeedItem.UserSuggestion, ItemUserSuggestionBinding>(ItemUserSuggestionBinding::inflate) {
+                uniqueKey { it.id }
+                onBind { item ->
+                    tvSugName.text = item.user.name
+                    tvSugFriends.text = "${item.mutualFriends} mutual friends"
+                    ivSugAvatar.loadUrl(item.user.avatar, isCircle = true)
+                    btnFollow.setOnClickListener { 
+                        btnFollow.text = "Requested"
+                        btnFollow.isEnabled = false
+                    }
+                }
+            }
+
+            setup<FeedItem.MomentItem, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
+                uniqueKey { it.moment.id }
+                
+                onBind { item ->
+                    val m = item.moment
+                    tvName.text = m.author.name
+                    tvContent.text = m.content
+                    ivAvatar.loadUrl(m.author.avatar, isCircle = true)
+                    
+                    imageContainer.visibility = if (m.images.isNotEmpty()) View.VISIBLE else View.GONE
+                    if (m.images.isNotEmpty()) ivImage.loadUrl(m.images[0])
+                    
+                    btnLike.setOnClickListener { 
+                        // 正确使用 root.getItem
+                        val currentItem = root.getItem<FeedItem.MomentItem>()
+                        currentItem?.let { vm.toggleLike(it.moment.id) }
+                    }
+                    
+                    updateLikeUI(this, m.isLiked, m.likes, animate = false)
+                }
+
+                // [Payload] 局部刷新：仅处理点赞状态
+                onPayload(FeedItem.MomentItem::moment) { m: Moment ->
+                    updateLikeUI(this, m.isLiked, m.likes, animate = true)
+                }
+            }
+
+            registerPlaceholder(ItemMomentPlaceholderBinding::inflate) {
+                onBind { _: Any -> }
+            }
         }
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -65,7 +106,7 @@ class MomentsActivity : AppCompatActivity() {
                     when (state) {
                         is MomentsState.Loading -> adapter.showPlaceholders(3)
                         is MomentsState.Success -> {
-                            adapter.submitList(state.posts)
+                            adapter.submitList(state.items)
                             binding.recyclerView.post { binding.recyclerView.requestLayout() }
                         }
                     }
@@ -77,7 +118,7 @@ class MomentsActivity : AppCompatActivity() {
     private fun updateLikeUI(binding: ItemMomentCardBinding, isLiked: Boolean, likes: Int, animate: Boolean) {
         binding.btnLike.text = likes.toString()
         val color = if (isLiked) Color.parseColor("#E91E63") else Color.GRAY
-        binding.btnLike.setIconResource(if (isLiked) R.drawable.ic_favorite else R.drawable.ic_favorite_border)
+        binding.btnLike.setIconResource(if (isLiked) com.fusion.example.R.drawable.ic_favorite else com.fusion.example.R.drawable.ic_favorite_border)
         binding.btnLike.iconTint = ColorStateList.valueOf(color)
         binding.btnLike.setTextColor(color)
         if (animate) {

@@ -13,8 +13,10 @@ recyclerview = "1.4.0"
 collection = "1.4.5"
 paging = "3.2.1"
 publish = "0.35.0"
+coil = "2.5.0"
 
 [libraries]
+coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

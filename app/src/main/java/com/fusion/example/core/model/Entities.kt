@@ -1,5 +1,32 @@
 package com.fusion.example.core.model
 
+/**
+ * [FeedItem] 社交流顶级密封类
+ */
+sealed class FeedItem {
+    // 1. 标准动态
+    data class MomentItem(val moment: Moment) : FeedItem()
+    
+    // 2. 商业推广
+    data class AdCampaign(
+        val id: String, 
+        val title: String, 
+        val description: String, 
+        val bannerUrl: String,
+        val actionText: String = "Learn More"
+    ) : FeedItem()
+    
+    // 3. 关注推荐
+    data class UserSuggestion(
+        val id: String,
+        val user: User,
+        val mutualFriends: Int = 0
+    ) : FeedItem()
+
+    // 4. 时光分隔线
+    data class TimelineHeader(val label: String) : FeedItem()
+}
+
 data class User(
     val id: String,
     val name: String,
@@ -31,7 +58,7 @@ data class Product(
     val price: String,
     val cover: String,
     val isHot: Boolean = false,
-    val height: Int = 0 // For Staggered items
+    val height: Int = 0 
 )
 
 data class SectionHeader(val title: String)

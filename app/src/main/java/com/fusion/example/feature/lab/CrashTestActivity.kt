@@ -8,9 +8,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.FusionListAdapter
-import com.fusion.adapter.exception.UnregisteredTypeException
-import com.fusion.adapter.initialize
-import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.adapter.setup
 import com.fusion.example.core.model.SectionHeader
@@ -22,10 +19,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CrashTestActivity : AppCompatActivity() {
-    
+
     data class Unregistered(val data: String)
 
     private lateinit var binding: ActivityCrashTestM3Binding
+
     // 延迟初始化 Adapter，确保它能拿到 onCreate 中通过 Fusion.initialize 设置的最新的 debug 配置
     private lateinit var adapter: FusionListAdapter
     private val items = mutableListOf<Any>()
@@ -33,19 +31,14 @@ class CrashTestActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // 1. 在创建任何 Adapter 之前，先强制更新全局配置为 debug = true
         originalConfig = Fusion.getConfig()
-        Fusion.initialize {
-            setDebug(true)
-            setDefaultItemIdEnabled(originalConfig?.defaultItemIdEnabled ?: false)
-            setGlobalDebounceInterval(originalConfig?.globalDebounceInterval ?: 300)
-        }
 
         binding = ActivityCrashTestM3Binding.inflate(layoutInflater)
         setContentView(binding.root)
         fullStatusBar(binding.root)
-        
+
         binding.toolbar.title = "Sanitization Lab"
 
         // 2. 现在初始化 Adapter，它内部的 FusionCore 会读取到最新的 debug=true 状态
@@ -75,7 +68,7 @@ class CrashTestActivity : AppCompatActivity() {
         lifecycleScope.launch {
             adapter.showPlaceholders(8)
             delay(1000)
-            
+
             items.clear()
             items.add(SectionHeader("Registry Security: Verified"))
             repeat(30) {
@@ -96,7 +89,9 @@ class CrashTestActivity : AppCompatActivity() {
         // 有保护触发 (捕获异常)
         binding.btnCatchCrash.setOnClickListener {
             val list = ArrayList(items)
-            list.add(1, Unregistered("EXTERNAL_DATA"))
+            // 修复：确保索引安全。如果 items 为空（加载中），则添加到末尾；否则添加到索引 1。
+            val targetIndex = if (list.size > 1) 1 else list.size
+            list.add(targetIndex, Unregistered("EXTERNAL_DATA"))
             try {
                 // setItems 会立即执行 core.filter()，在 debug=true 时抛出异常
                 adapter.setItems(list)

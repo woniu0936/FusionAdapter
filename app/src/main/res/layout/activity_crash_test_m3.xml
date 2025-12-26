@@ -67,20 +67,24 @@
                         android:id="@+id/btn_crash"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="64dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
-                        android:text="Trigger Crash"
+                        android:text="Force Crash"
                         app:backgroundTint="?attr/colorError"
-                        android:textColor="?attr/colorOnError" />
+                        android:textColor="?attr/colorOnError"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
 
                     <Button
                         android:id="@+id/btn_catch_crash"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="64dp"
                         android:layout_weight="1"
-                        android:text="Safe Catch" />
+                        android:text="Safe Catch"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

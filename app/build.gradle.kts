@@ -43,7 +43,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation("io.coil-kt:coil:2.5.0") // Added for real network images
+    implementation(libs.coil) // Updated to use version catalog
     implementation(projects.fusionCore)
     implementation(projects.fusionPaging)
     testImplementation(libs.junit)
