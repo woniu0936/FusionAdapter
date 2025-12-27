@@ -1,6 +1,7 @@
 package com.fusion.adapter.log
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import com.fusion.adapter.Fusion
 import java.io.File
 import java.io.FileWriter
@@ -11,15 +12,22 @@ import java.util.concurrent.Executors
 
 /**
  * [FusionLogger]
- * Commercial-grade high-performance logging system.
- * Supports Logcat output and asynchronous file writing.
+ * Internal high-performance logging system.
+ * Restrict to LIBRARY_GROUP to allow cross-module access but hide from end users.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object FusionLogger {
 
     private const val TAG_PREFIX = "Fusion-"
     private val DATE_FORMAT = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
     
     private val fileExecutor by lazy { Executors.newSingleThreadExecutor() }
+
+    inline fun v(tag: String, msg: () -> String) {
+        if (shouldLog()) {
+            print(Log.VERBOSE, tag, msg())
+        }
+    }
 
     inline fun i(tag: String, msg: () -> String) {
         if (shouldLog()) {
@@ -45,12 +53,6 @@ object FusionLogger {
         }
     }
 
-    inline fun v(tag: String, msg: () -> String) {
-        if (shouldLog()) {
-            print(Log.VERBOSE, tag, msg())
-        }
-    }
-
     @PublishedApi
     internal fun shouldLog(): Boolean {
         return Fusion.getConfig().isDebug
@@ -61,6 +63,7 @@ object FusionLogger {
         val fullTag = "$TAG_PREFIX$tag"
         
         when (priority) {
+            Log.VERBOSE -> Log.v(fullTag, message)
             Log.INFO -> Log.i(fullTag, message)
             Log.DEBUG -> Log.d(fullTag, message)
             Log.WARN -> Log.w(fullTag, message)
@@ -78,11 +81,12 @@ object FusionLogger {
         val time = DATE_FORMAT.format(Date())
         val thread = Thread.currentThread().name
         val levelStr = when (priority) {
+            Log.VERBOSE -> "V"
             Log.INFO -> "I"
             Log.DEBUG -> "D"
             Log.WARN -> "W"
             Log.ERROR -> "E"
-            else -> "V"
+            else -> "?"
         }
         val stackTrace = t?.stackTraceToString() ?: ""
         return "$time [$thread] $levelStr/$tag: $message\n$stackTrace"

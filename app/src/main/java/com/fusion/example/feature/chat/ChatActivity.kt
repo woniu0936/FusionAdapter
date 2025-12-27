@@ -1,13 +1,13 @@
 package com.fusion.example.feature.chat
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
@@ -78,7 +78,7 @@ class ChatActivity : AppCompatActivity() {
                     when (state) {
                         is ChatState.Loading -> adapter.showPlaceholders(6)
                         is ChatState.Success -> {
-                            FusionLogger.d("Chat") { "Messages count: ${state.msgs.size}" }
+                            Log.d("FusionChat", "Messages count: ${state.msgs.size}")
                             adapter.submitList(state.msgs)
                         }
                     }
