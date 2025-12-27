@@ -85,7 +85,7 @@ object FusionLogger {
             else -> "V"
         }
         val stackTrace = t?.stackTraceToString() ?: ""
-        return "$time [$thread] $levelStr/$tag: $message\n$stackTrace\n"
+        return "$time [$thread] $levelStr/$tag: $message\n$stackTrace"
     }
 
     private fun writeAsync(dir: String, content: String) {
@@ -95,7 +95,7 @@ object FusionLogger {
                 val file = File(dir, fileName)
                 
                 FileWriter(file, true).use { writer ->
-                    writer.append(content)
+                    writer.append(content).append("\n")
                 }
             } catch (e: Exception) {
                 Log.e("FusionLogger", "Failed to write log", e)
