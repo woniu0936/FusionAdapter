@@ -2,60 +2,65 @@ package com.fusion.example.utils
 
 import android.content.Context
 import android.util.TypedValue
-import android.view.Gravity
 import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.databinding.ItemMsgTextBinding
 import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.R as MaterialR
 
 object ChatStyleHelper {
 
     fun bindTextMsg(binding: ItemMsgTextBinding, isMe: Boolean) {
         val context = binding.root.context
         val density = context.resources.displayMetrics.density
+        val params = binding.cardBubble.layoutParams as ConstraintLayout.LayoutParams
 
         if (isMe) {
-            binding.rootLayout.gravity = Gravity.END
             binding.ivAvatarLeft.visibility = View.GONE
             binding.ivAvatarRight.visibility = View.VISIBLE
+            params.horizontalBias = 1.0f
             
-            val bg = resolveThemeColor(context, com.google.android.material.R.attr.colorPrimaryContainer)
-            val txt = resolveThemeColor(context, com.google.android.material.R.attr.colorOnPrimaryContainer)
+            val bg = resolveThemeColor(context, MaterialR.attr.colorPrimaryContainer)
+            val txt = resolveThemeColor(context, MaterialR.attr.colorOnPrimaryContainer)
 
             binding.cardBubble.setCardBackgroundColor(bg)
             binding.tvContent.setTextColor(txt)
-            binding.tvTime.gravity = Gravity.END
             binding.cardBubble.shapeAppearanceModel = getBubbleShape(density, isMe = true)
         } else {
-            binding.rootLayout.gravity = Gravity.START
             binding.ivAvatarLeft.visibility = View.VISIBLE
             binding.ivAvatarRight.visibility = View.GONE
+            params.horizontalBias = 0.0f
 
-            val bg = resolveThemeColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
-            val txt = resolveThemeColor(context, com.google.android.material.R.attr.colorOnSecondaryContainer)
+            val bg = resolveThemeColor(context, MaterialR.attr.colorSecondaryContainer)
+            val txt = resolveThemeColor(context, MaterialR.attr.colorOnSecondaryContainer)
 
             binding.cardBubble.setCardBackgroundColor(bg)
             binding.tvContent.setTextColor(txt)
-            binding.tvTime.gravity = Gravity.START
             binding.cardBubble.shapeAppearanceModel = getBubbleShape(density, isMe = false)
         }
+        binding.cardBubble.layoutParams = params
     }
 
     fun bindImageMsg(binding: ItemMsgImageBinding, isMe: Boolean) {
         val context = binding.root.context
         binding.ivImage.setImageDrawable(M3ColorGenerator.randomRectDrawable(0f))
+        val params = binding.cardBubble.layoutParams as ConstraintLayout.LayoutParams
 
         if (isMe) {
-            binding.rootLayout.gravity = Gravity.END
             binding.ivAvatarLeft.visibility = View.GONE
             binding.ivAvatarRight.visibility = View.VISIBLE
+            binding.ivAvatarRight.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
+            params.horizontalBias = 1.0f
             binding.cardBubble.strokeColor = resolveThemeColor(context, android.R.attr.colorPrimary)
         } else {
-            binding.rootLayout.gravity = Gravity.START
             binding.ivAvatarLeft.visibility = View.VISIBLE
             binding.ivAvatarRight.visibility = View.GONE
+            binding.ivAvatarLeft.loadUrl("https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", isCircle = true)
+            params.horizontalBias = 0.0f
             binding.cardBubble.strokeColor = resolveThemeColor(context, android.R.attr.textColorSecondary)
         }
+        binding.cardBubble.layoutParams = params
     }
 
     private fun getBubbleShape(density: Float, isMe: Boolean): ShapeAppearanceModel {

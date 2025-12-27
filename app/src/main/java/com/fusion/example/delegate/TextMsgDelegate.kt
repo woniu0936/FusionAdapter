@@ -1,25 +1,32 @@
 package com.fusion.example.delegate
 
-import android.view.Gravity
 import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.example.databinding.ItemMsgTextBinding
 import com.fusion.example.core.model.ChatMessage
+import com.fusion.example.databinding.ItemMsgTextBinding
 import com.fusion.example.utils.loadUrl
 
 class TextMsgDelegate : BindingDelegate<ChatMessage, ItemMsgTextBinding>(ItemMsgTextBinding::inflate) {
     init { setUniqueKey { it.id } }
     override fun onBind(binding: ItemMsgTextBinding, item: ChatMessage, position: Int) {
-        binding.tvContent.text = item.content
-        if (item.isMe) {
-            binding.rootLayout.gravity = Gravity.END
-            binding.ivAvatarLeft.visibility = View.GONE
-            binding.ivAvatarRight.visibility = View.VISIBLE
-        } else {
-            binding.rootLayout.gravity = Gravity.START
-            binding.ivAvatarLeft.visibility = View.VISIBLE
-            binding.ivAvatarRight.visibility = View.GONE
-            item.sender?.let { binding.ivAvatarLeft.loadUrl(it.avatar, isCircle = true) }
+        binding.apply {
+            tvContent.text = item.content
+            val params = cardBubble.layoutParams as ConstraintLayout.LayoutParams
+            
+            if (item.isMe) {
+                ivAvatarLeft.visibility = View.GONE
+                ivAvatarRight.visibility = View.VISIBLE
+                ivAvatarRight.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
+                params.horizontalBias = 1.0f
+            } else {
+                ivAvatarLeft.visibility = View.VISIBLE
+                ivAvatarRight.visibility = View.GONE
+                val avatarUrl = item.sender?.avatar ?: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+                ivAvatarLeft.loadUrl(avatarUrl, isCircle = true)
+                params.horizontalBias = 0.0f
+            }
+            cardBubble.layoutParams = params
         }
     }
 }
