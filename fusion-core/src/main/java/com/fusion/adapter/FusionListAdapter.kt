@@ -10,16 +10,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.delegate.LayoutHolder
-import com.fusion.adapter.dsl.ItemConfiguration
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
-import com.fusion.adapter.internal.FusionCore
-import com.fusion.adapter.internal.FusionDispatcher
-import com.fusion.adapter.internal.TypeDispatcher
+import com.fusion.adapter.internal.engine.FusionCore
+import com.fusion.adapter.internal.engine.FusionDispatcher
+import com.fusion.adapter.internal.registry.FusionRegistryDelegate
+import com.fusion.adapter.internal.registry.TypeDispatcher
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
@@ -27,10 +25,16 @@ import com.fusion.adapter.placeholder.PlaceholderConfigurator
 import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
 import com.fusion.adapter.placeholder.PlaceholderRegistry
 
+/**
+ * [FusionListAdapter]
+ */
 open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), FusionRegistry, PlaceholderRegistry {
 
     @PublishedApi
     internal val core = FusionCore()
+    
+    private val registryDelegate = FusionRegistryDelegate(core)
+
     private val differ: AsyncListDiffer<Any> = AsyncListDiffer(
         ListUpdateCallbackWrapper(this),
         AsyncDifferConfig.Builder(FusionDiffCallback(core)).setBackgroundThreadExecutor(FusionDispatcher.backgroundExecutorAdapter).build()
@@ -55,61 +59,13 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         override fun onChanged(position: Int, count: Int, payload: Any?) = adapter.notifyItemRangeChanged(position, count, payload)
     }
 
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
-        core.registerDispatcher(clazz, dispatcher)
-    }
-
-    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val dispatcher = TypeDispatcher.create(delegate)
-        core.registerDispatcher(clazz, dispatcher)
-    }
-
-    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun registerPlaceholder(@LayoutRes layoutResId: Int) {
-        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
-                return LayoutHolder(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
-            }
-            override fun onBindPlaceholder(holder: LayoutHolder) {}
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) {
-        val scope = PlaceholderDefinitionScope<VB>(); block?.invoke(scope)
-        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
-            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-                return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
-            }
-            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                val itemConfiguration = scope.getConfiguration()
-                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun <VB : ViewBinding> registerPlaceholder(
-        inflater: BindingInflater<VB>,
-        configurator: PlaceholderConfigurator<VB>?
-    ) {
-        val scope = PlaceholderDefinitionScope<VB>()
-        configurator?.configure(scope)
-        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
-            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-                val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
-                return BindingHolder(binding)
-            }
-            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                val itemConfiguration = scope.getConfiguration()
-                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
+    // --- Registry Delegation ---
+    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = registryDelegate.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = registryDelegate.register(clazz, delegate)
+    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = registryDelegate.registerPlaceholder(delegate)
+    override fun registerPlaceholder(@LayoutRes layoutResId: Int) = registryDelegate.registerPlaceholder(layoutResId)
+    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) = registryDelegate.registerPlaceholder(inflate, block)
+    override fun <VB : ViewBinding> registerPlaceholder(inflater: BindingInflater<VB>, configurator: PlaceholderConfigurator<VB>?) = registryDelegate.registerPlaceholder(inflater, configurator)
 
     fun submitList(list: List<Any>?, commitCallback: Runnable? = null) {
         val rawList = if (list == null) emptyList() else ArrayList(list)
@@ -125,10 +81,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
                 FusionLogger.d("Adapter") { "Filter finished in ${System.currentTimeMillis() - start}ms. Safe list size: ${safeList.size}" }
             }
             
-            // Fix: Must call differ.submitList on Main Thread because AsyncListDiffer is not thread-safe
-            // and might invoke callbacks immediately on the calling thread.
             FusionDispatcher.runOnMain {
-                FusionLogger.d("Adapter") { "Dispatching to Main Thread for DiffUtil." }
                 differ.submitList(safeList) {
                     FusionLogger.d("Adapter") { "DiffUtil finished. Updating UI." }
                     commitCallback?.run()
@@ -141,11 +94,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     fun setItems(list: List<Any>?, commitCallback: Runnable? = null) {
         val rawList = if (list == null) emptyList() else ArrayList(list)
         FusionLogger.i("Adapter") { "setItems called (Sync). Size: ${rawList.size}" }
-        
-        val start = System.currentTimeMillis()
         val safeList = core.filter(rawList)
-        FusionLogger.d("Adapter") { "Filter (Sync) finished in ${System.currentTimeMillis() - start}ms." }
-        
         differ.submitList(safeList, commitCallback)
     }
 

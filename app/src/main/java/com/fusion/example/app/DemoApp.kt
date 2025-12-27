@@ -1,9 +1,9 @@
 package com.fusion.example.app
 
 import android.app.Application
-import android.util.Log
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.initialize
+import com.fusion.adapter.log.FusionLogger
 import com.fusion.example.BuildConfig
 
 class DemoApp : Application() {
@@ -18,7 +18,7 @@ class DemoApp : Application() {
             setLogOutput(BuildConfig.DEBUG, logDir)
             
             setErrorListener { item, e ->
-                Log.e("Fusion", "Unknown type: " + item.javaClass, e);
+                FusionLogger.e("Core", e) { "Unknown type: " + item.javaClass }
             }
             setGlobalDebounceInterval(300)
             setDefaultItemIdEnabled(true)

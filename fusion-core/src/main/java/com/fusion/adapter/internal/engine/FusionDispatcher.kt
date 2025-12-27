@@ -1,4 +1,4 @@
-package com.fusion.adapter.internal
+package com.fusion.adapter.internal.engine
 
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +8,8 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
+
+import com.fusion.adapter.log.FusionLogger
 
 /**
  * [FusionDispatcher]
@@ -29,7 +31,14 @@ internal object FusionDispatcher {
         threadFactory = object : ThreadFactory {
             private val count = AtomicInteger(1)
             override fun newThread(r: Runnable): Thread {
-                return Thread(r, "Fusion-Dispatcher-${count.getAndIncrement()}").apply {
+                return Thread({
+                    FusionLogger.d("Trace") { "Thread ${Thread.currentThread().name} starting task" }
+                    try {
+                        r.run()
+                    } finally {
+                        FusionLogger.d("Trace") { "Thread ${Thread.currentThread().name} finished task" }
+                    }
+                }, "Fusion-Dispatcher-${count.getAndIncrement()}").apply {
                     // 降低优先级，防止后台 Diff 抢占 UI 渲染资源
                     priority = Thread.NORM_PRIORITY - 1
                     isDaemon = true
@@ -44,9 +53,9 @@ internal object FusionDispatcher {
 
     /**
      * [Core API] 分发后台任务
-     * 现在不需要 try-catch wrapper 了，FusionExecutor 会自动处理。
      */
     fun dispatch(task: Runnable): Cancellable {
+        FusionLogger.d("Trace") { "FusionDispatcher.dispatch called" }
         val future = backgroundService.submit(task)
         return Cancellable { future.cancel(true) }
     }
@@ -56,7 +65,6 @@ internal object FusionDispatcher {
      */
     fun runOnMain(task: Runnable): Cancellable {
         if (isMainThread()) {
-            // 主线程直接运行，不捕获异常，让其自然崩溃
             task.run()
             return Cancellable { }
         }
@@ -69,7 +77,6 @@ internal object FusionDispatcher {
 
     /**
      * [Interop] 暴露给 AsyncListDiffer 使用的 Executor。
-     * 由于 AsyncListDiffer 内部使用的是 execute()，我们的 afterExecute 同样能完美捕获异常。
      */
     val backgroundExecutorAdapter = Executor { command -> backgroundService.execute(command) }
 }

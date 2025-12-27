@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.dsl.BindingDefinitionScope
 import com.fusion.adapter.dsl.DispatcherScope
-import com.fusion.adapter.internal.DslAdapterFactory
+import com.fusion.adapter.internal.registry.DslAdapterFactory
 
 /**
  * [setup] 核心入口

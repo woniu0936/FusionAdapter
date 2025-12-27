@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         fullStatusBar(binding.root)
 
-        binding.toolbar.title = "Fusion Example"
+        binding.toolbar.title = "Fusion v3.0"
 
         binding.recyclerView.setupFusion {
             setup<MenuEntry, ItemSimpleLayoutBinding>(ItemSimpleLayoutBinding::inflate) {

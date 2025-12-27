@@ -1,0 +1,13 @@
+package com.fusion.adapter.internal.registry
+
+import com.fusion.adapter.ItemKeyProvider
+import com.fusion.adapter.delegate.FusionDelegate
+
+/**
+ * [DispatcherConfiguration]
+ */
+internal class DispatcherConfiguration<T : Any> {
+    var itemKeyProvider: ItemKeyProvider<T>? = null
+    var viewTypeProvider: ItemKeyProvider<T>? = null
+    val delegates = HashMap<Any, FusionDelegate<T, *>>()
+}

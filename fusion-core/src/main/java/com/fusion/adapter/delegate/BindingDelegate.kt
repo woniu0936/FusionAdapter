@@ -7,14 +7,9 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.extensions.setItem
 import com.fusion.adapter.internal.ClassTypeKey
-import com.fusion.adapter.internal.PropertyObserver
-import com.fusion.adapter.internal.PropertyObserver1
-import com.fusion.adapter.internal.PropertyObserver2
-import com.fusion.adapter.internal.PropertyObserver3
-import com.fusion.adapter.internal.PropertyObserver4
-import com.fusion.adapter.internal.PropertyObserver5
-import com.fusion.adapter.internal.PropertyObserver6
 import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.internal.diff.*
+import com.fusion.adapter.internal.registry.TypeDispatcher
 import kotlin.reflect.KProperty1
 
 /**
@@ -80,7 +75,6 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     final override fun onBindViewHolder(holder: BindingHolder<VB>, item: T, position: Int, payloads: MutableList<Any>) {
         holder.setItem(item)
         if (payloads.isNotEmpty()) {
-            // [分发核心] 传入 Binding 作为接收者
             val handled = dispatchHandledPayloads(holder.binding, item, payloads)
             onBindPartial(holder.binding, item, position, payloads, handled)
         } else {
@@ -93,22 +87,16 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         if (!handled) onBind(binding, item, position)
     }
 
-    /**
-     * [addObserver] 代理实现
-     */
     override fun addObserver(observer: PropertyObserver<T>) {
         super.addObserver(object : PropertyObserver<T> {
             override fun checkChange(oldItem: T, newItem: T) = observer.checkChange(oldItem, newItem)
             override fun execute(receiver: Any, item: T) {
-                // [核心逻辑] 无论上传来的是 Holder 还是 VB，都确保解包为 VB
-                // 这解决了 JavaDelegate 中 (VB) receiver 强转失败的问题
                 val target = if (receiver is BindingHolder<*>) receiver.binding else receiver
                 observer.execute(target, item)
             }
         })
     }
 
-    // --- 重写内部注册方法，显式处理 Binding 解包 (不再调用 addObserver 的包装版) ---
     @Suppress("UNCHECKED_CAST")
     override fun <P> registerPropertyObserver(g1: (T) -> P, action: BindingHolder<VB>.(P) -> Unit) {
         super.addObserver(PropertyObserver1(g1) { p -> (this as BindingHolder<VB>).action(p) })
@@ -160,7 +148,6 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         super.addObserver(PropertyObserver6(g1, g2, g3, g4, g5, g6) { v1, v2, v3, v4, v5, v6 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5, v6) })
     }
 
-    // --- Kotlin DSL onPayload ---
     @Suppress("UNCHECKED_CAST")
     protected fun <P> onPayload(p1: KProperty1<T, P>, action: VB.(P) -> Unit) {
         addObserver(PropertyObserver1({ p1.get(it) }) { v1 -> (this as VB).action(v1) })

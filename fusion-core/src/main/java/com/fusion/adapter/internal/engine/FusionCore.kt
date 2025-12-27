@@ -1,4 +1,4 @@
-package com.fusion.adapter.internal
+package com.fusion.adapter.internal.engine
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -7,6 +7,10 @@ import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.MissingUniqueKeyException
 import com.fusion.adapter.exception.UnregisteredTypeException
+import com.fusion.adapter.internal.diff.ItemIdStorage
+import com.fusion.adapter.internal.diff.ViewTypeStorage
+import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder

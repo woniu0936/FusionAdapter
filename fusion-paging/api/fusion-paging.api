@@ -2,7 +2,7 @@ public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/recyclervi
 	public fun <init> ()V
 	public final fun addLoadStateListener (Lkotlin/jvm/functions/Function1;)V
 	public final fun addOnPagesUpdatedListener (Lkotlin/jvm/functions/Function0;)V
-	public final fun getCore ()Lcom/fusion/adapter/internal/FusionCore;
+	public final fun getCore ()Lcom/fusion/adapter/internal/engine/FusionCore;
 	public fun getItemCount ()I
 	public fun getItemId (I)J
 	public fun getItemViewType (I)I
@@ -17,7 +17,7 @@ public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/recyclervi
 	public final fun peek (I)Ljava/lang/Object;
 	public final fun refresh ()V
 	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/TypeDispatcher;)V
+	public fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeDispatcher;)V
 	public fun registerPlaceholder (I)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
-import com.fusion.adapter.internal.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeDispatcher
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.example.R
 import com.fusion.example.core.model.ChatMessage
@@ -47,7 +47,6 @@ class ClassicManualActivity : AppCompatActivity() {
     }
 
     private fun setupAdapter() {
-        // 使用实验室专用 Delegate
         adapter.register(SectionHeader::class.java, object : com.fusion.adapter.delegate.BindingDelegate<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
             init { setUniqueKey { it.title } }
             override fun onBind(binding: ItemLabRecordBinding, item: SectionHeader, position: Int) {

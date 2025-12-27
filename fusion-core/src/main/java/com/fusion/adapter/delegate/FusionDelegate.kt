@@ -3,14 +3,8 @@ package com.fusion.adapter.delegate
 import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.internal.PropertyObserver
-import com.fusion.adapter.internal.PropertyObserver1
-import com.fusion.adapter.internal.PropertyObserver2
-import com.fusion.adapter.internal.PropertyObserver3
-import com.fusion.adapter.internal.PropertyObserver4
-import com.fusion.adapter.internal.PropertyObserver5
-import com.fusion.adapter.internal.PropertyObserver6
 import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.internal.diff.*
 import com.fusion.adapter.log.FusionLogger
 
 /**

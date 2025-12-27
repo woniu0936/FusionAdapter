@@ -46,8 +46,6 @@ class GridSpanSizeActivity : AppCompatActivity() {
                 }
                 spanSize { item, _ -> if (item.isHot) 2 else 1 }
             }
-
-            // [API] 使用专属骨架屏
             registerPlaceholder(ItemMarketPlaceholderBinding::inflate) { onBind { _: Any -> } }
         }
 

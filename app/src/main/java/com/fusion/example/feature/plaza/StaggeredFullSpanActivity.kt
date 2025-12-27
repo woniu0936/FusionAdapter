@@ -42,8 +42,6 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
                     ivImage.layoutParams.height = item.height
                 }
             }
-
-            // [API] 使用专属骨架屏
             registerPlaceholder(ItemImagePlaceholderBinding::inflate) {
                 onBind { _: Any ->
                     vPlaceholder.layoutParams.height = Random.nextInt(400, 700)

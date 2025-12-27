@@ -1,7 +1,8 @@
-package com.fusion.adapter.internal
+package com.fusion.adapter.internal.registry
 
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.internal.diff.ViewTypeStorage
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import java.util.concurrent.ConcurrentHashMap
 
@@ -17,10 +18,7 @@ class ViewTypeRegistry {
     private val classToDispatcher = ConcurrentHashMap<Class<*>, TypeDispatcher<Any>>()
     private val viewTypeToDelegate = ConcurrentHashMap<Int, FusionDelegate<Any, RecyclerView.ViewHolder>>()
 
-    // 缓存：记录 "Item是否被支持"，包含继承查找的结果 (并发安全)
     private val supportedCache = ConcurrentHashMap<Class<*>, Boolean>()
-
-    // 缓存：记录 "子类 -> 父类Dispatcher" 的查找结果，避免重复反射 (并发安全)
     private val inheritanceCache = ConcurrentHashMap<Class<*>, TypeDispatcher<Any>?>()
 
     @Volatile
@@ -30,7 +28,6 @@ class ViewTypeRegistry {
     fun <T : Any> register(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
         classToDispatcher[clazz] = dispatcher as TypeDispatcher<Any>
         dispatcher.getAllDelegates().forEach { registerDelegateGlobal(it) }
-        // 注册新类型时，清除缓存
         supportedCache.clear()
         inheritanceCache.clear()
     }
@@ -93,13 +90,12 @@ class ViewTypeRegistry {
         return ViewTypeStorage.getViewType(delegate.viewTypeKey)
     }
 
-    //带缓存的继承查找
     private fun findDispatcherForInheritanceCached(clazz: Class<*>): TypeDispatcher<Any>? {
         if (inheritanceCache.containsKey(clazz)) {
             return inheritanceCache[clazz]
         }
         val dispatcher = findDispatcherForInheritanceInternal(clazz)
-        inheritanceCache[clazz] = dispatcher // 即使是 null 也要缓存，表示"查过了，确实没有"
+        inheritanceCache[clazz] = dispatcher
         return dispatcher
     }
 

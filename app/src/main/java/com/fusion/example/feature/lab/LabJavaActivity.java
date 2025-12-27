@@ -6,7 +6,7 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.fusion.adapter.FusionListAdapter;
-import com.fusion.adapter.internal.TypeDispatcher;
+import com.fusion.adapter.internal.registry.TypeDispatcher;
 import com.fusion.adapter.placeholder.FusionPlaceholderExtensionsKt;
 import com.fusion.example.databinding.ActivityBaseFixedBinding;
 import com.fusion.example.databinding.ItemLabPlaceholderBinding;

@@ -1,10 +1,9 @@
-package com.fusion.adapter.internal
+package com.fusion.adapter.internal.diff
 
 import com.fusion.adapter.log.FusionLogger
 
 /**
  * [PropertyObserver]
- * 属性观察者接口。
  */
 interface PropertyObserver<T> {
     fun checkChange(oldItem: T, newItem: T): Any?

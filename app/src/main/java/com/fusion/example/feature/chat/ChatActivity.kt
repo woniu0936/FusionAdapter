@@ -1,13 +1,13 @@
 package com.fusion.example.feature.chat
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.adapter.setup
 import com.fusion.adapter.setupFusion
@@ -45,7 +45,7 @@ class ChatActivity : AppCompatActivity() {
                 dispatch(1, ItemMsgTextMeBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content 
-                        // Use a reliable unsplash image instead of pravatar
+                        // Fix: Using robust avatar URL
                         ivAvatarMe.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
                     }
                 }
@@ -70,18 +70,16 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        // REMOVED stackFromEnd = true to avoid jumping to bottom immediately
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { state ->
                     when (state) {
-                        is ChatState.Loading -> adapter.showPlaceholders(16)
+                        is ChatState.Loading -> adapter.showPlaceholders(6)
                         is ChatState.Success -> {
-                            Log.d("FusionChat", "Messages count: ${state.msgs.size}")
+                            FusionLogger.d("Chat") { "Messages count: ${state.msgs.size}" }
                             adapter.submitList(state.msgs)
-                            // REMOVED auto-scrolling to bottom on load
                         }
                     }
                 }

@@ -20,13 +20,13 @@ import com.fusion.adapter.FusionRegistry
 import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
-import com.fusion.adapter.internal.FusionCore
-import com.fusion.adapter.internal.TypeDispatcher
-import com.fusion.adapter.internal.ViewTypeRegistry
+import com.fusion.adapter.internal.engine.FusionCore
+import com.fusion.adapter.internal.registry.FusionRegistryDelegate
+import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
@@ -42,6 +42,9 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     @PublishedApi
     internal val core = FusionCore()
+    
+    private val registryDelegate = FusionRegistryDelegate(core)
+    
     private val helperAdapter = PagingHelperAdapter()
 
     init {
@@ -61,61 +64,13 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         })
     }
 
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
-        core.registerDispatcher(clazz, dispatcher)
-    }
-
-    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val dispatcher = TypeDispatcher.create(delegate)
-        core.registerDispatcher(clazz, dispatcher)
-    }
-
-    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun registerPlaceholder(@LayoutRes layoutResId: Int) {
-        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
-            override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder =
-                LayoutHolder(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
-
-            override fun onBindPlaceholder(holder: LayoutHolder) {}
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) {
-        val scope = PlaceholderDefinitionScope<VB>(); block?.invoke(scope)
-        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
-
-            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> = BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
-
-            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                val itemConfiguration = scope.getConfiguration()
-                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
-
-    override fun <VB : ViewBinding> registerPlaceholder(
-        inflater: BindingInflater<VB>,
-        configurator: PlaceholderConfigurator<VB>?
-    ) {
-        val scope = PlaceholderDefinitionScope<VB>()
-        configurator?.configure(scope)
-        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
-            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-                val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
-                return BindingHolder(binding)
-            }
-            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
-                val itemConfiguration = scope.getConfiguration()
-                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
-            }
-        }
-        core.registerPlaceholder(delegate)
-    }
+    // --- Registry Delegation ---
+    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = registryDelegate.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = registryDelegate.register(clazz, delegate)
+    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = registryDelegate.registerPlaceholder(delegate)
+    override fun registerPlaceholder(@LayoutRes layoutResId: Int) = registryDelegate.registerPlaceholder(layoutResId)
+    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) = registryDelegate.registerPlaceholder(inflate, block)
+    override fun <VB : ViewBinding> registerPlaceholder(inflater: BindingInflater<VB>, configurator: PlaceholderConfigurator<VB>?) = registryDelegate.registerPlaceholder(inflater, configurator)
 
     suspend fun submitData(pagingData: PagingData<T>) {
         FusionLogger.i("Paging") { "submitData (suspend) called." }
@@ -172,7 +127,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         holder.setupStaggeredSupport(bindItem) { queryItem -> if (queryItem is FusionPlaceholder) core.getPlaceholderDelegate() else core.getDelegate(queryItem) }
         
         if (item == null) {
-            FusionLogger.v("Paging") { "Binding Placeholder at pos: $position" }
+            FusionLogger.d("Paging") { "Binding Placeholder at pos: $position" }
             val delegate = core.getPlaceholderDelegate()
             if (delegate != null) {
                 holder.itemView.visibility = View.VISIBLE
