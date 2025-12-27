@@ -27,6 +27,7 @@ import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.FusionCore
 import com.fusion.adapter.internal.TypeDispatcher
 import com.fusion.adapter.internal.ViewTypeRegistry
+import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
@@ -97,42 +98,32 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         core.registerPlaceholder(delegate)
     }
 
-    /**
-     * Java API 实现
-     */
     override fun <VB : ViewBinding> registerPlaceholder(
         inflater: BindingInflater<VB>,
         configurator: PlaceholderConfigurator<VB>?
     ) {
-        // 1. 创建 Scope
         val scope = PlaceholderDefinitionScope<VB>()
-        // 2. 让 Java 用户配置 Scope
         configurator?.configure(scope)
-
-        // 3. 创建 Delegate
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
             override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-                // 使用 Java 传入的 BindingInflater
                 val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
                 return BindingHolder(binding)
             }
-
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
                 val itemConfiguration = scope.getConfiguration()
-                // 执行绑定
                 itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-
-        // 4. 注册到 Core
         core.registerPlaceholder(delegate)
     }
 
     suspend fun submitData(pagingData: PagingData<T>) {
+        FusionLogger.i("Paging") { "submitData (suspend) called." }
         helperAdapter.submitData(sanitizePagingData(pagingData))
     }
 
     fun submitData(lifecycle: Lifecycle, pagingData: PagingData<T>) {
+        FusionLogger.i("Paging") { "submitData (lifecycle) called." }
         helperAdapter.submitData(lifecycle, sanitizePagingData(pagingData))
     }
 
@@ -142,6 +133,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
             if (core.viewTypeRegistry.isSupported(item)) true
             else {
                 val exception = UnregisteredTypeException(item)
+                FusionLogger.e("Paging", exception) { "Unregistered paging item: ${item.javaClass.simpleName}" }
                 if (config.isDebug) throw exception
                 else {
                     config.errorListener?.onError(item, exception); false
@@ -158,7 +150,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     override fun getItemCount(): Int = helperAdapter.itemCount
 
     override fun getItemViewType(position: Int): Int {
-        val item = helperAdapter.peek(position) // 使用 peek 防止触发加载
+        val item = helperAdapter.peek(position)
 
         if (item == null) {
             return ViewTypeRegistry.TYPE_PLACEHOLDER
@@ -173,17 +165,23 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)
+    
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = helperAdapter.getItemInternal(position)
         val bindItem = item ?: FusionPlaceholder()
         holder.setupStaggeredSupport(bindItem) { queryItem -> if (queryItem is FusionPlaceholder) core.getPlaceholderDelegate() else core.getDelegate(queryItem) }
+        
         if (item == null) {
+            FusionLogger.v("Paging") { "Binding Placeholder at pos: $position" }
             val delegate = core.getPlaceholderDelegate()
             if (delegate != null) {
                 holder.itemView.visibility = View.VISIBLE
                 @Suppress("UNCHECKED_CAST")
                 (delegate as FusionDelegate<Any, RecyclerView.ViewHolder>).onBindViewHolder(holder, bindItem, position, mutableListOf())
-            } else holder.itemView.visibility = View.INVISIBLE
+            } else {
+                FusionLogger.w("Paging") { "Placeholder requested but no delegate registered!" }
+                holder.itemView.visibility = View.INVISIBLE
+            }
         } else {
             holder.itemView.visibility = View.VISIBLE
             core.onBindViewHolder(holder, item, position)

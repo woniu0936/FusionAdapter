@@ -11,6 +11,7 @@ import com.fusion.adapter.internal.PropertyObserver4
 import com.fusion.adapter.internal.PropertyObserver5
 import com.fusion.adapter.internal.PropertyObserver6
 import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.log.FusionLogger
 
 /**
  * [FusionDelegate]
@@ -59,10 +60,21 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     abstract fun onCreateViewHolder(parent: ViewGroup): VH
     abstract fun onBindViewHolder(holder: VH, item: T, position: Int, payloads: MutableList<Any>)
 
-    open fun areContentsTheSame(oldItem: T, newItem: T): Boolean = oldItem == newItem
+    open fun areContentsTheSame(oldItem: T, newItem: T): Boolean {
+        val same = oldItem == newItem
+        if (!same) {
+            FusionLogger.d("Diff") { "Content changed: $oldItem vs $newItem" }
+        }
+        return same
+    }
+
     open fun getChangePayload(oldItem: T, newItem: T): Any? {
         if (propertyObservers.isEmpty()) return null
         val payloads = propertyObservers.mapNotNull { it.checkChange(oldItem, newItem) }
+        
+        if (payloads.isNotEmpty()) {
+            FusionLogger.d("Diff") { "Payloads generated: ${payloads.size}" }
+        }
         return if (payloads.isNotEmpty()) payloads else null
     }
 

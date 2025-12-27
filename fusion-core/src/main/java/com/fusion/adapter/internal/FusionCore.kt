@@ -1,6 +1,5 @@
 package com.fusion.adapter.internal
 
-import android.util.Log
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
@@ -8,6 +7,7 @@ import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.MissingUniqueKeyException
 import com.fusion.adapter.exception.UnregisteredTypeException
+import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder
 import java.util.Collections
@@ -20,14 +20,21 @@ class FusionCore {
     val viewTypeRegistry = ViewTypeRegistry()
 
     fun filter(safeList: List<Any>): List<Any> {
-        if (safeList.isEmpty()) return safeList
+        val start = System.currentTimeMillis()
+        if (safeList.isEmpty()) {
+            FusionLogger.d("Core") { "Filter skipped: Input list is empty." }
+            return safeList
+        }
+        
         val config = Fusion.getConfig()
         val result = ArrayList<Any>(safeList.size)
         var hasRemoved = false
 
         for (item in safeList) {
-            // 响应中断
-            if (Thread.currentThread().isInterrupted) return emptyList()
+            if (Thread.currentThread().isInterrupted) {
+                FusionLogger.w("Core") { "Filter interrupted." }
+                return emptyList()
+            }
 
             if (viewTypeRegistry.isSupported(item)) {
                 result.add(item)
@@ -36,20 +43,30 @@ class FusionCore {
                 hasRemoved = true
             }
         }
+        
+        val duration = System.currentTimeMillis() - start
+        if (hasRemoved) {
+            FusionLogger.w("Core") { "Filter finished in ${duration}ms. Removed ${safeList.size - result.size} unregistered items." }
+        } else {
+            FusionLogger.d("Core") { "Filter finished in ${duration}ms. No items removed. Total: ${result.size}" }
+        }
+        
         return if (hasRemoved) result else safeList
     }
 
     private fun handleUnregisteredItem(item: Any, config: FusionConfig) {
         val exception = UnregisteredTypeException(item)
+        FusionLogger.e("Core", exception) { "Unregistered type detected: ${item.javaClass.name}" }
+        
         if (config.isDebug) {
             throw exception
         } else {
             config.errorListener?.onError(item, exception)
-            Log.e("Fusion", "⚠️ [Engine] Dropped unregistered item: ${item.javaClass.simpleName}.")
         }
     }
 
     fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) {
+        FusionLogger.i("Core") { "Registering PlaceholderDelegate: ${delegate.javaClass.simpleName}" }
         viewTypeRegistry.registerPlaceholder(delegate)
     }
 
@@ -58,6 +75,8 @@ class FusionCore {
     }
 
     fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
+        val count = dispatcher.getAllDelegates().size
+        FusionLogger.i("Registry") { "Registering Dispatcher for ${clazz.simpleName}. Delegates count: $count" }
         enforceUniqueKeys(clazz, dispatcher.getAllDelegates())
         viewTypeRegistry.register(clazz, dispatcher)
     }
@@ -66,15 +85,32 @@ class FusionCore {
 
     fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         if (viewType == ViewTypeRegistry.TYPE_PLACEHOLDER) {
+            FusionLogger.d("Core") { "Creating Placeholder ViewHolder" }
             return viewTypeRegistry.getPlaceholderDelegate()?.onCreateViewHolder(parent)
                 ?: FusionPlaceholderViewHolder(parent)
         }
-        return viewTypeRegistry.getDelegate(viewType).onCreateViewHolder(parent)
+        // Performance log for creation (potentially heavy)
+        val start = System.nanoTime()
+        val delegate = viewTypeRegistry.getDelegate(viewType)
+        val holder = delegate.onCreateViewHolder(parent)
+        val duration = (System.nanoTime() - start) / 1000 // micros
+        
+        // Log if creation takes > 2ms (frame drop risk)
+        if (duration > 2000) {
+             FusionLogger.w("Perf") { "onCreateViewHolder took ${duration}us for ViewType $viewType" }
+        }
+        return holder
     }
 
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any> = Collections.emptyList()) {
         val viewType = viewTypeRegistry.getItemViewType(item)
-        viewTypeRegistry.getDelegateOrNull(viewType)?.onBindViewHolder(holder, item, position, payloads)
+        val delegate = viewTypeRegistry.getDelegateOrNull(viewType)
+        
+        if (delegate != null) {
+            delegate.onBindViewHolder(holder, item, position, payloads)
+        } else {
+            FusionLogger.e("Core") { "Bind failed: No delegate found for item at position $position" }
+        }
     }
 
     fun getItemId(item: Any): Long {
@@ -99,21 +135,29 @@ class FusionCore {
         if (oldKey != null && newKey != null) {
             return oldKey == newKey
         }
-
-        // 只有在这里严格比较 equals，才能保证 DiffUtil 在重组/排序时的正确性
         return oldItem == newItem
     }
 
     fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
         val type = viewTypeRegistry.getItemViewType(oldItem)
         if (type != viewTypeRegistry.getItemViewType(newItem)) return false
-        return viewTypeRegistry.getDelegate(type).areContentsTheSame(oldItem, newItem)
+        
+        val same = viewTypeRegistry.getDelegate(type).areContentsTheSame(oldItem, newItem)
+        if (!same) {
+            FusionLogger.d("Diff") { "Content changed for ${oldItem.javaClass.simpleName}" }
+        }
+        return same
     }
 
     fun getChangePayload(oldItem: Any, newItem: Any): Any? {
         val type = viewTypeRegistry.getItemViewType(oldItem)
         if (type != viewTypeRegistry.getItemViewType(newItem)) return null
-        return viewTypeRegistry.getDelegate(type).getChangePayload(oldItem, newItem)
+        
+        val payload = viewTypeRegistry.getDelegate(type).getChangePayload(oldItem, newItem)
+        if (payload != null) {
+            FusionLogger.d("Diff") { "Payload generated for ${oldItem.javaClass.simpleName}" }
+        }
+        return payload
     }
 
     fun getDelegate(item: Any): FusionDelegate<Any, RecyclerView.ViewHolder>? {
@@ -133,19 +177,14 @@ class FusionCore {
         viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
     }
 
-    fun enforceUniqueKeys(
-        clazz: Class<*>,
-        delegates: Collection<FusionDelegate<*, *>>,
-    ) {
+    fun enforceUniqueKeys(clazz: Class<*>, delegates: Collection<FusionDelegate<*, *>>) {
         if (!Fusion.getConfig().defaultItemIdEnabled) return
-
         for (delegate in delegates) {
-            // 通过 isUniqueKeyDefined 直接检查内部是否有提取器引用
-            // 避免了传入脏数据导致用户 Lambda 抛出 ClassCastException
             if (!delegate.isUniqueKeyDefined) {
-                throw MissingUniqueKeyException(clazz, delegate.javaClass)
+                val ex = MissingUniqueKeyException(clazz, delegate.javaClass)
+                FusionLogger.e("Core", ex) { "UniqueKey missing for delegate: ${delegate.javaClass.simpleName}" }
+                throw ex
             }
         }
     }
 }
-

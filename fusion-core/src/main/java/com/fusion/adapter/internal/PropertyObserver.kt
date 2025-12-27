@@ -1,5 +1,7 @@
 package com.fusion.adapter.internal
 
+import com.fusion.adapter.log.FusionLogger
+
 /**
  * [PropertyObserver]
  * 属性观察者接口。
@@ -10,12 +12,26 @@ interface PropertyObserver<T> {
 }
 
 internal class PropertyObserver1<T, P>(val g1: (T) -> P, val action: Any.(P) -> Unit) : PropertyObserver<T> {
-    override fun checkChange(oldItem: T, newItem: T): Any? = if (g1(oldItem) != g1(newItem)) this else null
+    override fun checkChange(oldItem: T, newItem: T): Any? {
+        val v1 = g1(oldItem)
+        val v2 = g1(newItem)
+        if (v1 != v2) {
+            FusionLogger.d("Diff") { "Property changed: $v1 -> $v2" }
+            return this
+        }
+        return null
+    }
     override fun execute(receiver: Any, item: T) { receiver.action(g1(item)) }
 }
 
 internal class PropertyObserver2<T, P1, P2>(val g1: (T) -> P1, val g2: (T) -> P2, val action: Any.(P1, P2) -> Unit) : PropertyObserver<T> {
-    override fun checkChange(oldItem: T, newItem: T): Any? = if (g1(oldItem) != g1(newItem) || g2(oldItem) != g2(newItem)) this else null
+    override fun checkChange(oldItem: T, newItem: T): Any? {
+        val changed = g1(oldItem) != g1(newItem) || g2(oldItem) != g2(newItem)
+        if (changed) {
+            FusionLogger.d("Diff") { "Observer2 changed. P1: ${g1(oldItem)}->${g1(newItem)}, P2: ${g2(oldItem)}->${g2(newItem)}" }
+        }
+        return if (changed) this else null
+    }
     override fun execute(receiver: Any, item: T) { receiver.action(g1(item), g2(item)) }
 }
 

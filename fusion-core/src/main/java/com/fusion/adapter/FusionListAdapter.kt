@@ -14,21 +14,19 @@ import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
+import com.fusion.adapter.dsl.ItemConfiguration
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.FusionCore
 import com.fusion.adapter.internal.FusionDispatcher
 import com.fusion.adapter.internal.TypeDispatcher
+import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
 import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
 import com.fusion.adapter.placeholder.PlaceholderRegistry
 
-/**
- * [FusionListAdapter]
- * 自动挡适配器。
- */
 open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), FusionRegistry, PlaceholderRegistry {
 
     @PublishedApi
@@ -75,7 +73,6 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
             override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
                 return LayoutHolder(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
             }
-
             override fun onBindPlaceholder(holder: LayoutHolder) {}
         }
         core.registerPlaceholder(delegate)
@@ -87,7 +84,6 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
             override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 return BindingHolder(inflate(LayoutInflater.from(parent.context), parent, false))
             }
-
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
                 val itemConfiguration = scope.getConfiguration()
                 itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
@@ -96,56 +92,60 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         core.registerPlaceholder(delegate)
     }
 
-    /**
-     * Java API 实现
-     */
     override fun <VB : ViewBinding> registerPlaceholder(
         inflater: BindingInflater<VB>,
         configurator: PlaceholderConfigurator<VB>?
     ) {
-        // 1. 创建 Scope
         val scope = PlaceholderDefinitionScope<VB>()
-        // 2. 让 Java 用户配置 Scope
         configurator?.configure(scope)
-
-        // 3. 创建 Delegate
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
             override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
-                // 使用 Java 传入的 BindingInflater
                 val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
                 return BindingHolder(binding)
             }
-
             override fun onBindPlaceholder(holder: BindingHolder<VB>) {
                 val itemConfiguration = scope.getConfiguration()
-                // 执行绑定
                 itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
         }
-
-        // 4. 注册到 Core
         core.registerPlaceholder(delegate)
     }
 
-    /**
-     * 异步提交数据 (Default)
-     */
     fun submitList(list: List<Any>?, commitCallback: Runnable? = null) {
         val rawList = if (list == null) emptyList() else ArrayList(list)
+        FusionLogger.i("Adapter") { "submitList called. Size: ${rawList.size}" }
+        
         FusionDispatcher.dispatch {
+            val start = System.currentTimeMillis()
             val safeList = core.filter(rawList)
-            differ.submitList(safeList, commitCallback)
+            
+            if (rawList.isNotEmpty() && safeList.isEmpty()) {
+                FusionLogger.w("Adapter") { "submitList: All items were filtered out!" }
+            } else {
+                FusionLogger.d("Adapter") { "Filter finished in ${System.currentTimeMillis() - start}ms. Safe list size: ${safeList.size}" }
+            }
+            
+            // Fix: Must call differ.submitList on Main Thread because AsyncListDiffer is not thread-safe
+            // and might invoke callbacks immediately on the calling thread.
+            FusionDispatcher.runOnMain {
+                FusionLogger.d("Adapter") { "Dispatching to Main Thread for DiffUtil." }
+                differ.submitList(safeList) {
+                    FusionLogger.d("Adapter") { "DiffUtil finished. Updating UI." }
+                    commitCallback?.run()
+                }
+            }
         }
     }
 
-    /**
-     * [setItems] 同步过滤更新 (对应 FusionAdapter.setItems)
-     * 明确语义：立即过滤，然后进行异步 Diff。
-     */
     @MainThread
     fun setItems(list: List<Any>?, commitCallback: Runnable? = null) {
         val rawList = if (list == null) emptyList() else ArrayList(list)
+        FusionLogger.i("Adapter") { "setItems called (Sync). Size: ${rawList.size}" }
+        
+        val start = System.currentTimeMillis()
         val safeList = core.filter(rawList)
+        FusionLogger.d("Adapter") { "Filter (Sync) finished in ${System.currentTimeMillis() - start}ms." }
+        
         differ.submitList(safeList, commitCallback)
     }
 

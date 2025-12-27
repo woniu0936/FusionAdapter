@@ -41,6 +41,8 @@ public final class com/fusion/adapter/FusionConfig {
 	public final field errorListener Lcom/fusion/adapter/exception/ErrorListener;
 	public final field globalDebounceInterval J
 	public final field isDebug Z
+	public final field logDir Ljava/lang/String;
+	public final field logToFile Z
 	public synthetic fun <init> (Lcom/fusion/adapter/FusionConfig$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
@@ -51,6 +53,8 @@ public final class com/fusion/adapter/FusionConfig$Builder {
 	public final fun setDefaultItemIdEnabled (Z)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setErrorListener (Lcom/fusion/adapter/exception/ErrorListener;)Lcom/fusion/adapter/FusionConfig$Builder;
 	public final fun setGlobalDebounceInterval (J)Lcom/fusion/adapter/FusionConfig$Builder;
+	public final fun setLogOutput (ZLjava/lang/String;)Lcom/fusion/adapter/FusionConfig$Builder;
+	public static synthetic fun setLogOutput$default (Lcom/fusion/adapter/FusionConfig$Builder;ZLjava/lang/String;ILjava/lang/Object;)Lcom/fusion/adapter/FusionConfig$Builder;
 }
 
 public final class com/fusion/adapter/FusionExtensionsKt {
@@ -500,6 +504,19 @@ public final class com/fusion/adapter/internal/ViewTypeRegistry {
 }
 
 public final class com/fusion/adapter/internal/ViewTypeRegistry$Companion {
+}
+
+public final class com/fusion/adapter/log/FusionLogger {
+	public static final field INSTANCE Lcom/fusion/adapter/log/FusionLogger;
+	public final fun d (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun e (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun e$default (Lcom/fusion/adapter/log/FusionLogger;Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public final fun i (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun print (ILjava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun print$default (Lcom/fusion/adapter/log/FusionLogger;ILjava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public final fun shouldLog ()Z
+	public final fun v (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun w (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 }
 
 public final class com/fusion/adapter/placeholder/FusionPlaceholder {

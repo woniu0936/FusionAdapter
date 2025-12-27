@@ -10,8 +10,13 @@ class DemoApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        
+        val logDir = externalCacheDir?.absolutePath ?: filesDir.absolutePath
+        
         Fusion.initialize {
             setDebug(BuildConfig.DEBUG)
+            setLogOutput(BuildConfig.DEBUG, logDir)
+            
             setErrorListener { item, e ->
                 Log.e("Fusion", "Unknown type: " + item.javaClass, e);
             }
