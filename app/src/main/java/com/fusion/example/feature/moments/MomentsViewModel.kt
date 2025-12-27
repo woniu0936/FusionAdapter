@@ -12,6 +12,7 @@ sealed class MomentsState {
     object Loading : MomentsUiState()
     data class Success(val items: List<FeedItem>) : MomentsUiState()
 }
+
 open class MomentsUiState
 
 class MomentsViewModel : ViewModel() {
@@ -19,7 +20,9 @@ class MomentsViewModel : ViewModel() {
     val state: StateFlow<MomentsUiState> = _state
     private var feedItems = mutableListOf<FeedItem>()
 
-    init { load() }
+    init {
+        load()
+    }
 
     private fun load() {
         viewModelScope.launch {
@@ -30,15 +33,25 @@ class MomentsViewModel : ViewModel() {
 
     fun toggleLike(momentId: String) {
         val index = feedItems.indexOfFirst { it is FeedItem.MomentItem && it.moment.id == momentId }
+        
         if (index != -1) {
             val item = feedItems[index] as FeedItem.MomentItem
             val old = item.moment
+            
             val newMoment = old.copy(
-                isLiked = !old.isLiked, 
+                isLiked = !old.isLiked,
                 likes = if (!old.isLiked) old.likes + 1 else old.likes - 1
             )
-            feedItems[index] = FeedItem.MomentItem(newMoment)
-            _state.value = MomentsState.Success(ArrayList(feedItems))
+            
+            // Fix: Create a new list FIRST, then mutate the new list to ensure StateFlow detects the change
+            val newList = ArrayList(feedItems)
+            newList[index] = FeedItem.MomentItem(newMoment)
+            
+            // Update local cache
+            feedItems = newList
+            
+            // Emit state with the new list
+            _state.value = MomentsState.Success(newList)
         }
     }
 }
