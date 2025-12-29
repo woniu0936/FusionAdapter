@@ -78,10 +78,22 @@ object MockSource {
         delay(500)
         return List(40) { i ->
             val isMe = i % 2 == 0
+            val type = when {
+                i % 10 == 0 -> 3 // System
+                i % 4 == 0 -> 2  // Image
+                else -> 1        // Text
+            }
+            
+            val content = when (type) {
+                3 -> "System maintenance scheduled for 2:00 AM."
+                2 -> "https://picsum.photos/seed/chat_$i/400/300"
+                else -> "Sample message #$i from Fusion Messenger. This is a text message."
+            }
+
             ChatMessage(
                 "c_$i",
-                if (i % 5 == 0) "System maintenance scheduled for 2:00 AM." else "Sample message #$i from Fusion Messenger.",
-                if (i % 5 == 0) 3 else 1,
+                content,
+                type,
                 isMe,
                 if (!isMe) elena else null
             )

@@ -2,8 +2,10 @@ package com.fusion.example.feature.lab
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
+import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.internal.registry.TypeDispatcher
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.example.R
@@ -12,13 +14,15 @@ import com.fusion.example.core.model.SectionHeader
 import com.fusion.example.core.repo.MockSource
 import com.fusion.example.databinding.ActivityBaseFixedBinding
 import com.fusion.example.databinding.ItemLabRecordBinding
+import com.fusion.example.delegate.ImageMsgDelegate
+import com.fusion.example.delegate.SystemMsgDelegate
+import com.fusion.example.delegate.TextMsgDelegate
 import com.fusion.example.utils.fullStatusBar
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ClassicManualActivity : AppCompatActivity() {
-    
+
     private lateinit var binding: ActivityBaseFixedBinding
     private val adapter = FusionAdapter()
 
@@ -27,15 +31,15 @@ class ClassicManualActivity : AppCompatActivity() {
         binding = ActivityBaseFixedBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fullStatusBar(binding.root)
-        
+
         binding.toolbar.title = "Manual Registry"
 
         setupAdapter()
-        
+
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
 
-        MainScope().launch {
+        lifecycleScope.launch {
             adapter.showPlaceholders(10)
             delay(1000)
 
@@ -47,8 +51,11 @@ class ClassicManualActivity : AppCompatActivity() {
     }
 
     private fun setupAdapter() {
-        adapter.register(SectionHeader::class.java, object : com.fusion.adapter.delegate.BindingDelegate<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
-            init { setUniqueKey { it.title } }
+        adapter.register(SectionHeader::class.java, object : BindingDelegate<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
+            init {
+                setUniqueKey { it.title }
+            }
+
             override fun onBind(binding: ItemLabRecordBinding, item: SectionHeader, position: Int) {
                 binding.tvTitle.text = item.title
                 binding.tvId.text = "CLASSIC_BINDING"
@@ -58,10 +65,10 @@ class ClassicManualActivity : AppCompatActivity() {
 
         val dispatcher = TypeDispatcher.Builder<ChatMessage>()
             .uniqueKey { it.id }
-            .viewType { if (it.type == 3) 3 else if (it.isMe) 1 else 2 }
-            .delegate(1, com.fusion.example.delegate.TextMsgDelegate())
-            .delegate(2, com.fusion.example.delegate.TextMsgDelegate()) 
-            .delegate(3, com.fusion.example.delegate.SystemMsgDelegate())
+            .viewType { it.type }
+            .delegate(1, TextMsgDelegate())
+            .delegate(2, ImageMsgDelegate())
+            .delegate(3, SystemMsgDelegate())
             .build()
         adapter.registerDispatcher(ChatMessage::class.java, dispatcher)
 

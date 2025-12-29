@@ -6,13 +6,14 @@ import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.example.core.model.ChatMessage
 import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.utils.loadUrl
-import com.fusion.example.utils.M3ColorGenerator
 
 class ImageMsgDelegate : BindingDelegate<ChatMessage, ItemMsgImageBinding>(ItemMsgImageBinding::inflate) {
     init { setUniqueKey { it.id } }
     override fun onBind(binding: ItemMsgImageBinding, item: ChatMessage, position: Int) {
         binding.apply {
-            ivImage.setImageDrawable(M3ColorGenerator.randomRectDrawable(0f))
+            // Load content image
+            ivImage.loadUrl(item.content)
+            
             val params = cardBubble.layoutParams as ConstraintLayout.LayoutParams
             
             if (item.isMe) {
