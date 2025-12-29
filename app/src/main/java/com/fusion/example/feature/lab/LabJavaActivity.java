@@ -15,12 +15,14 @@ import com.fusion.example.feature.lab.delegate.LabAppPromotedDelegate;
 import com.fusion.example.feature.lab.delegate.LabAppStandardDelegate;
 import com.fusion.example.feature.lab.delegate.LabBannerDelegate;
 import com.fusion.example.feature.lab.delegate.LabHeaderDelegate;
+import com.fusion.example.feature.lab.model.BannerItem;
 import com.fusion.example.feature.lab.model.LabApp;
 import com.fusion.example.feature.lab.model.LabBanner;
 import com.fusion.example.feature.lab.model.LabHeader;
 import com.fusion.example.utils.ExtensionsKt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LabJavaActivity extends AppCompatActivity {
@@ -57,8 +59,13 @@ public class LabJavaActivity extends AppCompatActivity {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             List<Object> items = new ArrayList<>();
 
-            // 1. Top Featured Banners
-            items.add(new LabBanner("b1", "Summer Sale: Up to 50% Off", R.drawable.bg_placeholder));
+            // 1. Top Featured Banners (Carousel)
+            List<BannerItem> topBanners = Arrays.asList(
+                new BannerItem("Summer Sale: Up to 50% Off", "https://picsum.photos/seed/banner1/800/400"),
+                new BannerItem("New Collection Release", "https://picsum.photos/seed/banner2/800/400"),
+                new BannerItem("Editor's Top Picks", "https://picsum.photos/seed/banner3/800/400")
+            );
+            items.add(new LabBanner("b1", topBanners));
 
             // 2. Recommended Section (Standard Rows)
             items.add(new LabHeader("Recommended for you", "View More"));
@@ -69,7 +76,14 @@ public class LabJavaActivity extends AppCompatActivity {
             // 3. Featured Section (Promoted Cards)
             items.add(new LabHeader("Editor's Choice", null));
             items.add(new LabApp("p1", "Ultimate Marketplace", "The best marketplace for digital goods. Shop now!", 5.0f, R.drawable.ic_market, true));
-            items.add(new LabBanner("b2", "New Arrival: Moments Pro", R.drawable.bg_placeholder));
+            
+            // Middle Banner
+            List<BannerItem> midBanners = Arrays.asList(
+                new BannerItem("Pro Tools Bundle", "https://picsum.photos/seed/banner4/800/400"),
+                new BannerItem("Creative Cloud", "https://picsum.photos/seed/banner5/800/400")
+            );
+            items.add(new LabBanner("b2", midBanners));
+            
             items.add(new LabApp("p2", "Moments Pro", "Share your life in style with premium filters.", 4.7f, R.drawable.ic_moments, true));
 
             // 4. Trending Apps (Bulk Data)
@@ -90,7 +104,10 @@ public class LabJavaActivity extends AppCompatActivity {
             }
 
             // 7. Footer Banner
-            items.add(new LabBanner("b3", "Join our Developer Program", R.drawable.bg_placeholder));
+            List<BannerItem> footerBanners = Arrays.asList(
+                new BannerItem("Join our Developer Program", "https://picsum.photos/seed/banner6/800/400")
+            );
+            items.add(new LabBanner("b3", footerBanners));
 
             adapter.submitList(items, null);
         }, 500);

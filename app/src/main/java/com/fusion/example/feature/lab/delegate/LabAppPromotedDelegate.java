@@ -31,10 +31,12 @@ public class LabAppPromotedDelegate extends JavaDelegate<LabApp, ItemLabAppCardM
         binding.tvTitle.setText(item.getTitle());
         binding.tvDesc.setText(item.getDescription());
         binding.ratingBar.setRating(item.getRating());
-        binding.ivIcon.setImageResource(item.getIconRes());
         
-        // Load network image using Coil via Kotlin Helper
-        // Use a stable seed based on ID to ensure the image doesn't change on scroll
+        // Load network icon
+        String iconUrl = "https://picsum.photos/seed/" + item.getId() + "_icon/200/200";
+        CoilHelperKt.loadUrl(binding.ivIcon, iconUrl, true);
+        
+        // Load network cover image
         String url = "https://picsum.photos/seed/" + item.getId() + "/800/400";
         binding.ivCover.clearColorFilter(); // Clear XML tint
         CoilHelperKt.loadUrl(binding.ivCover, url, false);

@@ -21,7 +21,6 @@
             android:layout_height="160dp"
             android:scaleType="centerCrop"
             android:src="@drawable/bg_placeholder"
-            app:tint="?attr/colorPrimaryContainer"
             tools:ignore="ContentDescription" />
 
         <LinearLayout

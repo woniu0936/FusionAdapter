@@ -1,28 +1,21 @@
 package com.fusion.example.feature.lab.model;
 
-import androidx.annotation.DrawableRes;
+import java.util.List;
 
 public class LabBanner {
     private final String id;
-    private final String title;
-    @DrawableRes
-    private final int imageRes;
+    private final List<BannerItem> items;
 
-    public LabBanner(String id, String title, int imageRes) {
+    public LabBanner(String id, List<BannerItem> items) {
         this.id = id;
-        this.title = title;
-        this.imageRes = imageRes;
+        this.items = items;
     }
 
     public String getId() {
         return id;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public int getImageRes() {
-        return imageRes;
+    public List<BannerItem> getItems() {
+        return items;
     }
 }
