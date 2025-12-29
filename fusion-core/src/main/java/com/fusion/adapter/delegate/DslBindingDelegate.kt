@@ -4,11 +4,11 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.dsl.ItemConfiguration
-import com.fusion.adapter.internal.DslTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
 
 /**
  * [DslBindingDelegate]
+ * ViewBinding implementation for DSL mode.
  */
 internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
     override val viewTypeKey: ViewTypeKey,
@@ -19,25 +19,35 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
     init {
         config.itemKey?.let { setUniqueKey(it) }
         config.observers.forEach { addObserver(it) }
+
+        // Correctly pass click listeners to base class
+        config.onClick?.let { listener ->
+            setOnItemClick(config.clickDebounce) { binding: VB, item: T, position: Int ->
+                // Invoke the listener from config with correct context
+                listener(binding, item, position)
+            }
+        }
+
+        config.onLongClick?.let { listener ->
+            setOnItemLongClick { binding: VB, item: T, position: Int ->
+                listener(binding, item, position)
+            }
+        }
     }
 
     override fun onInflateBinding(inflater: LayoutInflater, parent: ViewGroup): VB {
         return inflate(inflater, parent, false)
     }
 
-    override fun onCreate(binding: VB) {
-        // Handle initial setup if needed
-    }
-
     override fun onBind(binding: VB, item: T, position: Int) {
         config.onBind?.invoke(binding, item, position)
     }
 
-    override fun onBindPartial(binding: VB, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
-        if (config.onBindPartial != null) {
-            config.onBindPartial?.invoke(binding, item, position, payloads)
+    override fun onPayload(binding: VB, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
+        if (config.onPayload != null) {
+            config.onPayload?.invoke(binding, item, position, payloads)
         } else {
-            super.onBindPartial(binding, item, position, payloads, handled)
+            super.onPayload(binding, item, position, payloads, handled)
         }
     }
 }

@@ -1,19 +1,27 @@
 package com.fusion.adapter.internal.engine
 
+import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
+import com.fusion.adapter.delegate.BindingHolder
+import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.MissingUniqueKeyException
 import com.fusion.adapter.exception.UnregisteredTypeException
-import com.fusion.adapter.internal.diff.ItemIdStorage
-import com.fusion.adapter.internal.diff.ViewTypeStorage
+import com.fusion.adapter.internal.diff.ItemIdUtils
 import com.fusion.adapter.internal.registry.TypeDispatcher
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.FusionPlaceholderViewHolder
+import com.fusion.adapter.placeholder.PlaceholderConfigurator
+import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
 import java.util.Collections
 
 /**
@@ -29,7 +37,7 @@ class FusionCore {
             FusionLogger.d("Core") { "Filter skipped: Input list is empty." }
             return safeList
         }
-        
+
         val config = Fusion.getConfig()
         val result = ArrayList<Any>(safeList.size)
         var hasRemoved = false
@@ -47,21 +55,21 @@ class FusionCore {
                 hasRemoved = true
             }
         }
-        
+
         val duration = System.currentTimeMillis() - start
         if (hasRemoved) {
             FusionLogger.w("Core") { "Filter finished in ${duration}ms. Removed ${safeList.size - result.size} unregistered items." }
         } else {
             FusionLogger.d("Core") { "Filter finished in ${duration}ms. No items removed. Total: ${result.size}" }
         }
-        
+
         return if (hasRemoved) result else safeList
     }
 
     private fun handleUnregisteredItem(item: Any, config: FusionConfig) {
         val exception = UnregisteredTypeException(item)
         FusionLogger.e("Core", exception) { "Unregistered type detected: ${item.javaClass.name}" }
-        
+
         if (config.isDebug) {
             throw exception
         } else {
@@ -74,6 +82,51 @@ class FusionCore {
         viewTypeRegistry.registerPlaceholder(delegate)
     }
 
+    fun registerPlaceholder(@LayoutRes layoutResId: Int) {
+        val delegate = object : FusionPlaceholderDelegate<LayoutHolder>() {
+            override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
+                return LayoutHolder(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
+            }
+
+            override fun onBindPlaceholder(holder: LayoutHolder) {}
+        }
+        registerPlaceholder(delegate)
+    }
+
+    fun <VB : ViewBinding> registerPlaceholder(
+        inflater: BindingInflater<VB>,
+        configurator: PlaceholderConfigurator<VB>?
+    ) {
+        val scope = PlaceholderDefinitionScope<VB>()
+        configurator?.configure(scope)
+        val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
+            override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
+                val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
+                return BindingHolder(binding)
+            }
+
+            override fun onBindPlaceholder(holder: BindingHolder<VB>) {
+                val itemConfiguration = scope.getConfiguration()
+                itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
+            }
+        }
+        registerPlaceholder(delegate)
+    }
+
+    fun <VB : ViewBinding> registerPlaceholder(
+        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        block: (PlaceholderDefinitionScope<VB>.() -> Unit)?
+    ) {
+        // 3. 调用那个基于接口的重载方法 (Java 版)
+        // 利用 SAM 转换将 Kotlin 函数包装成接口
+        registerPlaceholder(
+            BindingInflater(inflate),
+            block?.let { lambda ->
+                PlaceholderConfigurator { scope -> lambda(scope) }
+            }
+        )
+    }
+
     fun getPlaceholderDelegate(): FusionPlaceholderDelegate<*>? {
         return viewTypeRegistry.getPlaceholderDelegate() as? FusionPlaceholderDelegate<*>
     }
@@ -83,6 +136,11 @@ class FusionCore {
         FusionLogger.i("Registry") { "Registering Dispatcher for ${clazz.simpleName}. Delegates count: $count" }
         enforceUniqueKeys(clazz, dispatcher.getAllDelegates())
         viewTypeRegistry.register(clazz, dispatcher)
+    }
+
+    fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
+        val dispatcher = TypeDispatcher.create(delegate)
+        registerDispatcher(clazz, dispatcher)
     }
 
     fun getItemViewType(item: Any): Int = viewTypeRegistry.getItemViewType(item)
@@ -98,10 +156,10 @@ class FusionCore {
         val delegate = viewTypeRegistry.getDelegate(viewType)
         val holder = delegate.onCreateViewHolder(parent)
         val duration = (System.nanoTime() - start) / 1000 // micros
-        
+
         // Log if creation takes > 2ms (frame drop risk)
         if (duration > 2000) {
-             FusionLogger.w("Perf") { "onCreateViewHolder took ${duration}us for ViewType $viewType" }
+            FusionLogger.w("Perf") { "onCreateViewHolder took ${duration}us for ViewType $viewType" }
         }
         return holder
     }
@@ -109,7 +167,7 @@ class FusionCore {
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any> = Collections.emptyList()) {
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegateOrNull(viewType)
-        
+
         if (delegate != null) {
             delegate.onBindViewHolder(holder, item, position, payloads)
         } else {
@@ -121,7 +179,7 @@ class FusionCore {
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegate(viewType)
         val uniqueKey = delegate.getUniqueKey(item) ?: return System.identityHashCode(item).toLong()
-        return ItemIdStorage.getItemId(viewType, uniqueKey)
+        return ItemIdUtils.getItemId(viewType, uniqueKey)
     }
 
     fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
@@ -145,7 +203,7 @@ class FusionCore {
     fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
         val type = viewTypeRegistry.getItemViewType(oldItem)
         if (type != viewTypeRegistry.getItemViewType(newItem)) return false
-        
+
         val same = viewTypeRegistry.getDelegate(type).areContentsTheSame(oldItem, newItem)
         if (!same) {
             FusionLogger.d("Diff") { "Content changed for ${oldItem.javaClass.simpleName}" }
@@ -156,7 +214,7 @@ class FusionCore {
     fun getChangePayload(oldItem: Any, newItem: Any): Any? {
         val type = viewTypeRegistry.getItemViewType(oldItem)
         if (type != viewTypeRegistry.getItemViewType(newItem)) return null
-        
+
         val payload = viewTypeRegistry.getDelegate(type).getChangePayload(oldItem, newItem)
         if (payload != null) {
             FusionLogger.d("Diff") { "Payload generated for ${oldItem.javaClass.simpleName}" }

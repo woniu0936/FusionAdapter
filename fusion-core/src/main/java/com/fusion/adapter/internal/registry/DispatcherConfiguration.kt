@@ -6,6 +6,7 @@ import com.fusion.adapter.delegate.FusionDelegate
 /**
  * [DispatcherConfiguration]
  */
+@PublishedApi
 internal class DispatcherConfiguration<T : Any> {
     var itemKeyProvider: ItemKeyProvider<T>? = null
     var viewTypeProvider: ItemKeyProvider<T>? = null

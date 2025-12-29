@@ -17,7 +17,7 @@ abstract class ItemDefinitionScope<T : Any, V : Any> {
     fun uniqueKey(block: (item: T) -> Any?) { config.itemKey = block }
     fun onBind(block: V.(item: T) -> Unit) { config.onBind = { item, _ -> block(item) } }
     fun onBindIndexed(block: V.(item: T, position: Int) -> Unit) { config.onBind = block }
-    fun onBindPartial(block: V.(item: T, payloads: List<Any>) -> Unit) { config.onBindPartial = { item, _, payloads -> block(item, payloads) } }
+    fun onPayload(block: V.(item: T, payloads: List<Any>) -> Unit) { config.onPayload = { item, _, payloads -> block(item, payloads) } }
     
     fun <P> onPayload(p1: KProperty1<T, P>, action: V.(P) -> Unit) {
         @Suppress("UNCHECKED_CAST")

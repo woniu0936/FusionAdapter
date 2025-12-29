@@ -58,7 +58,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
         (holder as RecyclerView.ViewHolder).setItem(item)
         if (payloads.isNotEmpty()) {
             val handled = dispatchHandledPayloads(holder, item, payloads)
-            holder.onBindPartial(item, payloads, handled)
+            holder.onPayload(item, payloads, handled)
         } else {
             holder.onBind(item)
         }
@@ -66,7 +66,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
 
     abstract fun LayoutHolder.onBind(item: T)
     
-    open fun LayoutHolder.onBindPartial(item: T, payloads: List<Any>, handled: Boolean) {
+    open fun LayoutHolder.onPayload(item: T, payloads: List<Any>, handled: Boolean) {
         if (!handled) onBind(item)
     }
 }

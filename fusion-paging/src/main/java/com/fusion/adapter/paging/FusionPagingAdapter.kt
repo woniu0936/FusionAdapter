@@ -17,14 +17,12 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionRegistry
-import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
-import com.fusion.adapter.internal.registry.FusionRegistryDelegate
 import com.fusion.adapter.internal.registry.TypeDispatcher
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
@@ -42,9 +40,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     @PublishedApi
     internal val core = FusionCore()
-    
-    private val registryDelegate = FusionRegistryDelegate(core)
-    
+
     private val helperAdapter = PagingHelperAdapter()
 
     init {
@@ -65,12 +61,19 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     // --- Registry Delegation ---
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = registryDelegate.registerDispatcher(clazz, dispatcher)
-    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = registryDelegate.register(clazz, delegate)
-    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = registryDelegate.registerPlaceholder(delegate)
-    override fun registerPlaceholder(@LayoutRes layoutResId: Int) = registryDelegate.registerPlaceholder(layoutResId)
-    override fun <VB : ViewBinding> registerPlaceholder(inflate: (LayoutInflater, ViewGroup, Boolean) -> VB, block: (PlaceholderDefinitionScope<VB>.() -> Unit)?) = registryDelegate.registerPlaceholder(inflate, block)
-    override fun <VB : ViewBinding> registerPlaceholder(inflater: BindingInflater<VB>, configurator: PlaceholderConfigurator<VB>?) = registryDelegate.registerPlaceholder(inflater, configurator)
+    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = core.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = core.register(clazz, delegate)
+    override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = core.registerPlaceholder(delegate)
+    override fun registerPlaceholder(@LayoutRes layoutResId: Int) = core.registerPlaceholder(layoutResId)
+    override fun <VB : ViewBinding> registerPlaceholder(
+        inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
+        block: (PlaceholderDefinitionScope<VB>.() -> Unit)?
+    ) = core.registerPlaceholder(inflate, block)
+
+    override fun <VB : ViewBinding> registerPlaceholder(
+        inflater: BindingInflater<VB>,
+        configurator: PlaceholderConfigurator<VB>?
+    ) = core.registerPlaceholder(inflater, configurator)
 
     suspend fun submitData(pagingData: PagingData<T>) {
         FusionLogger.i("Paging") { "submitData (suspend) called." }
@@ -120,12 +123,12 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)
-    
+
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = helperAdapter.getItemInternal(position)
         val bindItem = item ?: FusionPlaceholder()
         holder.setupStaggeredSupport(bindItem) { queryItem -> if (queryItem is FusionPlaceholder) core.getPlaceholderDelegate() else core.getDelegate(queryItem) }
-        
+
         if (item == null) {
             FusionLogger.d("Paging") { "Binding Placeholder at pos: $position" }
             val delegate = core.getPlaceholderDelegate()

@@ -22,6 +22,11 @@ class ChatActivity : AppCompatActivity() {
     private val vm: ChatViewModel by viewModels()
     private lateinit var binding: ActivityBaseFixedBinding
 
+    companion object {
+        private const val TAG = "ChatActivity"
+        private const val INITIAL_SKELETON_COUNT = 16
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityBaseFixedBinding.inflate(layoutInflater)
@@ -41,16 +46,13 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
 
-                // 1. Me (Outgoing - Right side)
                 dispatch(1, ItemMsgTextMeBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content 
-                        // Fix: Using robust avatar URL
                         ivAvatarMe.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
                     }
                 }
 
-                // 2. Other (Incoming - Left side)
                 dispatch(2, ItemMsgTextOtherBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content
@@ -59,7 +61,6 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
 
-                // 3. System
                 dispatch(3, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
@@ -76,9 +77,12 @@ class ChatActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { state ->
                     when (state) {
-                        is ChatState.Loading -> adapter.showPlaceholders(6)
+                        is ChatState.Loading -> {
+                            Log.d(TAG, "Showing $INITIAL_SKELETON_COUNT skeletons...")
+                            adapter.showPlaceholders(INITIAL_SKELETON_COUNT)
+                        }
                         is ChatState.Success -> {
-                            Log.d("FusionChat", "Messages count: ${state.msgs.size}")
+                            Log.d(TAG, "Received ${state.msgs.size} messages.")
                             adapter.submitList(state.msgs)
                         }
                     }

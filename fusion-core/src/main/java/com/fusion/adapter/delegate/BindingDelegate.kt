@@ -9,7 +9,6 @@ import com.fusion.adapter.extensions.setItem
 import com.fusion.adapter.internal.ClassTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
 import com.fusion.adapter.internal.diff.*
-import com.fusion.adapter.internal.registry.TypeDispatcher
 import kotlin.reflect.KProperty1
 
 /**
@@ -76,14 +75,15 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         holder.setItem(item)
         if (payloads.isNotEmpty()) {
             val handled = dispatchHandledPayloads(holder.binding, item, payloads)
-            onBindPartial(holder.binding, item, position, payloads, handled)
+            onPayload(holder.binding, item, position, payloads, handled)
         } else {
             onBind(holder.binding, item, position)
         }
     }
 
     abstract fun onBind(binding: VB, item: T, position: Int)
-    open fun onBindPartial(binding: VB, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
+
+    open fun onPayload(binding: VB, item: T, position: Int, payloads: List<Any>, handled: Boolean) {
         if (!handled) onBind(binding, item, position)
     }
 
