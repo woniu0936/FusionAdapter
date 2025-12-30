@@ -53,8 +53,11 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
             }
         }
 
+        onCreate(holder)
         return holder
     }
+
+    open fun onCreate(holder: LayoutHolder) {}
 
     final override fun onBindViewHolder(holder: LayoutHolder, item: T, position: Int, payloads: MutableList<Any>) {
         (holder as RecyclerView.ViewHolder).setItem(item)

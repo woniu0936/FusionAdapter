@@ -57,7 +57,7 @@ class SocialPostDelegate(
         }
     }
 
-    override fun getUniqueKey(item: Moment): Any {
+    override fun getStableId(item: Moment): Any {
         return item.id
     }
 }

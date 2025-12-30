@@ -32,7 +32,7 @@ class ImageMsgDelegate : BindingDelegate<ChatMessage, ItemMsgImageBinding>(ItemM
         }
     }
 
-    override fun getUniqueKey(item: ChatMessage): Any {
+    override fun getStableId(item: ChatMessage): Any {
         return item.id
     }
 }

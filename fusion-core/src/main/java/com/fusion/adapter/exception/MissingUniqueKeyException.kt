@@ -5,6 +5,6 @@ class MissingUniqueKeyException(clazz: Class<*>, delegateClass: Class<*>) : Runt
             "Since you enabled 'setDefaultItemIdEnabled(true)', you MUST define a uniqueKey for every registered type.\n" +
             "Example:\n" +
             "setup<${clazz.simpleName}> {\n" +
-            "    uniqueKey { it.id }\n" +
+            "    stableId { it.id }\n" +
             "}"
 )

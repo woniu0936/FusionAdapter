@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.R
 import com.fusion.example.databinding.ActivityBaseFixedBinding
@@ -31,14 +31,16 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.title = "Fusion Example"
 
         binding.recyclerView.setupFusion {
-            setup<MenuEntry, ItemSimpleLayoutBinding>(ItemSimpleLayoutBinding::inflate) {
-                uniqueKey { it.title }
+            register<MenuEntry, ItemSimpleLayoutBinding>(ItemSimpleLayoutBinding::inflate) {
+                stableId { it.title }
                 onBind { item ->
                     tvTitle.text = item.title
                     tvSubtitle.text = item.desc
                     ivIcon.setImageResource(item.icon)
                 }
-                onClick { item -> startActivity(Intent(this@MainActivity, item.target)) }
+                                onItemClick { item ->
+                                    startActivity(Intent(this@MainActivity, item.target))
+                                }
             }
         }.submitList(listOf(
             MenuEntry("Social Feed", "Payloads & M3 Social Cards", R.drawable.ic_moments, MomentsActivity::class.java),

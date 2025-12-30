@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.fusion.adapter.placeholder.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.core.model.Product
 import com.fusion.example.core.model.SectionHeader
@@ -29,13 +29,13 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
         binding.toolbar.title = "Staggered Plaza"
 
         val adapter = binding.recyclerView.setupFusion(StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)) {
-            setup<SectionHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
-                uniqueKey { it.title }
+            register<SectionHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+                stableId { it.title }
                 onBind { item -> tvTitle.text = item.title }
                 fullSpanIf { true }
             }
-            setup<Product, ItemImageBinding>(ItemImageBinding::inflate) {
-                uniqueKey { it.id }
+            register<Product, ItemImageBinding>(ItemImageBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     tvDesc.text = item.name
                     ivImage.loadUrl(item.cover)

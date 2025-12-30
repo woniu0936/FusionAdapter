@@ -4,35 +4,35 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.ItemKeyProvider
-import com.fusion.adapter.internal.registry.DispatcherConfiguration
+import com.fusion.adapter.internal.registry.RouterConfiguration
 import com.fusion.adapter.internal.registry.DslAdapterFactory
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeRouter
 
 /**
- * [DispatcherScope]
+ * [RouterScope]
  * Scope for configuring one-to-many routing.
  */
 @FusionDsl
-class DispatcherScope<T : Any>(
+class RouterScope<T : Any>(
     // 1. 修改：加上 @PublishedApi internal
     // 作用：让下面的 inline 函数能读取 clazz，但在 Java/Kotlin 调用方看来它依然不可见
     @PublishedApi internal val clazz: Class<T>
 ) {
 
     // 2. 保持：这个必须是 @PublishedApi，因为 inline 函数用到了 config
-    @PublishedApi internal val config = DispatcherConfiguration<T>()
+    @PublishedApi internal val config = RouterConfiguration<T>()
 
-    fun uniqueKey(block: (T) -> Any?) {
+    fun stableId(block: (T) -> Any?) {
         config.itemKeyProvider = ItemKeyProvider(block)
     }
 
-    fun viewTypeKey(block: (T) -> Any?) {
+    fun match(block: (T) -> Any?) {
         config.viewTypeProvider = ItemKeyProvider(block)
     }
 
     // 3. 修改：inline + reified，并增加 viewType 参数
-    // 原代码中 viewType 变量未定义，通常它应该作为 dispatch 的参数传入
-    inline fun <reified VB : ViewBinding> dispatch(
+    // 原代码中 viewType 变量未定义，通常它应该作为 on 的参数传入
+    inline fun <reified VB : ViewBinding> map(
         viewType: Any, // <--- 补充：必须传入 viewType (或是 Int)
         noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
         noinline block: BindingDefinitionScope<T, VB>.() -> Unit
@@ -61,12 +61,12 @@ class DispatcherScope<T : Any>(
     }
 
     @PublishedApi
-    internal fun build(): TypeDispatcher<T> {
-        val builder = TypeDispatcher.Builder<T>()
-        config.itemKeyProvider?.let { builder.uniqueKey(it::getKey) }
-        config.viewTypeProvider?.let { builder.viewType(it::getKey) }
+    internal fun build(): TypeRouter<T> {
+        val builder = TypeRouter.Builder<T>()
+        config.itemKeyProvider?.let { builder.stableId(it::getKey) }
+        config.viewTypeProvider?.let { builder.match(it::getKey) }
         config.delegates.forEach { (key, delegate) ->
-            builder.delegate(key, delegate)
+            builder.map(key, delegate)
         }
         return builder.build()
     }

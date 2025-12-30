@@ -21,10 +21,7 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
 
         // Correctly pass click listeners to base class
         config.onClick?.let { listener ->
-            setOnItemClick(config.clickDebounce) { binding: VB, item: T, position: Int ->
-                // Invoke the listener from config with correct context
-                listener(binding, item, position)
-            }
+            setOnItemClick(config.clickDebounce, listener)
         }
 
         config.onLongClick?.let { listener ->
@@ -36,6 +33,10 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
 
     override fun onInflateBinding(inflater: LayoutInflater, parent: ViewGroup): VB {
         return inflate(inflater, parent, false)
+    }
+
+    override fun onCreate(binding: VB) {
+        config.onCreate?.invoke(binding)
     }
 
     override fun onBind(binding: VB, item: T, position: Int) {
@@ -50,13 +51,13 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
         }
     }
 
-    override fun getUniqueKey(item: T): Any {
-        // 1. 优先使用 DSL 中 uniqueKey { ... } 配置的 Lambda
+    override fun getStableId(item: T): Any {
+        // 1. 优先使用 DSL 中 stableId { ... } 配置的 Lambda
         val dslKey = config.itemKey?.invoke(item)
         if (dslKey != null) return dslKey
 
-        // 2. 其次使用 TypeDispatcher 注入的 Key (internalDispatcherKeyProvider 是我们在上一轮讨论中保留的 internal 字段)
-        val dispatchKey = internalDispatcherKeyProvider?.invoke(item)
+        // 2. 其次使用 TypeRouter 注入的 Key (internalRouterKeyProvider 是我们在上一轮讨论中保留的 internal 字段)
+        val dispatchKey = internalRouterKeyProvider?.invoke(item)
         if (dispatchKey != null) return dispatchKey
 
         // 3. 最后回退到 Item 本身 (Identity)

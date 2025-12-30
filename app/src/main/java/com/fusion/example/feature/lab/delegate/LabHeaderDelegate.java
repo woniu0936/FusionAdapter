@@ -15,7 +15,7 @@ public class LabHeaderDelegate extends JavaDelegate<LabHeader, ItemLabHeaderM3Bi
 
     @Nullable
     @Override
-    public Object getUniqueKey(@NonNull LabHeader item) {
+    public Object getStableId(@NonNull LabHeader item) {
         return item.getTitle(); // Title as ID for headers
     }
 

@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.fusion.adapter.placeholder.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.core.model.Product
 import com.fusion.example.core.model.SectionHeader
@@ -31,13 +31,13 @@ class GridSpanSizeActivity : AppCompatActivity() {
         binding.toolbar.title = "Market Plaza"
 
         val adapter = binding.recyclerView.setupFusion(GridLayoutManager(this, 2)) {
-            setup<SectionHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
-                uniqueKey { it.title }
+            register<SectionHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+                stableId { it.title }
                 onBind { item -> tvTitle.text = item.title }
                 spanSize { _, _ -> 2 } 
             }
-            setup<Product, ItemMarketProductBinding>(ItemMarketProductBinding::inflate) {
-                uniqueKey { it.id }
+            register<Product, ItemMarketProductBinding>(ItemMarketProductBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     tvName.text = item.name
                     tvPrice.text = item.price

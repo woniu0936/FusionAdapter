@@ -15,19 +15,19 @@ class ViewTypeRegistry {
         const val TYPE_PLACEHOLDER = -2049
     }
 
-    private val classToDispatcher = ConcurrentHashMap<Class<*>, TypeDispatcher<Any>>()
+    private val classToRouter = ConcurrentHashMap<Class<*>, TypeRouter<Any>>()
     private val viewTypeToDelegate = ConcurrentHashMap<Int, FusionDelegate<Any, RecyclerView.ViewHolder>>()
 
     private val supportedCache = ConcurrentHashMap<Class<*>, Boolean>()
-    private val inheritanceCache = ConcurrentHashMap<Class<*>, TypeDispatcher<Any>?>()
+    private val inheritanceCache = ConcurrentHashMap<Class<*>, TypeRouter<Any>?>()
 
     @Volatile
     private var hasPlaceholderDelegate = false
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> register(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
-        classToDispatcher[clazz] = dispatcher as TypeDispatcher<Any>
-        dispatcher.getAllDelegates().forEach { registerDelegateGlobal(it) }
+    fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>) {
+        classToRouter[clazz] = router as TypeRouter<Any>
+        router.getAllDelegates().forEach { registerDelegateGlobal(it) }
         supportedCache.clear()
         inheritanceCache.clear()
     }
@@ -60,8 +60,8 @@ class ViewTypeRegistry {
     }
 
     private fun checkIsSupportedInternal(clazz: Class<*>): Boolean {
-        if (classToDispatcher.containsKey(clazz)) return true
-        if (findDispatcherForInheritanceCached(clazz) != null) return true
+        if (classToRouter.containsKey(clazz)) return true
+        if (findRouterForInheritanceCached(clazz) != null) return true
         return false
     }
 
@@ -71,44 +71,44 @@ class ViewTypeRegistry {
             throw IllegalStateException("Fusion: FusionPlaceholder used but no PlaceholderDelegate registered.")
         }
         val clazz = item.javaClass
-        var dispatcher = classToDispatcher[clazz]
+        var router = classToRouter[clazz]
 
-        if (dispatcher == null) {
-            dispatcher = findDispatcherForInheritanceCached(clazz)
-            if (dispatcher != null) {
-                classToDispatcher.putIfAbsent(clazz, dispatcher)
+        if (router == null) {
+            router = findRouterForInheritanceCached(clazz)
+            if (router != null) {
+                classToRouter.putIfAbsent(clazz, router)
             }
         }
 
-        if (dispatcher == null) {
-            throw IllegalStateException("Fusion: Critical - Item ${clazz.simpleName} has no registered Dispatcher.")
+        if (router == null) {
+            throw IllegalStateException("Fusion: Critical - Item ${clazz.simpleName} has no registered Router.")
         }
 
-        val delegate = dispatcher.select(item)
+        val delegate = router.select(item)
             ?: throw IllegalStateException("Fusion: 分发失败 (Key 未映射) -> ${clazz.simpleName}")
 
         return ViewTypeStorage.getViewType(delegate.viewTypeKey)
     }
 
-    private fun findDispatcherForInheritanceCached(clazz: Class<*>): TypeDispatcher<Any>? {
+    private fun findRouterForInheritanceCached(clazz: Class<*>): TypeRouter<Any>? {
         if (inheritanceCache.containsKey(clazz)) {
             return inheritanceCache[clazz]
         }
-        val dispatcher = findDispatcherForInheritanceInternal(clazz)
-        inheritanceCache[clazz] = dispatcher
-        return dispatcher
+        val router = findRouterForInheritanceInternal(clazz)
+        inheritanceCache[clazz] = router
+        return router
     }
 
-    private fun findDispatcherForInheritanceInternal(clazz: Class<*>): TypeDispatcher<Any>? {
+    private fun findRouterForInheritanceInternal(clazz: Class<*>): TypeRouter<Any>? {
         var current: Class<*>? = clazz.superclass
         while (current != null && current != Any::class.java) {
-            val dispatcher = classToDispatcher[current]
-            if (dispatcher != null) return dispatcher
+            val router = classToRouter[current]
+            if (router != null) return router
             current = current.superclass
         }
         for (inf in clazz.interfaces) {
-            val dispatcher = classToDispatcher[inf]
-            if (dispatcher != null) return dispatcher
+            val router = classToRouter[inf]
+            if (router != null) return router
         }
         return null
     }

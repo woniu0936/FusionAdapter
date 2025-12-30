@@ -16,7 +16,7 @@ public class LabAppStandardDelegate extends JavaDelegate<LabApp, ItemLabAppRowM3
 
     @Nullable
     @Override
-    public Object getUniqueKey(@NonNull LabApp item) {
+    public Object getStableId(@NonNull LabApp item) {
         return item.getId();
     }
 

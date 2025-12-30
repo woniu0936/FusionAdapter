@@ -14,12 +14,16 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.placeholder.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
-import com.fusion.example.R
 import com.fusion.example.core.model.FeedItem
 import com.fusion.example.core.model.Moment
-import com.fusion.example.databinding.*
+import com.fusion.example.databinding.ActivityBaseFixedBinding
+import com.fusion.example.databinding.ItemFeedAdBinding
+import com.fusion.example.databinding.ItemHeaderBinding
+import com.fusion.example.databinding.ItemMomentCardBinding
+import com.fusion.example.databinding.ItemMomentPlaceholderBinding
+import com.fusion.example.databinding.ItemUserSuggestionBinding
 import com.fusion.example.utils.fullStatusBar
 import com.fusion.example.utils.loadUrl
 import kotlinx.coroutines.launch
@@ -33,57 +37,64 @@ class MomentsActivity : AppCompatActivity() {
         binding = ActivityBaseFixedBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fullStatusBar(binding.root)
-        
+
         binding.toolbar.title = "Feed Experience"
 
         val adapter = binding.recyclerView.setupFusion {
-            
-            setup<FeedItem.TimelineHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
-                uniqueKey { it.label }
+
+            register<FeedItem.TimelineHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
+                stableId { it.label }
                 onBind { item -> tvTitle.text = item.label }
             }
 
-            setup<FeedItem.AdCampaign, ItemFeedAdBinding>(ItemFeedAdBinding::inflate) {
-                uniqueKey { it.id }
+            register<FeedItem.AdCampaign, ItemFeedAdBinding>(ItemFeedAdBinding::inflate) {
+                stableId { it.id }
+                onCreate {
+                    btnAction.setOnClickListener { Toast.makeText(this@MomentsActivity, "Ad Clicked!", Toast.LENGTH_SHORT).show() }
+                }
                 onBind { item ->
                     tvAdTitle.text = item.title
                     tvAdDesc.text = item.description
                     ivBanner.loadUrl(item.bannerUrl)
                     btnAction.text = item.actionText
-                    btnAction.setOnClickListener { Toast.makeText(this@MomentsActivity, "Ad Clicked!", Toast.LENGTH_SHORT).show() }
+                }
+                onItemClick(600) {
+                    Toast.makeText(this@MomentsActivity, "item Clicked!", Toast.LENGTH_SHORT).show()
                 }
             }
 
-            setup<FeedItem.UserSuggestion, ItemUserSuggestionBinding>(ItemUserSuggestionBinding::inflate) {
-                uniqueKey { it.id }
-                onBind { item ->
-                    tvSugName.text = item.user.name
-                    tvSugFriends.text = "${item.mutualFriends} mutual friends"
-                    ivSugAvatar.loadUrl(item.user.avatar, isCircle = true)
-                    btnFollow.setOnClickListener { 
+            register<FeedItem.UserSuggestion, ItemUserSuggestionBinding>(ItemUserSuggestionBinding::inflate) {
+                stableId { it.id }
+                onCreate {
+                    btnFollow.setOnClickListener {
                         btnFollow.text = "Requested"
                         btnFollow.isEnabled = false
                     }
                 }
+                onBind { item ->
+                    tvSugName.text = item.user.name
+                    tvSugFriends.text = "${item.mutualFriends} mutual friends"
+                    ivSugAvatar.loadUrl(item.user.avatar, isCircle = true)
+                }
             }
 
-            setup<FeedItem.MomentItem, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
-                uniqueKey { it.moment.id }
-                
+            register<FeedItem.MomentItem, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
+                stableId { it.moment.id }
+                onCreate {
+                    btnLike.setOnClickListener {
+                        val currentItem = root.getItem<FeedItem.MomentItem>()
+                        currentItem?.let { vm.toggleLike(it.moment.id) }
+                    }
+                }
                 onBind { item ->
                     val m = item.moment
                     tvName.text = m.author.name
                     tvContent.text = m.content
                     ivAvatar.loadUrl(m.author.avatar, isCircle = true)
-                    
+
                     imageContainer.visibility = if (m.images.isNotEmpty()) View.VISIBLE else View.GONE
                     if (m.images.isNotEmpty()) ivImage.loadUrl(m.images[0])
-                    
-                    btnLike.setOnClickListener { 
-                        val currentItem = root.getItem<FeedItem.MomentItem>()
-                        currentItem?.let { vm.toggleLike(it.moment.id) }
-                    }
-                    
+
                     updateLikeUI(this, m.isLiked, m.likes, animate = false)
                 }
 

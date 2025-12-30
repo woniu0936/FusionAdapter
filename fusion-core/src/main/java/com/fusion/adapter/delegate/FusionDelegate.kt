@@ -20,12 +20,12 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     abstract val viewTypeKey: ViewTypeKey
     private val propertyObservers = ArrayList<PropertyObserver<T>>()
 
-    internal var internalDispatcherKeyProvider: ((T) -> Any?)? = null
+    internal var internalRouterKeyProvider: ((T) -> Any?)? = null
 
-    abstract fun getUniqueKey(item: T): Any
+    abstract fun getStableId(item: T): Any
 
-    internal fun internalInjectDispatcherKey(provider: (T) -> Any?) {
-        this.internalDispatcherKeyProvider = provider
+    internal fun internalInjectRouterKey(provider: (T) -> Any?) {
+        this.internalRouterKeyProvider = provider
     }
 
     // --- Layout Strategy ---

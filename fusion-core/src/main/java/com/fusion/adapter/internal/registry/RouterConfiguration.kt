@@ -4,10 +4,10 @@ import com.fusion.adapter.ItemKeyProvider
 import com.fusion.adapter.delegate.FusionDelegate
 
 /**
- * [DispatcherConfiguration]
+ * [RouterConfiguration]
  */
 @PublishedApi
-internal class DispatcherConfiguration<T : Any> {
+internal class RouterConfiguration<T : Any> {
     var itemKeyProvider: ItemKeyProvider<T>? = null
     var viewTypeProvider: ItemKeyProvider<T>? = null
     val delegates = HashMap<Any, FusionDelegate<T, *>>()

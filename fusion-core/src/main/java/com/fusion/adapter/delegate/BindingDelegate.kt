@@ -37,6 +37,11 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         this.onItemClick = { b, i, p -> listener.onItemClick(b, i, p) }; this.clickDebounceMs = debounceMs
     }
 
+    fun setOnItemClick(debounceMs: Long?, listener: (binding: VB, item: T, position: Int) -> Unit) {
+        this.onItemClick = listener
+        this.clickDebounceMs = debounceMs
+    }
+
     fun setOnItemLongClick(listener: (binding: VB, item: T, position: Int) -> Boolean) {
         this.onItemLongClick = listener
     }
@@ -51,10 +56,17 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
         val holder = BindingHolder(binding)
         if (onItemClick != null) {
             holder.itemView.setOnClickListener {
-                val pos = holder.bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) {
-                    val item = holder.getItem<T>()
-                    if (item != null) onItemClick?.invoke(holder.binding, item, pos)
+                val debounce = clickDebounceMs ?: com.fusion.adapter.Fusion.getConfig().globalDebounceInterval
+                val now = System.currentTimeMillis()
+                val lastClick = holder.itemView.getTag(com.fusion.adapter.core.R.id.fusion_last_click_time) as? Long ?: 0L
+                
+                if (now - lastClick >= debounce) {
+                    holder.itemView.setTag(com.fusion.adapter.core.R.id.fusion_last_click_time, now)
+                    val pos = holder.bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        val item = holder.getItem<T>()
+                        if (item != null) onItemClick?.invoke(holder.binding, item, pos)
+                    }
                 }
             }
         }

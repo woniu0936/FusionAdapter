@@ -7,6 +7,7 @@ import com.fusion.adapter.internal.diff.PropertyObserver
  */
 class ItemConfiguration<T : Any, V : Any> {
     var itemKey: ((T) -> Any?)? = null
+    var onCreate: (V.() -> Unit)? = null
     var onBind: (V.(item: T, position: Int) -> Unit)? = null
     var onPayload: (V.(item: T, position: Int, payloads: List<Any>) -> Unit)? = null
     var onClick: (V.(item: T, position: Int) -> Unit)? = null

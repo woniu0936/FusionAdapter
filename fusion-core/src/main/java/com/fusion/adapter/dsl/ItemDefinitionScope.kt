@@ -14,7 +14,8 @@ abstract class ItemDefinitionScope<T : Any, V : Any> {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     fun getConfiguration(): ItemConfiguration<T, V> = config
 
-    fun uniqueKey(block: (item: T) -> Any?) { config.itemKey = block }
+    fun stableId(block: (item: T) -> Any?) { config.itemKey = block }
+    fun onCreate(block: V.() -> Unit) { config.onCreate = block }
     fun onBind(block: V.(item: T) -> Unit) { config.onBind = { item, _ -> block(item) } }
     fun onBindIndexed(block: V.(item: T, position: Int) -> Unit) { config.onBind = block }
     fun onPayload(block: V.(item: T, payloads: List<Any>) -> Unit) { config.onPayload = { item, _, payloads -> block(item, payloads) } }
@@ -44,7 +45,7 @@ abstract class ItemDefinitionScope<T : Any, V : Any> {
         config.observers.add(PropertyObserver6({ p1.get(it) }, { p2.get(it) }, { p3.get(it) }, { p4.get(it) }, { p5.get(it) }, { p6.get(it) }, action as Any.(P1, P2, P3, P4, P5, P6) -> Unit))
     }
 
-    fun onClick(debounceMs: Long? = null, block: V.(item: T) -> Unit) { config.clickDebounce = debounceMs; config.onClick = { item, _ -> block(item) } }
+    fun onItemClick(debounceMs: Long? = null, block: V.(item: T) -> Unit) { config.clickDebounce = debounceMs; config.onClick = { item, _ -> block(item) } }
     fun onLongClick(block: V.(item: T) -> Boolean) { config.onLongClick = { item, _ -> block(item) } }
     fun spanSize(block: SpanSizeScope.(item: T, position: Int) -> Int) { config.spanSize = { item, pos, scope -> scope.block(item, pos) } }
     fun fullSpanIf(condition: (item: T) -> Boolean) { config.spanSize = { item, _, scope -> if (condition(item)) scope.totalSpans else 1 } }

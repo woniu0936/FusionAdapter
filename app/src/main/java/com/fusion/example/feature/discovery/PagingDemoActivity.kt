@@ -12,7 +12,7 @@ import androidx.paging.PagingState
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.paging.setupFusionPaging
 import com.fusion.adapter.paging.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.example.databinding.*
 import com.fusion.example.utils.fullStatusBar
 import com.fusion.example.utils.loadUrl
@@ -32,16 +32,16 @@ class PagingDemoActivity : AppCompatActivity() {
         binding.toolbar.title = "Discovery Feed"
 
         val pagingAdapter = binding.recyclerView.setupFusionPaging<Any> {
-            setup<DiscoveryItem.Article, ItemDiscoveryCardBinding>(ItemDiscoveryCardBinding::inflate) {
-                uniqueKey { it.id }
+            register<DiscoveryItem.Article, ItemDiscoveryCardBinding>(ItemDiscoveryCardBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     tvTitle.text = item.title
                     tvDesc.text = item.desc
                     ivCover.loadUrl("https://picsum.photos/seed/${item.id}/200/200")
                 }
             }
-            setup<DiscoveryItem.Featured, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
-                uniqueKey { it.id }
+            register<DiscoveryItem.Featured, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
+                stableId { it.id }
                 onBind { item ->
                     tvName.text = "Featured"
                     tvContent.text = item.text

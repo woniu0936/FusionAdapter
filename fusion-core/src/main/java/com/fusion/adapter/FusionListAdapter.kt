@@ -15,8 +15,8 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
-import com.fusion.adapter.internal.engine.FusionDispatcher
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.engine.FusionExecutor
+import com.fusion.adapter.internal.registry.TypeRouter
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
@@ -33,11 +33,11 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
 
     private val differ: AsyncListDiffer<Any> = AsyncListDiffer(
         ListUpdateCallbackWrapper(this),
-        AsyncDifferConfig.Builder(FusionDiffCallback(core)).setBackgroundThreadExecutor(FusionDispatcher.backgroundExecutorAdapter).build()
+        AsyncDifferConfig.Builder(FusionDiffCallback(core)).setBackgroundThreadExecutor(FusionExecutor.backgroundExecutorAdapter).build()
     )
 
     init {
-        if (Fusion.getConfig().defaultItemIdEnabled) {
+        if (Fusion.getConfig().defaultStableIds) {
             setHasStableIds(true)
         }
     }
@@ -56,7 +56,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     }
 
     // --- Registry Delegation ---
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = core.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>) = core.register(clazz, router)
     override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = core.register(clazz, delegate)
     override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = core.registerPlaceholder(delegate)
     override fun registerPlaceholder(@LayoutRes layoutResId: Int) = core.registerPlaceholder(layoutResId)
@@ -74,7 +74,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
         val rawList = if (list == null) emptyList() else ArrayList(list)
         FusionLogger.i("Adapter") { "submitList called. Size: ${rawList.size}" }
 
-        FusionDispatcher.dispatch {
+        FusionExecutor.execute {
             val start = System.currentTimeMillis()
             val safeList = core.filter(rawList)
 
@@ -84,7 +84,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
                 FusionLogger.d("Adapter") { "Filter finished in ${System.currentTimeMillis() - start}ms. Safe list size: ${safeList.size}" }
             }
 
-            FusionDispatcher.runOnMain {
+            FusionExecutor.runOnMain {
                 differ.submitList(safeList) {
                     FusionLogger.d("Adapter") { "DiffUtil finished. Updating UI." }
                     commitCallback?.run()

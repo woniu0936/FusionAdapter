@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="fusion_item_tag" type="id"/>
+    <item name="fusion_last_click_time" type="id"/>
 </resources>

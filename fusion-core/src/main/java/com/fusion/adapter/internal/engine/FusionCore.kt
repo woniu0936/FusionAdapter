@@ -13,7 +13,7 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.internal.diff.ItemIdUtils
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeRouter
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
@@ -91,7 +91,7 @@ class FusionCore {
 
             override fun onBindPlaceholder(holder: LayoutHolder) {}
 
-            override fun getUniqueKey(item: Any): Any = item
+            override fun getStableId(item: Any): Any = item
         }
         registerPlaceholder(delegate)
     }
@@ -114,7 +114,7 @@ class FusionCore {
                 itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
 
-            override fun getUniqueKey(item: Any): Any = item
+            override fun getStableId(item: Any): Any = item
         }
         registerPlaceholder(delegate)
     }
@@ -151,15 +151,15 @@ class FusionCore {
         return high or low
     }
 
-    fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
-        val count = dispatcher.getAllDelegates().size
-        FusionLogger.i("Registry") { "Registering Dispatcher for ${clazz.simpleName}. Delegates count: $count" }
-        viewTypeRegistry.register(clazz, dispatcher)
+    fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>) {
+        val count = router.getAllDelegates().size
+        FusionLogger.i("Registry") { "Registering Router for ${clazz.simpleName}. Delegates count: $count" }
+        viewTypeRegistry.register(clazz, router)
     }
 
     fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) {
-        val dispatcher = TypeDispatcher.create(delegate)
-        registerDispatcher(clazz, dispatcher)
+        val router = TypeRouter.create(delegate)
+        register(clazz, router)
     }
 
     fun getItemViewType(item: Any): Int = viewTypeRegistry.getItemViewType(item)
@@ -201,7 +201,7 @@ class FusionCore {
         }
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegate(viewType)
-        val uniqueKey = delegate.getUniqueKey(item)
+        val uniqueKey = delegate.getStableId(item)
         return ItemIdUtils.getItemId(viewType, uniqueKey)
     }
 
@@ -214,8 +214,8 @@ class FusionCore {
         if (oldType != newType) return false
 
         val delegate = viewTypeRegistry.getDelegate(oldType)
-        val oldKey = delegate.getUniqueKey(oldItem)
-        val newKey = delegate.getUniqueKey(newItem)
+        val oldKey = delegate.getStableId(oldItem)
+        val newKey = delegate.getStableId(newItem)
 
         return oldKey == newKey
     }

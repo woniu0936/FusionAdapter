@@ -1,7 +1,7 @@
 package com.fusion.adapter
 
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeRouter
 
 /**
  * [FusionRegistry]
@@ -12,7 +12,7 @@ interface FusionRegistry {
     /**
      * 注册路由分发器（用于同一个数据类对应多个布局的情况）
      */
-    fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>)
+    fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>)
 
     /**
      * 注册一对一映射代理（最常用）

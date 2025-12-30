@@ -13,7 +13,7 @@ class SimpleLayoutDelegate : LayoutDelegate<SectionHeader>(R.layout.item_simple_
         setText(R.id.tv_subtitle, "Classic Layout Delegate")
     }
 
-    override fun getUniqueKey(item: SectionHeader): Any {
+    override fun getStableId(item: SectionHeader): Any {
         return item.hashCode()
     }
 }

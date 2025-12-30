@@ -6,13 +6,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.Fusion
-import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.FusionListAdapter
-import com.fusion.adapter.exception.UnregisteredTypeException
-import com.fusion.adapter.initialize
-import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.example.core.model.SectionHeader
 import com.fusion.example.databinding.ActivityCrashTestM3Binding
 import com.fusion.example.databinding.ItemLabPlaceholderBinding
@@ -22,28 +18,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CrashTestActivity : AppCompatActivity() {
-    
+
     data class Unregistered(val data: String)
 
     private lateinit var binding: ActivityCrashTestM3Binding
     private lateinit var adapter: FusionListAdapter
     private val items = mutableListOf<Any>()
-    private var originalConfig: FusionConfig? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        originalConfig = Fusion.getConfig()
-        Fusion.initialize {
-            setDebug(true)
-            setDefaultItemIdEnabled(originalConfig?.defaultItemIdEnabled ?: false)
-            setGlobalDebounceInterval(originalConfig?.globalDebounceInterval ?: 300)
-        }
 
         binding = ActivityCrashTestM3Binding.inflate(layoutInflater)
         setContentView(binding.root)
         fullStatusBar(binding.root)
-        
+
         binding.toolbar.title = "Sanitization Lab"
 
         adapter = FusionListAdapter()
@@ -57,8 +45,8 @@ class CrashTestActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
 
-        adapter.setup<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
-            uniqueKey { it.title }
+        adapter.register<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
+            stableId { it.title }
             onBind { item ->
                 tvTitle.text = item.title
                 vStatusIndicatorBox.setCardBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
@@ -72,7 +60,7 @@ class CrashTestActivity : AppCompatActivity() {
         lifecycleScope.launch {
             adapter.showPlaceholders(8)
             delay(1000)
-            
+
             items.clear()
             items.add(SectionHeader("Registry Security: Verified"))
             repeat(30) {
@@ -92,7 +80,7 @@ class CrashTestActivity : AppCompatActivity() {
         binding.btnCatchCrash.setOnClickListener {
             val list = ArrayList(adapter.currentList)
             list.add(if (list.size > 1) 1 else 0, Unregistered("EXTERNAL_DATA"))
-            
+
             try {
                 adapter.setItems(list)
             } catch (e: Exception) {
@@ -103,6 +91,5 @@ class CrashTestActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        originalConfig?.let { Fusion.initialize(it) }
     }
 }

@@ -6,14 +6,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.dsl.BindingDefinitionScope
-import com.fusion.adapter.dsl.DispatcherScope
+import com.fusion.adapter.dsl.RouterScope
 import com.fusion.adapter.internal.registry.DslAdapterFactory
 
 /**
- * [setup] 核心入口
+ * [register] 核心入口
  */
 @JvmName("register")
-inline fun <reified T : Any, reified VB : ViewBinding> FusionRegistry.setup(
+inline fun <reified T : Any, reified VB : ViewBinding> FusionRegistry.register(
     noinline inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
     crossinline block: BindingDefinitionScope<T, VB>.() -> Unit
 ) {
@@ -22,12 +22,12 @@ inline fun <reified T : Any, reified VB : ViewBinding> FusionRegistry.setup(
     this.register(T::class.java, delegate)
 }
 
-@JvmName("registerDispatcher")
-inline fun <reified T : Any> FusionRegistry.setup(
-    block: DispatcherScope<T>.() -> Unit
+@JvmName("registerRouter")
+inline fun <reified T : Any> FusionRegistry.register(
+    block: RouterScope<T>.() -> Unit
 ) {
-    val dispatcher = DispatcherScope(T::class.java).apply(block).build()
-    this.registerDispatcher(T::class.java, dispatcher)
+    val router = RouterScope(T::class.java).apply(block).build()
+    this.register(T::class.java, router)
 }
 
 /**

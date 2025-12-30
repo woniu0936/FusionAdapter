@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="?attr/materialCardViewFilledStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
     android:layout_marginVertical="8dp"
-    style="?attr/materialCardViewFilledStyle"
     app:cardBackgroundColor="?attr/colorPrimaryContainer">
 
     <LinearLayout
@@ -20,22 +19,22 @@
             android:layout_width="match_parent"
             android:layout_height="160dp"
             android:scaleType="centerCrop"
-            tools:src="@tools:sample/backgrounds/scenic"/>
+            tools:src="@tools:sample/backgrounds/scenic" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
                 android:text="SPONSORED"
                 android:textAppearance="?attr/textAppearanceLabelSmall"
                 android:textColor="?attr/colorPrimary"
-                android:textStyle="bold"
-                android:letterSpacing="0.1"/>
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvAdTitle"
@@ -44,17 +43,17 @@
                 android:layout_marginTop="4dp"
                 android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:textStyle="bold"
-                tools:text="FusionAdapter Pro"/>
+                tools:text="FusionAdapter Pro" />
 
             <TextView
                 android:id="@+id/tvAdDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:alpha="0.8"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnPrimaryContainer"
-                android:alpha="0.8"
-                tools:text="Unlock the full power of dynamic lists with high-level DSL."/>
+                tools:text="Unlock the full power of dynamic lists with high-level DSL." />
 
             <Button
                 android:id="@+id/btnAction"
@@ -62,7 +61,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                tools:text="Learn More"/>
+                android:backgroundTint="?attr/colorPrimary"
+                tools:text="Learn More" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

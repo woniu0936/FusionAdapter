@@ -30,7 +30,7 @@ class TextMsgDelegate : BindingDelegate<ChatMessage, ItemMsgTextBinding>(ItemMsg
         }
     }
 
-    override fun getUniqueKey(item: ChatMessage): Any {
+    override fun getStableId(item: ChatMessage): Any {
         return item.id
     }
 }

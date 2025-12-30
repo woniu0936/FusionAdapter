@@ -10,7 +10,7 @@ class SystemMsgDelegate : BindingDelegate<ChatMessage, ItemMsgSystemBinding>(Ite
         binding.tvSystemMsg.text = item.content
     }
 
-    override fun getUniqueKey(item: ChatMessage): Any {
+    override fun getStableId(item: ChatMessage): Any {
         return item.id
     }
 }

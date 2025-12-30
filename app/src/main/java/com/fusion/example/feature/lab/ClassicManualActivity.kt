@@ -6,7 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeRouter
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.example.R
 import com.fusion.example.core.model.ChatMessage
@@ -59,19 +59,25 @@ class ClassicManualActivity : AppCompatActivity() {
                 binding.vStatusIndicatorBox.setCardBackgroundColor(android.graphics.Color.DKGRAY)
             }
 
-            override fun getUniqueKey(item: SectionHeader): Any {
-                return item.hashCode()
-            }
+        override fun getStableId(item: SectionHeader): Any {
+            return item.title
+        }
         })
 
-        val dispatcher = TypeDispatcher.Builder<ChatMessage>()
-            .uniqueKey { it.id }
-            .viewType { it.type }
-            .delegate(1, TextMsgDelegate())
-            .delegate(2, ImageMsgDelegate())
-            .delegate(3, SystemMsgDelegate())
+        val router = TypeRouter.Builder<ChatMessage>()
+            .stableId { it.id }
+            .match { 
+                when {
+                    it.type == 3 -> 3
+                    it.isMe -> 1
+                    else -> 2
+                }
+            }
+            .map(1, TextMsgDelegate())
+            .map(2, ImageMsgDelegate())
+            .map(3, SystemMsgDelegate())
             .build()
-        adapter.registerDispatcher(ChatMessage::class.java, dispatcher)
+        adapter.register(ChatMessage::class.java, router)
 
         adapter.registerPlaceholder(R.layout.item_lab_record)
     }

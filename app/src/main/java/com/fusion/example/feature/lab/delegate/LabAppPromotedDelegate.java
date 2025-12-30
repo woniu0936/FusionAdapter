@@ -16,7 +16,7 @@ public class LabAppPromotedDelegate extends JavaDelegate<LabApp, ItemLabAppCardM
 
     @Nullable
     @Override
-    public Object getUniqueKey(@NonNull LabApp item) {
+    public Object getStableId(@NonNull LabApp item) {
         return item.getId();
     }
 

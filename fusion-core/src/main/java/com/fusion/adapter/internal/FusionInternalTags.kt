@@ -18,7 +18,7 @@ internal object FusionInternalTags {
     // 占位符的默认标签
     const val TAG_PLACEHOLDER = "Fusion:Placeholder"
 
-    // TypeDispatcher 自动生成的标签
-    const val TAG_DISPATCHER_DEFAULT = "Fusion:DispatcherDefault"
-    const val TAG_DISPATCHER_AUTO = "Fusion:DispatcherAuto"
+    // TypeRouter 自动生成的标签
+    const val TAG_ROUTER_DEFAULT = "Fusion:RouterDefault"
+    const val TAG_ROUTER_AUTO = "Fusion:RouterAuto"
 }

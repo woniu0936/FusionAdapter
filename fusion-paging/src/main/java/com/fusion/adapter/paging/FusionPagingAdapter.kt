@@ -23,7 +23,7 @@ import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
-import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.internal.registry.TypeRouter
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder
@@ -44,7 +44,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     private val helperAdapter = PagingHelperAdapter()
 
     init {
-        if (Fusion.getConfig().defaultItemIdEnabled) {
+        if (Fusion.getConfig().defaultStableIds) {
             setHasStableIds(true)
         }
         helperAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -61,7 +61,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     }
 
     // --- Registry Delegation ---
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = core.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>) = core.register(clazz, router)
     override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = core.register(clazz, delegate)
     override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = core.registerPlaceholder(delegate)
     override fun registerPlaceholder(@LayoutRes layoutResId: Int) = core.registerPlaceholder(layoutResId)

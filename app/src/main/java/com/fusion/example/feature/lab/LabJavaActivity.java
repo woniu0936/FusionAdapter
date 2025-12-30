@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.fusion.adapter.FusionListAdapter;
-import com.fusion.adapter.internal.registry.TypeDispatcher;
+import com.fusion.adapter.internal.registry.TypeRouter;
 import com.fusion.example.R;
 import com.fusion.example.databinding.ActivityBaseFixedBinding;
 import com.fusion.example.feature.lab.delegate.LabAppPromotedDelegate;
@@ -44,13 +44,13 @@ public class LabJavaActivity extends AppCompatActivity {
 
         // 3. [1-to-Many Mapping] LabApp -> Standard or Promoted Delegate
         // Demonstrates mapping one data type to multiple view types based on properties
-        TypeDispatcher<LabApp> appDispatcher = new TypeDispatcher.Builder<LabApp>()
-                .uniqueKey(LabApp::getId)
-                .viewType(app -> app.isPromoted() ? 2 : 1) // 2: Promoted, 1: Standard
-                .delegate(1, new LabAppStandardDelegate())
-                .delegate(2, new LabAppPromotedDelegate())
+        TypeRouter<LabApp> appRouter = new TypeRouter.Builder<LabApp>()
+                .stableId(LabApp::getId)
+                .match(app -> app.isPromoted() ? 2 : 1) // 2: Promoted, 1: Standard
+                .map(1, new LabAppStandardDelegate())
+                .map(2, new LabAppPromotedDelegate())
                 .build();
-        adapter.registerDispatcher(LabApp.class, appDispatcher);
+        adapter.register(LabApp.class, appRouter);
 
         b.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         b.recyclerView.setAdapter(adapter);

@@ -11,9 +11,8 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
-import com.fusion.adapter.internal.engine.FusionDispatcher
-import com.fusion.adapter.internal.registry.TypeDispatcher
-import com.fusion.adapter.placeholder.FusionPlaceholder
+import com.fusion.adapter.internal.engine.FusionExecutor
+import com.fusion.adapter.internal.registry.TypeRouter
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
 import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
@@ -33,19 +32,19 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Fusi
     private var items: List<Any> = Collections.emptyList()
     val currentItems: List<Any> get() = Collections.unmodifiableList(items)
     private val maxScheduledGeneration = AtomicInteger(0)
-    private var pendingTask: FusionDispatcher.Cancellable? = null
+    private var pendingTask: FusionExecutor.Cancellable? = null
 
     fun interface OnItemsChangedListener {
         fun onItemsChanged()
     }
 
     init {
-        if (Fusion.getConfig().defaultItemIdEnabled) {
+        if (Fusion.getConfig().defaultStableIds) {
             setHasStableIds(true)
         }
     }
 
-    override fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) = core.registerDispatcher(clazz, dispatcher)
+    override fun <T : Any> register(clazz: Class<T>, router: TypeRouter<T>) = core.register(clazz, router)
     override fun <T : Any> register(clazz: Class<T>, delegate: FusionDelegate<T, *>) = core.register(clazz, delegate)
     override fun registerPlaceholder(delegate: FusionPlaceholderDelegate<*>) = core.registerPlaceholder(delegate)
     override fun registerPlaceholder(@LayoutRes layoutResId: Int) = core.registerPlaceholder(layoutResId)
@@ -70,9 +69,9 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Fusi
     fun setItemsAsync(newItems: List<Any>, listener: OnItemsChangedListener? = null) {
         pendingTask?.cancel()
         val generation = maxScheduledGeneration.incrementAndGet()
-        pendingTask = FusionDispatcher.dispatch {
+        pendingTask = FusionExecutor.execute {
             val safeItems = core.filter(newItems)
-            FusionDispatcher.runOnMain {
+            FusionExecutor.runOnMain {
                 if (maxScheduledGeneration.get() == generation) {
                     updateInternal(safeItems)
                     listener?.onItemsChanged()

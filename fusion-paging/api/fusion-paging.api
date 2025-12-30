@@ -17,7 +17,7 @@ public class com/fusion/adapter/paging/FusionPagingAdapter : androidx/recyclervi
 	public final fun peek (I)Ljava/lang/Object;
 	public final fun refresh ()V
 	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun registerDispatcher (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeDispatcher;)V
+	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
 	public fun registerPlaceholder (I)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V

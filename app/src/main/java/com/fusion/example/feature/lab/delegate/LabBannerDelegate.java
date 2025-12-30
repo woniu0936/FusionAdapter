@@ -26,7 +26,7 @@ public class LabBannerDelegate extends JavaDelegate<LabBanner, ItemLabBannerM3Bi
 
     @Nullable
     @Override
-    public Object getUniqueKey(@NonNull LabBanner item) {
+    public Object getStableId(@NonNull LabBanner item) {
         return item.getId();
     }
 

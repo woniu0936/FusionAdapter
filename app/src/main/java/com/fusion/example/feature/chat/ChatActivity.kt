@@ -9,10 +9,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.placeholder.showPlaceholders
-import com.fusion.adapter.setup
+import com.fusion.adapter.register
 import com.fusion.adapter.setupFusion
 import com.fusion.example.core.model.ChatMessage
-import com.fusion.example.core.repo.MockSource
 import com.fusion.example.databinding.*
 import com.fusion.example.utils.fullStatusBar
 import com.fusion.example.utils.loadUrl
@@ -36,9 +35,9 @@ class ChatActivity : AppCompatActivity() {
         binding.toolbar.title = "Messenger"
 
         val adapter = binding.recyclerView.setupFusion {
-            setup<ChatMessage> {
-                uniqueKey { it.id }
-                viewTypeKey { 
+            register<ChatMessage> {
+                stableId { it.id }
+                match { 
                     when {
                         it.type == 3 -> 3 // System
                         it.isMe -> 1      // Me (Right)
@@ -46,14 +45,14 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
 
-                dispatch(1, ItemMsgTextMeBinding::inflate) {
+                map(1, ItemMsgTextMeBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content 
                         ivAvatarMe.loadUrl("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", isCircle = true)
                     }
                 }
 
-                dispatch(2, ItemMsgTextOtherBinding::inflate) {
+                map(2, ItemMsgTextOtherBinding::inflate) {
                     onBind { item -> 
                         tvContent.text = item.content
                         val avatarUrl = item.sender?.avatar ?: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
@@ -61,7 +60,7 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
 
-                dispatch(3, ItemMsgSystemBinding::inflate) {
+                map(3, ItemMsgSystemBinding::inflate) {
                     onBind { item -> tvSystemMsg.text = item.content }
                 }
             }
