@@ -8,14 +8,14 @@ import com.fusion.example.databinding.ItemMsgImageBinding
 import com.fusion.example.utils.loadUrl
 
 class ImageMsgDelegate : BindingDelegate<ChatMessage, ItemMsgImageBinding>(ItemMsgImageBinding::inflate) {
-    init { setUniqueKey { it.id } }
+
     override fun onBind(binding: ItemMsgImageBinding, item: ChatMessage, position: Int) {
         binding.apply {
             // Load content image
             ivImage.loadUrl(item.content)
-            
+
             val params = cardBubble.layoutParams as ConstraintLayout.LayoutParams
-            
+
             if (item.isMe) {
                 ivAvatarLeft.visibility = View.GONE
                 ivAvatarRight.visibility = View.VISIBLE
@@ -30,5 +30,9 @@ class ImageMsgDelegate : BindingDelegate<ChatMessage, ItemMsgImageBinding>(ItemM
             }
             cardBubble.layoutParams = params
         }
+    }
+
+    override fun getUniqueKey(item: ChatMessage): Any {
+        return item.id
     }
 }

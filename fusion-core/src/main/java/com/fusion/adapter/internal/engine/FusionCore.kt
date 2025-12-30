@@ -11,7 +11,6 @@ import com.fusion.adapter.delegate.BindingHolder
 import com.fusion.adapter.delegate.BindingInflater
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
-import com.fusion.adapter.exception.MissingUniqueKeyException
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.internal.diff.ItemIdUtils
 import com.fusion.adapter.internal.registry.TypeDispatcher
@@ -91,6 +90,8 @@ class FusionCore {
             }
 
             override fun onBindPlaceholder(holder: LayoutHolder) {}
+
+            override fun getUniqueKey(item: Any): Any = item
         }
         registerPlaceholder(delegate)
     }
@@ -102,6 +103,7 @@ class FusionCore {
         val scope = PlaceholderDefinitionScope<VB>()
         configurator?.configure(scope)
         val delegate = object : FusionPlaceholderDelegate<BindingHolder<VB>>() {
+
             override fun onCreateViewHolder(parent: ViewGroup): BindingHolder<VB> {
                 val binding = inflater.inflate(LayoutInflater.from(parent.context), parent, false)
                 return BindingHolder(binding)
@@ -111,6 +113,8 @@ class FusionCore {
                 val itemConfiguration = scope.getConfiguration()
                 itemConfiguration.onBind?.invoke(holder.binding, FusionPlaceholder(), 0)
             }
+
+            override fun getUniqueKey(item: Any): Any = item
         }
         registerPlaceholder(delegate)
     }
@@ -150,7 +154,6 @@ class FusionCore {
     fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
         val count = dispatcher.getAllDelegates().size
         FusionLogger.i("Registry") { "Registering Dispatcher for ${clazz.simpleName}. Delegates count: $count" }
-        enforceUniqueKeys(clazz, dispatcher.getAllDelegates())
         viewTypeRegistry.register(clazz, dispatcher)
     }
 
@@ -198,7 +201,7 @@ class FusionCore {
         }
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegate(viewType)
-        val uniqueKey = delegate.getUniqueKey(item) ?: return System.identityHashCode(item).toLong()
+        val uniqueKey = delegate.getUniqueKey(item)
         return ItemIdUtils.getItemId(viewType, uniqueKey)
     }
 
@@ -214,10 +217,7 @@ class FusionCore {
         val oldKey = delegate.getUniqueKey(oldItem)
         val newKey = delegate.getUniqueKey(newItem)
 
-        if (oldKey != null && newKey != null) {
-            return oldKey == newKey
-        }
-        return oldItem == newItem
+        return oldKey == newKey
     }
 
     fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
@@ -259,14 +259,5 @@ class FusionCore {
         viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
     }
 
-    fun enforceUniqueKeys(clazz: Class<*>, delegates: Collection<FusionDelegate<*, *>>) {
-        if (!Fusion.getConfig().defaultItemIdEnabled) return
-        for (delegate in delegates) {
-            if (!delegate.isUniqueKeyDefined) {
-                val ex = MissingUniqueKeyException(clazz, delegate.javaClass)
-                FusionLogger.e("Core", ex) { "UniqueKey missing for delegate: ${delegate.javaClass.simpleName}" }
-                throw ex
-            }
-        }
-    }
 }
+

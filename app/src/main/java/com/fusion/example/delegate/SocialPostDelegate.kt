@@ -6,17 +6,16 @@ import android.graphics.Color
 import android.view.View
 import com.fusion.adapter.delegate.BindingDelegate
 import com.fusion.adapter.extensions.getItem
-import com.fusion.example.databinding.ItemMomentCardBinding
 import com.fusion.example.core.model.Moment
+import com.fusion.example.databinding.ItemMomentCardBinding
 import com.fusion.example.utils.loadUrl
-import com.google.android.material.R as MaterialR
 
 class SocialPostDelegate(
     private val onLikeClick: (Moment) -> Unit
 ) : BindingDelegate<Moment, ItemMomentCardBinding>(ItemMomentCardBinding::inflate) {
 
     init {
-        setUniqueKey { it.id }
+
         onPayload(Moment::isLiked, Moment::likes) { isLiked, count ->
             updateLikeState(this, isLiked, count)
         }
@@ -33,14 +32,14 @@ class SocialPostDelegate(
         binding.tvName.text = item.author.name
         binding.tvContent.text = item.content
         binding.ivAvatar.loadUrl(item.author.avatar, isCircle = true)
-        
+
         if (item.images.isNotEmpty()) {
             binding.imageContainer.visibility = View.VISIBLE
             binding.ivImage.loadUrl(item.images[0])
         } else {
             binding.imageContainer.visibility = View.GONE
         }
-        
+
         updateLikeState(binding, item.isLiked, item.likes)
     }
 
@@ -56,5 +55,9 @@ class SocialPostDelegate(
             binding.btnLike.iconTint = ColorStateList.valueOf(Color.GRAY)
             binding.btnLike.setTextColor(Color.GRAY)
         }
+    }
+
+    override fun getUniqueKey(item: Moment): Any {
+        return item.id
     }
 }

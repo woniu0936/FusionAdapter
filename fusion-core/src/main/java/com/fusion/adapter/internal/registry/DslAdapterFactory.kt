@@ -8,7 +8,7 @@ import com.fusion.adapter.delegate.DslLayoutDelegate
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.dsl.ItemConfiguration
-import com.fusion.adapter.internal.DslTypeKey
+import com.fusion.adapter.internal.GlobalTypeKey
 
 /**
  * [DslAdapterFactory]
@@ -24,7 +24,7 @@ internal object DslAdapterFactory {
         inflate: (LayoutInflater, ViewGroup, Boolean) -> VB,
         config: ItemConfiguration<T, VB>
     ): FusionDelegate<T, *> {
-        val key = DslTypeKey(clazz, config)
+        val key = GlobalTypeKey(clazz, vbClazz)
         return DslBindingDelegate(key, inflate, config)
     }
 
@@ -35,7 +35,7 @@ internal object DslAdapterFactory {
         layoutResId: Int,
         config: ItemConfiguration<T, LayoutHolder>
     ): FusionDelegate<T, *> {
-        val key = DslTypeKey(clazz, config)
+        val key = GlobalTypeKey(clazz, layoutResId)
         return DslLayoutDelegate(key, layoutResId, config)
     }
 }

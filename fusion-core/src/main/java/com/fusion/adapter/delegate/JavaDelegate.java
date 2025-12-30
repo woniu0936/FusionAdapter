@@ -2,12 +2,16 @@ package com.fusion.adapter.delegate;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
-import com.fusion.adapter.internal.ClassTypeKey;
+
+import com.fusion.adapter.internal.FusionInternalTags;
+import com.fusion.adapter.internal.GlobalTypeKey;
 import com.fusion.adapter.internal.ViewTypeKey;
+
 import java.util.function.Function;
+
 import kotlin.Unit;
 
 /**
@@ -18,7 +22,7 @@ import kotlin.Unit;
 public abstract class JavaDelegate<T, VB extends ViewBinding> extends BindingDelegate<T, VB> {
 
     public JavaDelegate() {
-        super(null); 
+        super(null);
     }
 
     @NonNull
@@ -30,7 +34,7 @@ public abstract class JavaDelegate<T, VB extends ViewBinding> extends BindingDel
     @NonNull
     @Override
     public ViewTypeKey getViewTypeKey() {
-        return new ClassTypeKey(this.getClass());
+        return new GlobalTypeKey(this.getClass(), FusionInternalTags.TAG_JAVA_DELEGATE);
     }
 
     @NonNull
@@ -43,26 +47,31 @@ public abstract class JavaDelegate<T, VB extends ViewBinding> extends BindingDel
 
     protected abstract void onBind(@NonNull VB binding, @NonNull T item);
 
-    // --- UniqueKey 安全修复 (Fix #2) ---
-
-    @Override
-    public boolean isManualUniqueKeyDefined() {
-        /**
-         * [Fix #2] 我们不再默认返回 true。
-         * 我们通过一个技巧来检测子类是否真正实现了 [getUniqueKey]。
-         * 或者要求 Java 用户必须显式重写此方法并返回 true。
-         */
-        return true; // 在 Demo 级别暂时保持 true 以支持重写，但在严谨生产中应要求显式标记。
-    }
-
     // --- Payload 修复 (Fix #1) ---
 
-    public interface PayloadConsumer<VB, P> { void accept(VB binding, P val); }
-    public interface PayloadConsumer2<VB, P1, P2> { void accept(VB binding, P1 v1, P2 v2); }
-    public interface PayloadConsumer3<VB, P1, P2, P3> { void accept(VB binding, P1 v1, P2 v2, P3 v3); }
-    public interface PayloadConsumer4<VB, P1, P2, P3, P4> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4); }
-    public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5); }
-    public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> { void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6); }
+    public interface PayloadConsumer<VB, P> {
+        void accept(VB binding, P val);
+    }
+
+    public interface PayloadConsumer2<VB, P1, P2> {
+        void accept(VB binding, P1 v1, P2 v2);
+    }
+
+    public interface PayloadConsumer3<VB, P1, P2, P3> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3);
+    }
+
+    public interface PayloadConsumer4<VB, P1, P2, P3, P4> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4);
+    }
+
+    public interface PayloadConsumer5<VB, P1, P2, P3, P4, P5> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5);
+    }
+
+    public interface PayloadConsumer6<VB, P1, P2, P3, P4, P5, P6> {
+        void accept(VB binding, P1 v1, P2 v2, P3 v3, P4 v4, P5 v5, P6 v6);
+    }
 
     /**
      * [SuppressWarnings] 由于底层 BindingDelegate.addObserver 代理逻辑，

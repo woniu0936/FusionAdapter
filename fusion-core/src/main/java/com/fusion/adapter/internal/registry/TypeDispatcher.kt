@@ -1,9 +1,9 @@
 package com.fusion.adapter.internal.registry
 
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.internal.ClassTypeKey
-import com.fusion.adapter.internal.ViewTypeKey
-import java.util.concurrent.ConcurrentHashMap
+import com.fusion.adapter.internal.FusionInternalTags.TAG_DISPATCHER_AUTO
+import com.fusion.adapter.internal.FusionInternalTags.TAG_DISPATCHER_DEFAULT
+import com.fusion.adapter.internal.GlobalTypeKey
 
 /**
  * [TypeDispatcher]
@@ -48,14 +48,14 @@ class TypeDispatcher<T : Any> private constructor(
         }
 
         fun build(): TypeDispatcher<T> {
-            val extractor = viewTypeKeyExtractor ?: { ClassTypeKey(it::class.java) }
+            val extractor = viewTypeKeyExtractor ?: { GlobalTypeKey(it::class.java, TAG_DISPATCHER_DEFAULT) }
             return TypeDispatcher(extractor, uniqueKeyExtractor, keyToDelegate)
         }
     }
 
     companion object {
         fun <T : Any> create(delegate: FusionDelegate<T, *>): TypeDispatcher<T> {
-            val key = ClassTypeKey(delegate::class.java)
+            val key = GlobalTypeKey(delegate::class.java, TAG_DISPATCHER_AUTO)
             return Builder<T>()
                 .delegate(key, delegate)
                 .viewType { key }

@@ -17,7 +17,6 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
 ) : BindingDelegate<T, VB>() {
 
     init {
-        config.itemKey?.let { setUniqueKey(it) }
         config.observers.forEach { addObserver(it) }
 
         // Correctly pass click listeners to base class
@@ -49,5 +48,18 @@ internal class DslBindingDelegate<T : Any, VB : ViewBinding>(
         } else {
             super.onPayload(binding, item, position, payloads, handled)
         }
+    }
+
+    override fun getUniqueKey(item: T): Any {
+        // 1. 优先使用 DSL 中 uniqueKey { ... } 配置的 Lambda
+        val dslKey = config.itemKey?.invoke(item)
+        if (dslKey != null) return dslKey
+
+        // 2. 其次使用 TypeDispatcher 注入的 Key (internalDispatcherKeyProvider 是我们在上一轮讨论中保留的 internal 字段)
+        val dispatchKey = internalDispatcherKeyProvider?.invoke(item)
+        if (dispatchKey != null) return dispatchKey
+
+        // 3. 最后回退到 Item 本身 (Identity)
+        return item
     }
 }

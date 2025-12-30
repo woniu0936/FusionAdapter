@@ -2,11 +2,13 @@ package com.fusion.adapter.placeholder
 
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.internal.FusionInternalTags.TAG_PLACEHOLDER
+import com.fusion.adapter.internal.GlobalTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
-import com.fusion.adapter.internal.ClassTypeKey
 
 abstract class FusionPlaceholderDelegate<VH : RecyclerView.ViewHolder> : FusionDelegate<Any, VH>() {
-    override val viewTypeKey: ViewTypeKey = ClassTypeKey(this::class.java)
+
+    override val viewTypeKey: ViewTypeKey = GlobalTypeKey(this::class.java, TAG_PLACEHOLDER)
 
     final override fun onBindViewHolder(holder: VH, item: Any, position: Int, payloads: MutableList<Any>) {
         onBindPlaceholder(holder)

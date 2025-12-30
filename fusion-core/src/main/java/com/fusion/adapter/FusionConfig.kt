@@ -23,7 +23,7 @@ class FusionConfig private constructor(builder: Builder) {
         internal var globalDebounceInterval: Long = DEFAULT_DEBOUNCE_INTERVAL
         internal var defaultItemIdEnabled: Boolean = false
         internal var logDir: String? = null
-        internal var logToFile: Boolean = false
+        internal var logToFile: Boolean = true
 
         fun setDebug(debug: Boolean): Builder { this.isDebug = debug; return this }
         fun setErrorListener(listener: ErrorListener): Builder { this.errorListener = listener; return this }

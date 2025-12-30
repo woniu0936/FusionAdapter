@@ -6,7 +6,8 @@ import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.extensions.setItem
-import com.fusion.adapter.internal.ClassTypeKey
+import com.fusion.adapter.internal.FusionInternalTags
+import com.fusion.adapter.internal.GlobalTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
 
 /**
@@ -14,7 +15,8 @@ import com.fusion.adapter.internal.ViewTypeKey
  */
 abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) : FusionDelegate<T, LayoutHolder>() {
 
-    override val viewTypeKey: ViewTypeKey = ClassTypeKey(this::class.java)
+    override val viewTypeKey: ViewTypeKey = GlobalTypeKey(this::class.java, FusionInternalTags.TAG_LAYOUT_DELEGATE)
+
     private var onItemClick: ((holder: LayoutHolder, item: T, position: Int) -> Unit)? = null
     private var onItemLongClick: ((holder: LayoutHolder, item: T, position: Int) -> Boolean)? = null
 
@@ -29,7 +31,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
     final override fun onCreateViewHolder(parent: ViewGroup): LayoutHolder {
         val view = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
         val holder = LayoutHolder(view)
-        
+
         if (onItemClick != null) {
             holder.itemView.setOnClickListener {
                 val pos = holder.bindingAdapterPosition
@@ -39,7 +41,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
                 }
             }
         }
-        
+
         if (onItemLongClick != null) {
             holder.itemView.setOnLongClickListener {
                 val pos = holder.bindingAdapterPosition
@@ -50,7 +52,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
                 false
             }
         }
-        
+
         return holder
     }
 
@@ -65,7 +67,7 @@ abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) 
     }
 
     abstract fun LayoutHolder.onBind(item: T)
-    
+
     open fun LayoutHolder.onPayload(item: T, payloads: List<Any>, handled: Boolean) {
         if (!handled) onBind(item)
     }

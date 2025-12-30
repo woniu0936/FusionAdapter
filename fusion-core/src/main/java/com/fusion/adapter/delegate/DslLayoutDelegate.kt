@@ -14,7 +14,6 @@ internal class DslLayoutDelegate<T : Any>(
 ) : LayoutDelegate<T>(layoutResId) {
 
     init {
-        config.itemKey?.let { setUniqueKey(it) }
         config.observers.forEach { addObserver(it) }
 
         // Correctly pass click listeners to base class
@@ -42,5 +41,18 @@ internal class DslLayoutDelegate<T : Any>(
             // Since we can't easily call super on member extension, we re-implement the fallback logic
             if (!handled) onBind(item)
         }
+    }
+
+    override fun getUniqueKey(item: T): Any {
+        // 1. 优先使用 DSL 中 uniqueKey { ... } 配置
+        val dslKey = config.itemKey?.invoke(item)
+        if (dslKey != null) return dslKey
+
+        // 2. 其次使用 TypeDispatcher 注入的 Key (来自基类的 internal 字段)
+        val dispatchKey = internalDispatcherKeyProvider?.invoke(item)
+        if (dispatchKey != null) return dispatchKey
+
+        // 3. 最后回退到 Item 本身
+        return item
     }
 }

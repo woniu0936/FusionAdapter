@@ -52,14 +52,15 @@ class ClassicManualActivity : AppCompatActivity() {
 
     private fun setupAdapter() {
         adapter.register(SectionHeader::class.java, object : BindingDelegate<SectionHeader, ItemLabRecordBinding>(ItemLabRecordBinding::inflate) {
-            init {
-                setUniqueKey { it.title }
-            }
 
             override fun onBind(binding: ItemLabRecordBinding, item: SectionHeader, position: Int) {
                 binding.tvTitle.text = item.title
                 binding.tvId.text = "CLASSIC_BINDING"
                 binding.vStatusIndicatorBox.setCardBackgroundColor(android.graphics.Color.DKGRAY)
+            }
+
+            override fun getUniqueKey(item: SectionHeader): Any {
+                return item.hashCode()
             }
         })
 

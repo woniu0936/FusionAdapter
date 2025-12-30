@@ -4,7 +4,13 @@ import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.internal.ViewTypeKey
-import com.fusion.adapter.internal.diff.*
+import com.fusion.adapter.internal.diff.PropertyObserver
+import com.fusion.adapter.internal.diff.PropertyObserver1
+import com.fusion.adapter.internal.diff.PropertyObserver2
+import com.fusion.adapter.internal.diff.PropertyObserver3
+import com.fusion.adapter.internal.diff.PropertyObserver4
+import com.fusion.adapter.internal.diff.PropertyObserver5
+import com.fusion.adapter.internal.diff.PropertyObserver6
 import com.fusion.adapter.log.FusionLogger
 
 /**
@@ -14,27 +20,12 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     abstract val viewTypeKey: ViewTypeKey
     private val propertyObservers = ArrayList<PropertyObserver<T>>()
 
-    internal var specificUniqueKeyExtractor: ((T) -> Any?)? = null
-    internal var defaultUniqueKeyExtractor: ((T) -> Any?)? = null
+    internal var internalDispatcherKeyProvider: ((T) -> Any?)? = null
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal val isUniqueKeyDefined: Boolean
-        get() = specificUniqueKeyExtractor != null ||
-                defaultUniqueKeyExtractor != null ||
-                isManualUniqueKeyDefined
+    abstract fun getUniqueKey(item: T): Any
 
-    protected open val isManualUniqueKeyDefined: Boolean = false
-
-    open fun getUniqueKey(item: T): Any? {
-        return specificUniqueKeyExtractor?.invoke(item) ?: defaultUniqueKeyExtractor?.invoke(item)
-    }
-
-    fun setUniqueKey(extractor: (T) -> Any?) {
-        this.specificUniqueKeyExtractor = extractor
-    }
-
-    internal fun attachDefaultUniqueKeyProvider(provider: (T) -> Any?) {
-        this.defaultUniqueKeyExtractor = provider
+    internal fun internalInjectDispatcherKey(provider: (T) -> Any?) {
+        this.internalDispatcherKeyProvider = provider
     }
 
     // --- Layout Strategy ---
@@ -65,7 +56,7 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     open fun getChangePayload(oldItem: T, newItem: T): Any? {
         if (propertyObservers.isEmpty()) return null
         val payloads = propertyObservers.mapNotNull { it.checkChange(oldItem, newItem) }
-        
+
         if (payloads.isNotEmpty()) {
             FusionLogger.d("Diff") { "Payloads generated: ${payloads.size}" }
         }

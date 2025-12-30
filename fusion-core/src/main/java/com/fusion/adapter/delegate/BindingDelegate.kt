@@ -6,7 +6,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.extensions.setItem
-import com.fusion.adapter.internal.ClassTypeKey
+import com.fusion.adapter.internal.FusionInternalTags
+import com.fusion.adapter.internal.GlobalTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
 import com.fusion.adapter.internal.diff.*
 import kotlin.reflect.KProperty1
@@ -18,7 +19,8 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     private val inflater: BindingInflater<VB>? = null
 ) : FusionDelegate<T, BindingHolder<VB>>() {
 
-    override val viewTypeKey: ViewTypeKey = ClassTypeKey(this::class.java)
+    override val viewTypeKey: ViewTypeKey = GlobalTypeKey(this::class.java, FusionInternalTags.TAG_BINDING_DELEGATE)
+
     private var onItemClick: ((binding: VB, item: T, position: Int) -> Unit)? = null
     private var onItemLongClick: ((binding: VB, item: T, position: Int) -> Boolean)? = null
     private var clickDebounceMs: Long? = null

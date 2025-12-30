@@ -8,7 +8,7 @@ import com.fusion.example.databinding.ItemMsgTextBinding
 import com.fusion.example.utils.loadUrl
 
 class TextMsgDelegate : BindingDelegate<ChatMessage, ItemMsgTextBinding>(ItemMsgTextBinding::inflate) {
-    init { setUniqueKey { it.id } }
+
     override fun onBind(binding: ItemMsgTextBinding, item: ChatMessage, position: Int) {
         binding.apply {
             tvContent.text = item.content
@@ -28,5 +28,9 @@ class TextMsgDelegate : BindingDelegate<ChatMessage, ItemMsgTextBinding>(ItemMsg
             }
             cardBubble.layoutParams = params
         }
+    }
+
+    override fun getUniqueKey(item: ChatMessage): Any {
+        return item.id
     }
 }

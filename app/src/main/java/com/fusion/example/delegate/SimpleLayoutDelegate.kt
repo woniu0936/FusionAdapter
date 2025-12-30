@@ -7,9 +7,13 @@ import com.fusion.example.R
 import com.fusion.example.core.model.SectionHeader
 
 class SimpleLayoutDelegate : LayoutDelegate<SectionHeader>(R.layout.item_simple_layout) {
-    init { setUniqueKey { it.title } }
+
     override fun LayoutHolder.onBind(item: SectionHeader) {
         setText(R.id.tv_title, item.title)
         setText(R.id.tv_subtitle, "Classic Layout Delegate")
+    }
+
+    override fun getUniqueKey(item: SectionHeader): Any {
+        return item.hashCode()
     }
 }
