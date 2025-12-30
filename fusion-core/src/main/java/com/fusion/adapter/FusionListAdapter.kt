@@ -106,7 +106,7 @@ open class FusionListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), 
     override fun getItemViewType(position: Int): Int = core.getItemViewType(differ.currentList[position])
     override fun getItemId(position: Int): Long {
         if (!hasStableIds() || position !in currentList.indices) return RecyclerView.NO_ID
-        return core.getItemId(currentList[position])
+        return core.getItemId(currentList[position], position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)

@@ -31,6 +31,8 @@ class FusionCore {
 
     val viewTypeRegistry = ViewTypeRegistry()
 
+    private val scopeId: Long = System.identityHashCode(this).toLong() shl 32
+
     fun filter(safeList: List<Any>): List<Any> {
         val start = System.currentTimeMillis()
         if (safeList.isEmpty()) {
@@ -131,6 +133,20 @@ class FusionCore {
         return viewTypeRegistry.getPlaceholderDelegate() as? FusionPlaceholderDelegate<*>
     }
 
+    /**
+     * 生成确定性的占位符 ID。
+     * 算法：(AdapterHash << 32) | (Position & 0xFFFFFFFF)
+     * 保证：
+     * 1. 同一个 Adapter 内，不同 Position ID 不同。
+     * 2. 不同 Adapter (ConcatAdapter 场景)，高 32 位不同，ID 空间物理隔离。
+     * 3. 只要 Adapter 实例不变，刷新列表时同一个位置的 ID 保持不变 (支持 DiffUtil 动画)。
+     */
+    fun getPlaceholderId(position: Int, hostHashCode: Int): Long {
+        val high = hostHashCode.toLong() shl 32
+        val low = position.toLong() and 0xFFFFFFFFL
+        return high or low
+    }
+
     fun <T : Any> registerDispatcher(clazz: Class<T>, dispatcher: TypeDispatcher<T>) {
         val count = dispatcher.getAllDelegates().size
         FusionLogger.i("Registry") { "Registering Dispatcher for ${clazz.simpleName}. Delegates count: $count" }
@@ -175,7 +191,11 @@ class FusionCore {
         }
     }
 
-    fun getItemId(item: Any): Long {
+    fun getItemId(item: Any, position: Int): Long {
+        if (item is FusionPlaceholder) {
+            // 算法：(CoreHash << 32) | (Position & 0xFFFFFFFF)
+            return scopeId or (position.toLong() and 0xFFFFFFFFL)
+        }
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegate(viewType)
         val uniqueKey = delegate.getUniqueKey(item) ?: return System.identityHashCode(item).toLong()

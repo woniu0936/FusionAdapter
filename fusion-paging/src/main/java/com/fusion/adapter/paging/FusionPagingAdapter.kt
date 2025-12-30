@@ -119,7 +119,7 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
     override fun getItemId(position: Int): Long {
         if (!hasStableIds()) return RecyclerView.NO_ID
         val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
-        return core.getItemId(item)
+        return core.getItemId(item, position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)

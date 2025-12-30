@@ -13,6 +13,7 @@ import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
 import com.fusion.adapter.internal.engine.FusionDispatcher
 import com.fusion.adapter.internal.registry.TypeDispatcher
+import com.fusion.adapter.placeholder.FusionPlaceholder
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
 import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
@@ -109,7 +110,8 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Fusi
     override fun getItemViewType(position: Int): Int = core.getItemViewType(items[position])
     override fun getItemId(position: Int): Long {
         if (!hasStableIds() || position !in items.indices) return RecyclerView.NO_ID
-        return core.getItemId(items[position])
+        val item = items[position]
+        return core.getItemId(item,position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = core.onCreateViewHolder(parent, viewType)
