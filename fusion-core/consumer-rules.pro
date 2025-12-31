@@ -67,6 +67,7 @@
 # 但我们要确保 Fusion 内部使用的资源 ID 字段名不被混淆，防止反射查找 ID 失败。
 -keepclassmembers class **.R$id {
     public static int fusion_item_tag;
+    public static int fusion_last_click_time;
 }
 
 # ----------------------------------------------------------------------------
@@ -74,3 +75,27 @@
 # ----------------------------------------------------------------------------
 # 如果用户使用了 FusionPagingAdapter，确保 Paging 相关的类不会因为被 Fusion 引用而产生误报警告
 -dontwarn com.fusion.adapter.**
+
+# ==========================================================
+# Fusion Adapter Logger Stripping
+# ==========================================================
+
+# 针对 FusionLogger 类开启“无副作用”假设
+-assumenosideeffects class com.fusion.adapter.log.FusionLogger {
+
+    # 【核心规则】
+    # 强制让 R8 认为 shouldLog() 永远返回 false。
+    # 因为 d/v 是 inline 函数，代码被复制到了调用处，变成了 if(shouldLog()) {...}。
+    # 当 R8 确定此方法返回 false 时，"Dead Code Elimination" 会直接移除整个 if 块，
+    # 从而连带移除了 msg lambda 的创建和字符串拼接。
+    public final boolean shouldLog() return false;
+
+    # 【兜底规则】
+    # 针对可能存在的未被 Inline 的调用（如 Java 代码调用或特殊场景），
+    # 直接移除 d 和 v 的方法调用。
+    public final void d(...);
+    public final void v(...);
+
+    # 如果你也想移除 internal 的 print 方法（双重保险）
+    public final void print(...);
+}
