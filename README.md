@@ -1,4 +1,3 @@
-
 # 🚀 FusionAdapter
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.woniu0936/fusion-core)](https://search.maven.org/artifact/io.github.woniu0936/fusion-core)
@@ -106,8 +105,7 @@ adapter.submitList(listOf("Hello", "Fusion", "Adapter"))
 
 ### 2. Polymorphism (Cascading Stable ID)
 
-Handle scenarios where the same data class (`Message`) renders differently based on its state.
-Fusion introduces a **"Cascading Priority Strategy"** to handle IDs elegantly.
+Handle scenarios where the same data class (`Message`) renders different layouts based on its state.
 
 ```kotlin
 data class Message(val id: Long, val type: Int, val content: String)
@@ -115,27 +113,21 @@ data class Message(val id: Long, val type: Int, val content: String)
 recyclerView.setupFusion {
     register<Message> {
         
-        // [Level 2] Router-level configuration:
-        // By default, all Message delegates use 'it.id'
+        // [Level 1] Router Level ID config
         stableId { it.id }
 
-        // Define routing rules
+        // Define routing logic
         match { it.type }
 
-        // [Inherit]: Automatically inherits the Router-level stableId
+        // [Inherit] Inherits Level 1 stableId automatically
         map(TYPE_TEXT, ItemMsgTextBinding::inflate) {
             onBind { msg -> ... }
         }
 
-        map(TYPE_IMAGE, ItemMsgImageBinding::inflate) {
-            onBind { msg -> ... }
-        }
-
-        // [Override]: Override the default ID rule for special cases
-        // e.g., Split a single message into parts to avoid ID collision
-        map(TYPE_SPLIT_PART, ItemMsgSplitBinding::inflate) {
-            // [Level 1] Delegate-level configuration: Higher priority
-            stableId { "${it.id}_split" }
+        // [Override] Override ID for special cases to prevent conflicts
+        map(TYPE_TIMELINE, ItemTimeLineBinding::inflate) {
+            // [Level 2] Delegate Level ID (Higher priority)
+            stableId { "${it.id}_time" }
             onBind { msg -> ... }
         }
     }
@@ -144,22 +136,20 @@ recyclerView.setupFusion {
 
 ### 3. Paging 3 Integration
 
-Fusion provides `FusionPagingAdapter` which shares the **exact same DSL** API.
+Dedicated adapter for Paging 3 with seamless integration.
 
 ```kotlin
-// Use setupFusionPaging extension
-val pagingAdapter = recyclerView.setupFusionPaging<User> {
-    
-    // 1. Register Normal Item
-    register(ItemUserBinding::inflate) {
-        stableId { it.userId }
-        onBind { user -> tvName.text = user.name }
-    }
+val pagingAdapter = FusionPagingAdapter<User>()
 
-    // 2. Register Placeholder (Skeleton)
-    // Automatically shown when Paging 3 returns null (loading state)
+pagingAdapter.apply {
+    // Regular registration
+    register(ItemUserBinding::inflate) {
+        onBind { user -> ... }
+    }
+    
+    // Optional: Register a custom placeholder (Skeleton)
     registerPlaceholder(ItemSkeletonBinding::inflate) {
-        onBind { binding.shimmer.startShimmer() }
+        onBind { /* Setup shimmer animation */ }
     }
 }
 
@@ -171,29 +161,26 @@ lifecycleScope.launch {
 }
 ```
 
-### 4. Grid & Staggered Layouts
+### 4. Grid & Staggered Support
 
-Control span sizes directly in the item registration. Fusion automatically handles the `SpanSizeLookup`.
+Control spans directly in the DSL. Fusion handles `SpanSizeLookup` automatically.
 
 ```kotlin
 val layoutManager = GridLayoutManager(context, 2)
 recyclerView.layoutManager = layoutManager
 
-// Pass layoutManager to enable Layout DSL
 recyclerView.setupFusion(layoutManager) {
     
-    // Header: Always occupy full width
+    // Header: Always full span
     register<Header>(ItemHeaderBinding::inflate) {
         onBind { ... }
-        // Works for both Grid and Staggered layouts
         fullSpanIf { true } 
     }
 
-    // Grid Item: Dynamic span size
+    // Grid Item: Dynamic span
     register<GridItem>(ItemGridBinding::inflate) {
         onBind { ... }
         spanSize { item, position, scope -> 
-            // Promote specific items to full width
             if (item.isPromoted) scope.totalSpans else 1 
         }
     }
@@ -221,82 +208,103 @@ recyclerView.setAdapter(adapter);
 
 ---
 
-## 🛡️ Robustness & Safety
-
-FusionAdapter introduces a strict **Sanitization** mechanism to ensure layout consistency.
-
-### Global Configuration
-Initialize Fusion in your `Application` class:
-
-```kotlin
-Fusion.initialize {
-    // [DEBUG Mode]: Fail-Fast
-    // CRASH immediately when an unregistered type is encountered.
-    // Forces developers to fix bugs during development.
-    setDebug(BuildConfig.DEBUG)
-    
-    // [RELEASE Mode]: Fail-Safe
-    // Silently DROP unregistered items to prevent crashes or grid layout corruption.
-    // Report dropped items via listener for analytics.
-    setErrorListener { item, e ->
-        FirebaseCrashlytics.getInstance().recordException(e)
-    }
-
-    // Enable Default Stable ID Check (Recommended)
-    // Enforce that all registered types must provide a stableId for best performance.
-    setDefaultStableIds(true)
-}
-```
-
----
-
 ## ⚙️ Advanced Features
 
-### Partial Refresh (Payloads)
-Update only specific views without re-binding the entire row.
+### 1. Partial Updates & Property-Level Binding (Payloads)
+
+By combining `onPayload` with Kotlin property references, FusionAdapter achieves **"View-specific"** updates. Only the code corresponding to the changed property is executed, completely eliminating flickering in complex items.
 
 ```kotlin
-register(ItemPostBinding::inflate) {
-    onBind { post -> ... } // Full bind
-    
-    // Automatically triggers when 'likeCount' changes
-    bindPayload(Post::likeCount) { count ->
+register<Post>(ItemPostBinding::inflate) {
+    onBind { post -> /* Full Binding */ }
+
+    // [Single Property] Only updates tvLikeCount when likeCount changes
+    onPayload(Post::likeCount) { count ->
         tvLikeCount.text = count.toString()
+    }
+
+    // [Multi-Property] Triggered if either avatar or nickname changes
+    onPayload(Post::avatar, Post::nickname) { avatar, name ->
+        ivAvatar.load(avatar)
+        tvName.text = name
     }
 }
 ```
 
-### Manual Placeholders (Non-Paging)
-Drive skeleton screens explicitly in a standard list.
+### 2. Manual Skeleton Control (Skeleton API)
+
+In non-paging mode, you can manipulate placeholders just like regular data:
 
 ```kotlin
-// 1. Register placeholder layout
-adapter.registerPlaceholder(ItemSkeletonBinding::inflate)
+// 1. Register placeholder style
+adapter.registerPlaceholder(ItemSkeletonBinding::inflate) {
+    onBind { /* Configure skeleton animations */ }
+}
 
-// 2. Show 10 skeleton items
-adapter.submitPlaceholders(10)
+// 2. Show placeholders (Skeleton mode)
+adapter.showPlaceholders(count = 10)
 
-// 3. Data loaded, show real data
-adapter.submitList(data)
+// 3. Clear them when async data arrives
+adapter.clearPlaceholders()
+adapter.setItems(realData)
 ```
 
 ---
 
 ## ☕ Java Interoperability
 
-FusionAdapter is Java-friendly. You can use the `JavaDelegate` class.
+FusionAdapter provides full support for Java developers.
 
 ```java
-// 1. Create a Delegate
+// 1. Implement Delegate
 public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
-    // Implement onCreateBinding and onBind...
+    @Override
+    public Object getStableId(@NonNull User item) {
+        return item.getId();
+    }
+
+    @Override
+    protected ItemUserBinding onCreateBinding(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent) {
+        return ItemUserBinding.inflate(inflater, parent, false);
+    }
+
+    @Override
+    protected void onBind(@NonNull ItemUserBinding binding, @NonNull User item) {
+        binding.tvName.setText(item.getName());
+    }
+
+    @Override
+    protected void onCreate(@NonNull ItemUserBinding binding) {
+        // [Advanced] Bind payloads in Java to achieve granular updates
+        bindPayload(User::getName, (binding, name) -> binding.tvName.setText(name));
+    }
 }
 
 // 2. Register
-adapter.attachLinker(User.class, new TypeRouter<User>()
-    .stableId(user -> user.getId()) // Java 8 Lambda configuration
-        .map(null, new UserDelegate())
-        );
+adapter.register(User.class, new TypeRouter.Builder<User>()
+    .stableId(User::getId)
+    .map("DEFAULT", new UserDelegate())
+    .build()
+);
+```
+
+---
+
+## 🛡️ Robustness & Safety
+
+FusionAdapter introduces a strict **Sanitization** mechanism to ensure UI consistency.
+
+### Global Configuration
+Initialize Fusion in your `Application` class:
+
+```kotlin
+Fusion.initialize {
+    setDebug(BuildConfig.DEBUG) // Fast-fail in Debug, Safe-drop in Release
+    setErrorListener { item, e -> 
+        // Monitor unregistered types or data errors
+        Log.e("Fusion", "Error on item: $item", e)
+    }
+}
 ```
 
 ---

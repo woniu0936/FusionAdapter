@@ -1,4 +1,3 @@
-
 # 🚀 FusionAdapter
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.woniu0936/fusion-core)](https://search.maven.org/artifact/io.github.woniu0936/fusion-core)
@@ -115,7 +114,7 @@ data class Message(val id: Long, val type: Int, val content: String)
 recyclerView.setupFusion {
     register<Message> {
         
-        // [Level 2] Router 级配置: 
+        // [Level 1] Router 级配置: 
         // 默认情况下，所有 Message 的 ID 都是 it.id
         stableId { it.id }
 
@@ -127,15 +126,11 @@ recyclerView.setupFusion {
             onBind { msg -> ... }
         }
 
-        map(TYPE_IMAGE, ItemMsgImageBinding::inflate) {
-            onBind { msg -> ... }
-        }
-
         // [Override] 覆盖: 特殊情况覆盖默认 ID 规则
         // 例如：将同一条消息拆分显示，防止 ID 冲突
-        map(TYPE_SPLIT_PART, ItemMsgSplitBinding::inflate) {
-            // [Level 1] Delegate 级配置: 优先级高于 Router 级
-            stableId { "${it.id}_split" }
+        map(TYPE_TIMELINE, ItemTimeLineBinding::inflate) {
+            // [Level 2] Delegate 级配置: 优先级高于 Router 级
+            stableId { "${it.id}_time" }
             onBind { msg -> ... }
         }
     }
@@ -144,22 +139,20 @@ recyclerView.setupFusion {
 
 ### 3. Paging 3 集成
 
-Fusion 提供了 `FusionPagingAdapter`，API 与标准版 DSL 完全一致，零成本迁移。
+专为 Paging 3 设计的适配器，无缝接入。
 
 ```kotlin
-// 使用 setupFusionPaging 扩展方法
-val pagingAdapter = recyclerView.setupFusionPaging<User> {
-    
-    // 1. 注册正常 Item
-    register(ItemUserBinding::inflate) {
-        stableId { it.userId }
-        onBind { user -> tvName.text = user.name }
-    }
+val pagingAdapter = FusionPagingAdapter<User>()
 
-    // 2. 注册占位符 (骨架屏)
-    // 当 Paging 3 返回 null (加载中) 时自动显示此布局
+pagingAdapter.apply {
+    // 常规注册
+    register(ItemUserBinding::inflate) {
+        onBind { user -> ... }
+    }
+    
+    // 可选：注册占位符 (骨架屏)
     registerPlaceholder(ItemSkeletonBinding::inflate) {
-        onBind { binding.shimmer.startShimmer() }
+        onBind { /* 配置加载动画 */ }
     }
 }
 
@@ -221,6 +214,109 @@ recyclerView.setAdapter(adapter);
 
 ---
 
+## ⚙️ 进阶特性
+
+### 1. 局部刷新与属性级绑定 (Payloads)
+
+通过 `onPayload` 结合 Kotlin 属性引用，FusionAdapter 实现了 **"精确到 View"** 的更新。只有变化的属性才会触发代码执行，彻底解决复杂 Item 的刷新抖动问题。
+
+```kotlin
+register<Post>(ItemPostBinding::inflate) {
+    onBind { post -> /* 全量绑定 */ }
+
+    // 【单属性监听】仅当 likeCount 变化时，仅更新点赞数 View
+    onPayload(Post::likeCount) { count ->
+        tvLikeCount.text = count.toString()
+    }
+
+    // 【多属性联合监听】当头像或昵称任一变化时，触发闭包
+    onPayload(Post::avatar, Post::nickname) { avatar, name ->
+        ivAvatar.load(avatar)
+        tvName.text = name
+    }
+}
+```
+
+### 2. 级联 Stable ID：解决动画冲突的终极方案
+
+在处理 **"同一个数据对象渲染为多个列表项"** (例如：IM 消息被拆分为时间线和气泡) 时，普通的 ID 会导致 RecyclerView 动画错乱。Fusion 提供级联 ID 策略：
+
+```kotlin
+register<Message> {
+    // [Level 1] Router 级：默认所有子项使用 ID 字段
+    stableId { it.id } 
+
+    map(TYPE_TEXT, ItemTextBinding::inflate) {
+        onBind { ... } // 继承 Level 1 的 ID
+    }
+
+    map(TYPE_TIMELINE, ItemTimeBinding::inflate) {
+        // [Level 2] Delegate 级：覆盖 Router 级，防止 ID 冲突
+        stableId { "${it.id}_time" } 
+        onBind { ... }
+    }
+}
+```
+
+### 3. 手动骨架屏控制 (Skeleton API)
+
+非 Paging 模式下，您可以像操作普通数据一样操作占位符：
+
+```kotlin
+// 1. 注册占位符样式
+adapter.registerPlaceholder(ItemSkeletonBinding::inflate) {
+    onBind { /* 配置骨架屏动画 */ }
+}
+
+// 2. 显示占位符（骨架屏模式）
+adapter.showPlaceholders(count = 10)
+
+// 3. 异步数据回来后，直接清除
+adapter.clearPlaceholders()
+adapter.setItems(realData)
+```
+
+---
+
+## ☕ Java 互操作性
+
+FusionAdapter 为 Java 开发者提供了完整的适配支持。
+
+```java
+// 1. 实现 Delegate
+public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
+    @Override
+    public Object getStableId(@NonNull User item) {
+        return item.getId();
+    }
+
+    @Override
+    protected ItemUserBinding onCreateBinding(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent) {
+        return ItemUserBinding.inflate(inflater, parent, false);
+    }
+
+    @Override
+    protected void onBind(@NonNull ItemUserBinding binding, @NonNull User item) {
+        binding.tvName.setText(item.getName());
+    }
+
+    @Override
+    protected void onCreate(@NonNull ItemUserBinding binding) {
+        // [Fix #1] 修复 Java 侧属性监听，解决多维度刷新
+        bindPayload(User::getName, (binding, name) -> binding.tvName.setText(name));
+    }
+}
+
+// 2. 注册
+adapter.register(User.class, new TypeRouter.Builder<User>()
+    .stableId(User::getId)
+    .map("DEFAULT", new UserDelegate())
+    .build()
+);
+```
+
+---
+
 ## 🛡️ 健壮性与安全
 
 FusionAdapter 引入了严格的 **Sanitization (数据清洗)** 机制来确保布局的一致性。
@@ -230,72 +326,12 @@ FusionAdapter 引入了严格的 **Sanitization (数据清洗)** 机制来确保
 
 ```kotlin
 Fusion.initialize {
-    // [DEBUG 模式]: Fail-Fast 
-    // 遇到未注册类型立即 CRASH。强制开发者在开发阶段修复问题。
-    setDebug(BuildConfig.DEBUG)
-    
-    // [RELEASE 模式]: Fail-Safe 
-    // 静默丢弃未注册的数据，防止线上 Crash 或 Grid 布局错位。
-    // 通过监听器上报异常数据以便分析。
-    setErrorListener { item, e ->
-        FirebaseCrashlytics.getInstance().recordException(e)
-    }
-
-    // 开启默认 StableId 检查 (推荐)
-    // 强制要求所有注册类型必须提供 stableId，以获得最佳性能
-    setDefaultStableIds(true) 
-}
-```
-
----
-
-## ⚙️ 进阶特性
-
-### 局部刷新 (Payloads)
-轻松处理 `notifyItemChanged(pos, payload)`，仅更新变化的 View。
-
-```kotlin
-register(ItemPostBinding::inflate) {
-    onBind { post -> ... } // 全量更新
-    
-    // 仅当 likeCount 发生变化时触发
-    bindPayload(Post::likeCount) { count ->
-        tvLikeCount.text = count.toString()
+    setDebug(BuildConfig.DEBUG) // Debug 模式 Fail-Fast，Release 模式 Safe-Drop
+    setErrorListener { item, e -> 
+        // 监控未注册类型或数据异常
+        Log.e("Fusion", "Error on item: $item", e)
     }
 }
-```
-
-### 手动骨架屏 (非 Paging)
-在普通列表中显式驱动骨架屏显示。
-
-```kotlin
-// 1. 注册骨架屏布局
-adapter.registerPlaceholder(ItemSkeletonBinding::inflate)
-
-// 2. 显示 10 个骨架占位符
-adapter.submitPlaceholders(10)
-
-// 3. 数据加载完毕，显示真实数据
-adapter.submitList(data)
-```
-
----
-
-## ☕ Java 互操作性
-
-FusionAdapter 对 Java 友好。你可以通过继承 `JavaDelegate` 类来混合使用。
-
-```java
-// 1. 创建 Delegate
-public class UserDelegate extends JavaDelegate<User, ItemUserBinding> {
-    // 实现 onCreateBinding 和 onBind ...
-}
-
-// 2. 注册
-adapter.attachLinker(User.class, new TypeRouter<User>()
-    .stableId(user -> user.getId()) // Java 8 Lambda 配置 ID
-    .map(null, new UserDelegate())
-);
 ```
 
 ---
