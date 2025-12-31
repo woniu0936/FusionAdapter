@@ -118,7 +118,10 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     override fun getItemId(position: Int): Long {
         if (!hasStableIds()) return RecyclerView.NO_ID
-        val item = helperAdapter.peek(position) ?: return RecyclerView.NO_ID
+        val item = helperAdapter.peek(position)
+        if (item == null) {
+            return core.getPlaceholderId(position, System.identityHashCode(this))
+        }
         return core.getItemId(item, position)
     }
 
@@ -159,10 +162,16 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
+        helperAdapter.onAttachedToRecyclerView(recyclerView)
         recyclerView.setupGridSupport(
             this,
             { pos -> if (pos in helperAdapter.itemCount.let { 0 until it }) helperAdapter.peek(pos) else null },
             { core.getDelegate(it) })
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        helperAdapter.onDetachedFromRecyclerView(recyclerView)
     }
 
     val loadStateFlow: Flow<CombinedLoadStates> get() = helperAdapter.loadStateFlow
