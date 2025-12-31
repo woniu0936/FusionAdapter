@@ -165,8 +165,12 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         helperAdapter.onAttachedToRecyclerView(recyclerView)
         recyclerView.setupGridSupport(
             this,
-            { pos -> if (pos in helperAdapter.itemCount.let { 0 until it }) helperAdapter.peek(pos) else null },
-            { core.getDelegate(it) })
+            { pos -> if (pos in 0 until helperAdapter.itemCount) helperAdapter.peek(pos) else null },
+            { queryItem ->
+                val actualItem = queryItem ?: FusionPlaceholder()
+                if (actualItem is FusionPlaceholder) core.getPlaceholderDelegate()
+                else core.getDelegate(actualItem)
+            })
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
