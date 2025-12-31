@@ -62,12 +62,16 @@ object FusionLogger {
     internal fun print(priority: Int, tag: String, message: String, t: Throwable? = null) {
         val fullTag = "$TAG_PREFIX$tag"
         
-        when (priority) {
-            Log.VERBOSE -> Log.v(fullTag, message)
-            Log.INFO -> Log.i(fullTag, message)
-            Log.DEBUG -> Log.d(fullTag, message)
-            Log.WARN -> Log.w(fullTag, message)
-            Log.ERROR -> Log.e(fullTag, message, t)
+        try {
+            when (priority) {
+                Log.VERBOSE -> Log.v(fullTag, message)
+                Log.INFO -> Log.i(fullTag, message)
+                Log.DEBUG -> Log.d(fullTag, message)
+                Log.WARN -> Log.w(fullTag, message)
+                Log.ERROR -> Log.e(fullTag, message, t)
+            }
+        } catch (e: Exception) {
+            // Fallback for JVM unit tests where android.util.Log is not available
         }
 
         val config = Fusion.getConfig()

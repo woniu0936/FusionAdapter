@@ -91,11 +91,17 @@ class ViewTypeRegistry {
     }
 
     private fun findRouterForInheritanceCached(clazz: Class<*>): TypeRouter<Any>? {
+        // ConcurrentHashMap does not support null values, so we use containsKey
+        // and only put if the router is not null.
+        // For null results (not supported), we could use a sentinel value if we want to cache negative results,
+        // but for now let's just avoid putting null.
         if (inheritanceCache.containsKey(clazz)) {
             return inheritanceCache[clazz]
         }
         val router = findRouterForInheritanceInternal(clazz)
-        inheritanceCache[clazz] = router
+        if (router != null) {
+            inheritanceCache[clazz] = router
+        }
         return router
     }
 

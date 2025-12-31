@@ -12,6 +12,8 @@ constraintlayout = "2.1.4"
 recyclerview = "1.4.0"
 collection = "1.4.5"
 paging = "3.2.1"
+mockito = "5.5.0"
+mockitoKotlin = "5.1.0"
 publish = "0.35.0"
 coil = "2.5.0"
 
@@ -19,6 +21,8 @@ coil = "2.5.0"
 coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
