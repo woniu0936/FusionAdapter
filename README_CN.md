@@ -64,9 +64,9 @@ FusionAdapter 并非只是另一个 MultiType 库，它是为了解决大型工�
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:fusion-core:0.6.0")
+    implementation("io.github.woniu0936:fusion-core:0.7.0")
     // 可选：原生 Paging 3 支持
-    implementation("io.github.woniu0936:fusion-paging:0.6.0")
+    implementation("io.github.woniu0936:fusion-paging:0.7.0")
 }
 ```
 
