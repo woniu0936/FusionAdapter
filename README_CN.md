@@ -18,18 +18,24 @@
 
 ## 🆚 为什么选择 FusionAdapter?
 
-FusionAdapter 与业界主流库的深度对比：
+FusionAdapter 并非只是另一个 MultiType 库，它是为了解决大型工程中 **“样板代码膨胀”**、**“异步数据不安全”** 以及 **“Paging 3 集成痛苦”** 而生的下一代适配器解决方案。
 
-| 核心维度 | **FusionAdapter** | **Epoxy (Airbnb)** | **MultiType** | **BRVAH (v4)** |
+| 特性 | **FusionAdapter** | **Epoxy (Airbnb)** | **MultiType** | **BRVAH (v4)** |
 | :--- | :--- | :--- | :--- | :--- |
-| **编码范式** | **Kotlin DSL** (原地注册) | 注解处理 (Annotation) | 类映射 (Class Mapping) | 继承式 (Inheritance) |
-| **样板代码** | **零 (Zero)**<br>无需创建 Adapter/Holder 类 | 高 (需创建 Model) | 中 (需创建 Binder) | 中 |
-| **安全策略** | **Fail-Fast / Fail-Safe**<br>*(Debug 崩溃提醒，Release 自动清洗)* | Fail-Safe (隐式不显示) | Fail-Fast (直接崩溃) | 未定义<br>(可能导致错乱) |
-| **Paging 3** | **原生支持**<br>*(统一 API，自动处理占位符)* | 需引入扩展库 | 无支持 | 兼容模式<br>(核心仍为回调) |
-| **编译成本** | **无** (纯运行时) | **慢** (依赖 KAPT/KSP) | 无 | 无 |
-| **网格布局** | **自动注入** (Auto Span) | 自动处理 | 手动管理 | 手动管理 |
+| **设计范式** | **响应式 DSL** (原地声明) | 注解驱动 (编译期生成) | 命令式 (类映射) | 继承驱动 (传统的) |
+| **样板代码** | **极简 (Zero)**<br>无需创建 Adapter/Holder | 高 (需大量 Model 类) | 中 (需创建 Binder) | 中 (需继承基类) |
+| **数据安全** | **Sanitization (数据清洗)**<br>Release 自动剔除坏数据 | 隐式忽略 | 直接崩溃 (Fail-Fast) | 状态不确定 (易错乱) |
+| **Paging 3** | **第一方原生支持**<br>自动占位符与 ID 管理 | 需外部扩展库 | 无原生支持 | 兼容模式 |
+| **编译损耗** | **零 (纯运行时)** | **显著 (KAPT/KSP)** | 零 | 零 |
+| **并发模型** | **Immutable Runtime** | 内部同步 | 线程不安全 | 线程不安全 |
+| **学习曲线** | **极低** (即学即用) | 极高 (概念庞杂) | 低 | 中 |
 
-**核心优势:** FusionAdapter 拥有 **Epoxy** 般的强大布局能力却无编译损耗，拥有 **MultiType** 般的灵活性却提供更现代的 DSL，同时为您提供了梦寐以求的顶级 **Paging 3** 原生支持。
+### 💡 核心价值：为什么它适合您的项目？
+
+1.  **不再有 "Class Explosion"**: 传统的方案每增加一种 UI 样式就需要创建一个 `ViewHolder` 或 `ItemBinder` 类。在 FusionAdapter 中，您只需在 DSL 中多写几行代码，极大地保持了代码库的整洁。
+2.  **为线上稳定性而生**: 大型项目中，后端返回的异构数据偶尔会包含未定义类型。FusionAdapter 的 **数据清洗机制** 确保了在 Release 环境下，这些非法数据会被安全剔除，而不是导致应用直接闪退。
+3.  **零编译负担**: 相比 Epoxy 动辄数秒的注解处理时间，FusionAdapter 全程无编译损耗，让您的构建速度保持飞快。
+4.  **完美的动画体验**: 结合 FNV-1a 64位哈希算法生成的 **级联 Stable ID**，即使在复杂的 Paging 异步加载场景下，也能提供教科书级的 RecyclerView 插入/删除动画。
 
 ---
 
@@ -39,13 +45,16 @@ FusionAdapter 与业界主流库的深度对比：
 *   **🛡️ 健壮的数据清洗**:
     *   **Debug**: 遇到未注册类型立即崩溃 (Fail-Fast)，帮助在开发期发现 Bug。
     *   **Release**: 自动剔除非法数据 (Fail-Safe)，防止线上崩溃或 Grid 布局错位。
-*   **📄 原生 Paging 3**: 提供专用的 `FusionPagingAdapter`，API 与标准版完全一致。支持 **自动 Null 占位符**。
+*   **🧵 高并发安全**: 采用 **Immutable Runtime** 设计，确保多线程环境下的数据读写安全与极致性能。
+*   **📄 原生 Paging 3**: 提供专用的 `FusionPagingAdapter`，与标准 Paging API 深度集成。支持 **确定性占位符 ID**，解决刷新抖动。
 *   **🔀 级联 Stable ID 策略**:
     *   支持 **Router 级 (共享)** 和 **Delegate 级 (覆盖)** 的 ID 配置策略。
-    *   解决一对多场景下的 ID 冲突，完美支持 RecyclerView 动画。
+    *   内置 FNV-1a 64位哈希算法，彻底解决跨类型 ID 碰撞。
 *   **📐 智能布局控制**: 直接在 DSL 中声明 `spanSize` 和 `fullSpan`，自动适配 Grid 和瀑布流。
-*   **🚀 智能差分**: 内置 `AsyncListDiffer`，结合 Stable ID 实现高性能渲染。
-*   **🎨 ViewBinding**: 类型安全，告别 `findViewById`。
+*   **🚀 内存与日志安全**: 
+    *   **自动泄露防护**: 在 `onViewRecycled` 时自动清理视图 Tag，严防内存泄漏。
+    *   **企业级日志**: 高性能异步日志系统。支持通过 ProGuard 在 Release 包中自动剥离调试日志代码。
+*   **☕ Java 友好**: 不仅支持 Kotlin DSL，还为 Java 开发者提供了完整的 **Builder 模式** 支持。
 
 ---
 
@@ -189,6 +198,25 @@ recyclerView.setupFusion(layoutManager) {
         }
     }
 }
+```
+
+### 5. Java 互操作性 (Builder 模式)
+
+Fusion 对 Java 开发者同样友好。您可以使用 `TypeRouter.Builder` 来实现类型安全的注册。
+
+```java
+// Java 示例
+FusionAdapter adapter = new FusionAdapter();
+
+// 使用 Builder 模式配置路由
+TypeRouter<User> userRouter = new TypeRouter.Builder<User>()
+    .match(user -> user.getRole())
+    .map("ADMIN", new AdminDelegate())
+    .map("USER", new UserDelegate())
+    .build();
+
+adapter.register(User.class, userRouter);
+recyclerView.setAdapter(adapter);
 ```
 
 ---
