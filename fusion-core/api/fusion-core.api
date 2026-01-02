@@ -517,6 +517,7 @@ public abstract interface class com/fusion/adapter/placeholder/PlaceholderRegist
 	public abstract fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public abstract fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
 	public abstract fun registerPlaceholder (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun registerPlaceholder$default (Lcom/fusion/adapter/placeholder/PlaceholderRegistry;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 
 public final class com/fusion/adapter/placeholder/PlaceholderRegistry$DefaultImpls {

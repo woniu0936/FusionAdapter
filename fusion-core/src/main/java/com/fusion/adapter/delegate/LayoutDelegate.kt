@@ -13,7 +13,7 @@ import com.fusion.adapter.internal.ViewTypeKey
 /**
  * [LayoutDelegate]
  */
-abstract class LayoutDelegate<T : Any>(@LayoutRes private val layoutResId: Int) : FusionDelegate<T, LayoutHolder>() {
+abstract class LayoutDelegate<T : Any>(@param:LayoutRes private val layoutResId: Int) : FusionDelegate<T, LayoutHolder>() {
 
     override val viewTypeKey: ViewTypeKey = GlobalTypeKey(this::class.java, FusionInternalTags.TAG_LAYOUT_DELEGATE)
 
