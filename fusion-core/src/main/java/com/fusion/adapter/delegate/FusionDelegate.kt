@@ -17,8 +17,14 @@ import com.fusion.adapter.log.FusionLogger
  * [FusionDelegate]
  */
 abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
+    
     abstract val viewTypeKey: ViewTypeKey
-    private val propertyObservers = ArrayList<PropertyObserver<T>>()
+
+    // Fast-path slots for the first 3 observers (covers 99% of use cases)
+    private var observer1: PropertyObserver<T>? = null
+    private var observer2: PropertyObserver<T>? = null
+    private var observer3: PropertyObserver<T>? = null
+    private var extraObservers: MutableList<PropertyObserver<T>>? = null
 
     internal var internalRouterKeyProvider: ((T) -> Any?)? = null
 
@@ -53,14 +59,61 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
         return same
     }
 
+    /**
+     * [Optimization] Highly optimized for performance and memory allocation.
+     * Uses a lazy-list approach and fast-path slots.
+     */
     open fun getChangePayload(oldItem: T, newItem: T): Any? {
-        if (propertyObservers.isEmpty()) return null
-        val payloads = propertyObservers.mapNotNull { it.checkChange(oldItem, newItem) }
-
-        if (payloads.isNotEmpty()) {
-            FusionLogger.d("Diff") { "Payloads generated: ${payloads.size}" }
+        val obs1 = observer1 ?: return null
+        
+        val p1 = obs1.checkChange(oldItem, newItem)
+        val p2 = observer2?.checkChange(oldItem, newItem)
+        val p3 = observer3?.checkChange(oldItem, newItem)
+        
+        // Fast-path: Only 1-3 observers and no extras
+        if (extraObservers == null) {
+            return when {
+                p1 != null && p2 != null && p3 != null -> listOf(p1, p2, p3)
+                p1 != null && p2 != null -> listOf(p1, p2)
+                p1 != null && p3 != null -> listOf(p1, p3)
+                p2 != null && p3 != null -> listOf(p2, p3)
+                p1 != null -> p1
+                p2 != null -> p2
+                p3 != null -> p3
+                else -> null
+            }
         }
-        return if (payloads.isNotEmpty()) payloads else null
+
+        // Slow-path: Strictly lazy allocation. 
+        // We only create the ArrayList if at least one property has actually changed.
+        var result: MutableList<Any>? = null
+        
+        if (p1 != null) {
+            result = ArrayList(4)
+            result.add(p1)
+        }
+        
+        if (p2 != null) {
+            if (result == null) result = ArrayList(4)
+            result.add(p2)
+        }
+        
+        if (p3 != null) {
+            if (result == null) result = ArrayList(4)
+            result.add(p3)
+        }
+        
+        extraObservers?.let { list ->
+            for (i in list.indices) {
+                val p = list[i].checkChange(oldItem, newItem)
+                if (p != null) {
+                    if (result == null) result = ArrayList()
+                    result!!.add(p)
+                }
+            }
+        }
+        
+        return result
     }
 
     protected fun dispatchHandledPayloads(receiver: Any, item: T, payloads: List<Any>): Boolean {
@@ -79,7 +132,15 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     }
 
     open fun addObserver(observer: PropertyObserver<T>) {
-        propertyObservers.add(observer)
+        when {
+            observer1 == null -> observer1 = observer
+            observer2 == null -> observer2 = observer
+            observer3 == null -> observer3 = observer
+            else -> {
+                if (extraObservers == null) extraObservers = ArrayList(4)
+                extraObservers!!.add(observer)
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
