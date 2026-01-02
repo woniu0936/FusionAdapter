@@ -1,5 +1,6 @@
 package com.fusion.adapter.internal.registry
 
+import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.internal.diff.ViewTypeStorage
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * [ViewTypeRegistry]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class ViewTypeRegistry {
 
     companion object {

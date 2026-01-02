@@ -3,6 +3,7 @@ package com.fusion.adapter.internal.engine
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.Fusion
@@ -26,6 +27,7 @@ import java.util.Collections
 /**
  * [FusionCore]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class FusionCore {
 
     val viewTypeRegistry = ViewTypeRegistry()
