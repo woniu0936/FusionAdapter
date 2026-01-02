@@ -2,7 +2,8 @@ package com.fusion.adapter.internal.registry
 
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.internal.FusionInternalTags
-import com.fusion.adapter.internal.GlobalTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
+import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.internal.diff.ViewTypeStorage
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every

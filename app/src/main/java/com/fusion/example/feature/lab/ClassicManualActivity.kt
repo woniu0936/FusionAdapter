@@ -6,7 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fusion.adapter.FusionAdapter
 import com.fusion.adapter.delegate.BindingDelegate
-import com.fusion.adapter.internal.registry.TypeRouter
+import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.placeholder.showPlaceholders
 import com.fusion.example.R
 import com.fusion.example.core.model.ChatMessage

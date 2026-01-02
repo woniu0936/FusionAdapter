@@ -3,6 +3,7 @@ package com.fusion.adapter.internal.registry
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.internal.diff.ViewTypeStorage
 import com.fusion.adapter.placeholder.FusionPlaceholder
 import java.util.concurrent.ConcurrentHashMap

@@ -1,4 +1,4 @@
-package com.fusion.adapter.internal
+package com.fusion.adapter.core
 
 /**
  * 标识 ViewType 唯一性的接口。

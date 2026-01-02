@@ -8,7 +8,7 @@ import com.fusion.adapter.delegate.DslLayoutDelegate
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.dsl.ItemConfiguration
-import com.fusion.adapter.internal.GlobalTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
 
 /**
  * [DslAdapterFactory]

@@ -6,8 +6,8 @@ import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.UnregisteredTypeException
-import com.fusion.adapter.internal.GlobalTypeKey
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 import com.google.common.truth.Truth.assertThat
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach

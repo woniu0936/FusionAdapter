@@ -21,7 +21,7 @@ public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/Rec
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
+	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/router/TypeRouter;)V
 	public fun registerPlaceholder (I)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
@@ -81,7 +81,7 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 	public fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
+	public fun register (Ljava/lang/Class;Lcom/fusion/adapter/router/TypeRouter;)V
 	public fun registerPlaceholder (I)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
@@ -94,11 +94,27 @@ public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget
 
 public abstract interface class com/fusion/adapter/FusionRegistry {
 	public abstract fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public abstract fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
+	public abstract fun register (Ljava/lang/Class;Lcom/fusion/adapter/router/TypeRouter;)V
 }
 
 public abstract interface class com/fusion/adapter/ItemKeyProvider {
 	public abstract fun getKey (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fusion/adapter/core/GlobalTypeKey : com/fusion/adapter/core/ViewTypeKey {
+	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Class;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Class;Ljava/lang/Object;)Lcom/fusion/adapter/core/GlobalTypeKey;
+	public static synthetic fun copy$default (Lcom/fusion/adapter/core/GlobalTypeKey;Ljava/lang/Class;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fusion/adapter/core/GlobalTypeKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrimary ()Ljava/lang/Class;
+	public final fun getSecondary ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fusion/adapter/core/ViewTypeKey {
 }
 
 public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/adapter/delegate/FusionDelegate {
@@ -106,7 +122,7 @@ public abstract class com/fusion/adapter/delegate/BindingDelegate : com/fusion/a
 	public fun <init> (Lcom/fusion/adapter/delegate/BindingInflater;)V
 	public synthetic fun <init> (Lcom/fusion/adapter/delegate/BindingInflater;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun addObserver (Lcom/fusion/adapter/internal/diff/PropertyObserver;)V
-	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public fun getViewTypeKey ()Lcom/fusion/adapter/core/ViewTypeKey;
 	public abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/BindingHolder;Ljava/lang/Object;ILjava/util/List;)V
@@ -153,7 +169,7 @@ public abstract class com/fusion/adapter/delegate/FusionDelegate {
 	protected final fun dispatchHandledPayloads (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/List;)Z
 	public fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
-	public abstract fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public abstract fun getViewTypeKey ()Lcom/fusion/adapter/core/ViewTypeKey;
 	public fun isFullSpan (Ljava/lang/Object;)Z
 	public abstract fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public abstract fun onCreateViewHolder (Landroid/view/ViewGroup;)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
@@ -179,7 +195,7 @@ public abstract class com/fusion/adapter/delegate/JavaDelegate : com/fusion/adap
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer4;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer5;)V
 	protected final fun bindPayload (Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Lcom/fusion/adapter/delegate/JavaDelegate$PayloadConsumer6;)V
-	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public fun getViewTypeKey ()Lcom/fusion/adapter/core/ViewTypeKey;
 	protected abstract fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;)V
 	public fun onBind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;I)V
 	protected abstract fun onCreateBinding (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
@@ -212,7 +228,7 @@ public abstract interface class com/fusion/adapter/delegate/JavaDelegate$Payload
 
 public abstract class com/fusion/adapter/delegate/LayoutDelegate : com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> (I)V
-	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public fun getViewTypeKey ()Lcom/fusion/adapter/core/ViewTypeKey;
 	public abstract fun onBind (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;)V
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 	public final fun onBindViewHolder (Lcom/fusion/adapter/delegate/LayoutHolder;Ljava/lang/Object;ILjava/util/List;)V
@@ -259,7 +275,7 @@ public final class com/fusion/adapter/dsl/ItemConfiguration {
 
 public abstract class com/fusion/adapter/dsl/ItemDefinitionScope {
 	public fun <init> ()V
-	public final fun fullSpanIf (Lkotlin/jvm/functions/Function1;)V
+	public final fun fullSpan (Lkotlin/jvm/functions/Function1;)V
 	public final fun getConfig ()Lcom/fusion/adapter/dsl/ItemConfiguration;
 	public final fun getConfiguration ()Lcom/fusion/adapter/dsl/ItemConfiguration;
 	public final fun onBind (Lkotlin/jvm/functions/Function2;)V
@@ -285,7 +301,7 @@ public final class com/fusion/adapter/dsl/LayoutDefinitionScope : com/fusion/ada
 
 public final class com/fusion/adapter/dsl/RouterScope {
 	public fun <init> (Ljava/lang/Class;)V
-	public final fun build ()Lcom/fusion/adapter/internal/registry/TypeRouter;
+	public final fun build ()Lcom/fusion/adapter/router/TypeRouter;
 	public final fun getClazz ()Ljava/lang/Class;
 	public final fun getConfig ()Lcom/fusion/adapter/internal/registry/RouterConfiguration;
 	public final fun match (Lkotlin/jvm/functions/Function1;)V
@@ -359,22 +375,6 @@ public final class com/fusion/adapter/extensions/ViewExtensionsKt {
 	public static final fun setItem (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;)V
 }
 
-public final class com/fusion/adapter/internal/GlobalTypeKey : com/fusion/adapter/internal/ViewTypeKey {
-	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
-	public final fun component1 ()Ljava/lang/Class;
-	public final fun component2 ()Ljava/lang/Object;
-	public final fun copy (Ljava/lang/Class;Ljava/lang/Object;)Lcom/fusion/adapter/internal/GlobalTypeKey;
-	public static synthetic fun copy$default (Lcom/fusion/adapter/internal/GlobalTypeKey;Ljava/lang/Class;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fusion/adapter/internal/GlobalTypeKey;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getPrimary ()Ljava/lang/Class;
-	public final fun getSecondary ()Ljava/lang/Object;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class com/fusion/adapter/internal/ViewTypeKey {
-}
-
 public abstract interface class com/fusion/adapter/internal/diff/PropertyObserver {
 	public abstract fun checkChange (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 	public abstract fun execute (Ljava/lang/Object;Ljava/lang/Object;)V
@@ -399,7 +399,7 @@ public final class com/fusion/adapter/internal/engine/FusionCore {
 	public final fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/delegate/FusionDelegate;)V
-	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
+	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/router/TypeRouter;)V
 	public final fun registerPlaceholder (I)V
 	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/BindingInflater;Lcom/fusion/adapter/placeholder/PlaceholderConfigurator;)V
 	public final fun registerPlaceholder (Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;)V
@@ -421,26 +421,6 @@ public final class com/fusion/adapter/internal/registry/RouterConfiguration {
 	public final fun setViewTypeProvider (Lcom/fusion/adapter/ItemKeyProvider;)V
 }
 
-public final class com/fusion/adapter/internal/registry/TypeRouter {
-	public static final field Companion Lcom/fusion/adapter/internal/registry/TypeRouter$Companion;
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getAllDelegates ()Ljava/util/Collection;
-	public final fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
-	public final fun select (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
-}
-
-public final class com/fusion/adapter/internal/registry/TypeRouter$Builder {
-	public fun <init> ()V
-	public final fun build ()Lcom/fusion/adapter/internal/registry/TypeRouter;
-	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/registry/TypeRouter$Builder;
-	public final fun match (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/internal/registry/TypeRouter$Builder;
-	public final fun stableId (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/internal/registry/TypeRouter$Builder;
-}
-
-public final class com/fusion/adapter/internal/registry/TypeRouter$Companion {
-	public final fun create (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/internal/registry/TypeRouter;
-}
-
 public final class com/fusion/adapter/internal/registry/ViewTypeRegistry {
 	public static final field Companion Lcom/fusion/adapter/internal/registry/ViewTypeRegistry$Companion;
 	public static final field TYPE_PLACEHOLDER I
@@ -450,7 +430,7 @@ public final class com/fusion/adapter/internal/registry/ViewTypeRegistry {
 	public final fun getItemViewType (Ljava/lang/Object;)I
 	public final fun getPlaceholderDelegate ()Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun isSupported (Ljava/lang/Object;)Z
-	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/internal/registry/TypeRouter;)V
+	public final fun register (Ljava/lang/Class;Lcom/fusion/adapter/router/TypeRouter;)V
 	public final fun registerPlaceholder (Lcom/fusion/adapter/delegate/FusionDelegate;)V
 }
 
@@ -476,7 +456,7 @@ public final class com/fusion/adapter/placeholder/FusionPlaceholder {
 
 public abstract class com/fusion/adapter/placeholder/FusionPlaceholderDelegate : com/fusion/adapter/delegate/FusionDelegate {
 	public fun <init> ()V
-	public fun getViewTypeKey ()Lcom/fusion/adapter/internal/ViewTypeKey;
+	public fun getViewTypeKey ()Lcom/fusion/adapter/core/ViewTypeKey;
 	public abstract fun onBindPlaceholder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public final fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;Ljava/lang/Object;ILjava/util/List;)V
 }
@@ -522,5 +502,25 @@ public abstract interface class com/fusion/adapter/placeholder/PlaceholderRegist
 
 public final class com/fusion/adapter/placeholder/PlaceholderRegistry$DefaultImpls {
 	public static synthetic fun registerPlaceholder$default (Lcom/fusion/adapter/placeholder/PlaceholderRegistry;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class com/fusion/adapter/router/TypeRouter {
+	public static final field Companion Lcom/fusion/adapter/router/TypeRouter$Companion;
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAllDelegates ()Ljava/util/Collection;
+	public final fun getStableId (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun select (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
+}
+
+public final class com/fusion/adapter/router/TypeRouter$Builder {
+	public fun <init> ()V
+	public final fun build ()Lcom/fusion/adapter/router/TypeRouter;
+	public final fun map (Ljava/lang/Object;Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/router/TypeRouter$Builder;
+	public final fun match (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/router/TypeRouter$Builder;
+	public final fun stableId (Lkotlin/jvm/functions/Function1;)Lcom/fusion/adapter/router/TypeRouter$Builder;
+}
+
+public final class com/fusion/adapter/router/TypeRouter$Companion {
+	public final fun create (Lcom/fusion/adapter/delegate/FusionDelegate;)Lcom/fusion/adapter/router/TypeRouter;
 }
 

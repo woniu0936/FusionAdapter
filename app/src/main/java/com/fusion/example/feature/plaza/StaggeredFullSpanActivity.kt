@@ -32,7 +32,7 @@ class StaggeredFullSpanActivity : AppCompatActivity() {
             register<SectionHeader, ItemHeaderBinding>(ItemHeaderBinding::inflate) {
                 stableId { it.title }
                 onBind { item -> tvTitle.text = item.title }
-                fullSpanIf { true }
+                fullSpan { true }
             }
             register<Product, ItemImageBinding>(ItemImageBinding::inflate) {
                 stableId { it.id }

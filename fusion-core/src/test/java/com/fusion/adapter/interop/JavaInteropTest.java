@@ -7,7 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.viewbinding.ViewBinding;
 
 import com.fusion.adapter.delegate.JavaDelegate;
-import com.fusion.adapter.internal.GlobalTypeKey;
+import com.fusion.adapter.core.GlobalTypeKey;
 
 import org.junit.jupiter.api.Test;
 import static com.google.common.truth.Truth.assertThat;

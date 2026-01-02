@@ -14,7 +14,7 @@ import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.delegate.LayoutHolder
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.internal.diff.ItemIdUtils
-import com.fusion.adapter.internal.registry.TypeRouter
+import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
 import com.fusion.adapter.log.FusionLogger
 import com.fusion.adapter.placeholder.FusionPlaceholder

@@ -7,8 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.viewbinding.ViewBinding;
 
 import com.fusion.adapter.internal.FusionInternalTags;
-import com.fusion.adapter.internal.GlobalTypeKey;
-import com.fusion.adapter.internal.ViewTypeKey;
+import com.fusion.adapter.core.GlobalTypeKey;
+import com.fusion.adapter.core.ViewTypeKey;
 
 import java.util.function.Function;
 

@@ -1,9 +1,9 @@
-package com.fusion.adapter.internal.registry
+package com.fusion.adapter.router
 
+import com.fusion.adapter.core.GlobalTypeKey
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.internal.FusionInternalTags.TAG_ROUTER_AUTO
 import com.fusion.adapter.internal.FusionInternalTags.TAG_ROUTER_DEFAULT
-import com.fusion.adapter.internal.GlobalTypeKey
 
 /**
  * [TypeRouter]

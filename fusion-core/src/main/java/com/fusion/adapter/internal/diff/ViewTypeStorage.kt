@@ -1,7 +1,7 @@
 package com.fusion.adapter.internal.diff
 
-import com.fusion.adapter.internal.GlobalTypeKey
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 

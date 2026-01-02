@@ -7,8 +7,8 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.extensions.setItem
 import com.fusion.adapter.internal.FusionInternalTags
-import com.fusion.adapter.internal.GlobalTypeKey
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 import com.fusion.adapter.internal.diff.*
 import kotlin.reflect.KProperty1
 
@@ -112,54 +112,54 @@ abstract class BindingDelegate<T : Any, VB : ViewBinding>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <P> registerPropertyObserver(g1: (T) -> P, action: BindingHolder<VB>.(P) -> Unit) {
-        super.addObserver(PropertyObserver1(g1) { p -> (this as BindingHolder<VB>).action(p) })
+    override fun <P> registerPropertyObserver(getter1: (T) -> P, action: BindingHolder<VB>.(P) -> Unit) {
+        super.addObserver(PropertyObserver1(getter1) { p -> (this as BindingHolder<VB>).action(p) })
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <P1, P2> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, action: BindingHolder<VB>.(P1, P2) -> Unit) {
-        super.addObserver(PropertyObserver2(g1, g2) { v1, v2 -> (this as BindingHolder<VB>).action(v1, v2) })
+    override fun <P1, P2> registerPropertyObserver(getter1: (T) -> P1, getter2: (T) -> P2, action: BindingHolder<VB>.(P1, P2) -> Unit) {
+        super.addObserver(PropertyObserver2(getter1, getter2) { v1, v2 -> (this as BindingHolder<VB>).action(v1, v2) })
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <P1, P2, P3> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, action: BindingHolder<VB>.(P1, P2, P3) -> Unit) {
-        super.addObserver(PropertyObserver3(g1, g2, g3) { v1, v2, v3 -> (this as BindingHolder<VB>).action(v1, v2, v3) })
+    override fun <P1, P2, P3> registerPropertyObserver(getter1: (T) -> P1, getter2: (T) -> P2, getter3: (T) -> P3, action: BindingHolder<VB>.(P1, P2, P3) -> Unit) {
+        super.addObserver(PropertyObserver3(getter1, getter2, getter3) { v1, v2, v3 -> (this as BindingHolder<VB>).action(v1, v2, v3) })
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <P1, P2, P3, P4> registerPropertyObserver(
-        g1: (T) -> P1,
-        g2: (T) -> P2,
-        g3: (T) -> P3,
-        g4: (T) -> P4,
+        getter1: (T) -> P1,
+        getter2: (T) -> P2,
+        getter3: (T) -> P3,
+        getter4: (T) -> P4,
         action: BindingHolder<VB>.(P1, P2, P3, P4) -> Unit
     ) {
-        super.addObserver(PropertyObserver4(g1, g2, g3, g4) { v1, v2, v3, v4 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4) })
+        super.addObserver(PropertyObserver4(getter1, getter2, getter3, getter4) { v1, v2, v3, v4 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4) })
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <P1, P2, P3, P4, P5> registerPropertyObserver(
-        g1: (T) -> P1,
-        g2: (T) -> P2,
-        g3: (T) -> P3,
-        g4: (T) -> P4,
-        g5: (T) -> P5,
+        getter1: (T) -> P1,
+        getter2: (T) -> P2,
+        getter3: (T) -> P3,
+        getter4: (T) -> P4,
+        getter5: (T) -> P5,
         action: BindingHolder<VB>.(P1, P2, P3, P4, P5) -> Unit
     ) {
-        super.addObserver(PropertyObserver5(g1, g2, g3, g4, g5) { v1, v2, v3, v4, v5 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5) })
+        super.addObserver(PropertyObserver5(getter1, getter2, getter3, getter4, getter5) { v1, v2, v3, v4, v5 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5) })
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <P1, P2, P3, P4, P5, P6> registerPropertyObserver(
-        g1: (T) -> P1,
-        g2: (T) -> P2,
-        g3: (T) -> P3,
-        g4: (T) -> P4,
-        g5: (T) -> P5,
-        g6: (T) -> P6,
+        getter1: (T) -> P1,
+        getter2: (T) -> P2,
+        getter3: (T) -> P3,
+        getter4: (T) -> P4,
+        getter5: (T) -> P5,
+        getter6: (T) -> P6,
         action: BindingHolder<VB>.(P1, P2, P3, P4, P5, P6) -> Unit
     ) {
-        super.addObserver(PropertyObserver6(g1, g2, g3, g4, g5, g6) { v1, v2, v3, v4, v5, v6 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5, v6) })
+        super.addObserver(PropertyObserver6(getter1, getter2, getter3, getter4, getter5, getter6) { v1, v2, v3, v4, v5, v6 -> (this as BindingHolder<VB>).action(v1, v2, v3, v4, v5, v6) })
     }
 
     @Suppress("UNCHECKED_CAST")

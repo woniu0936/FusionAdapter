@@ -3,7 +3,7 @@ package com.fusion.adapter.delegate
 import android.view.ViewGroup
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 import com.fusion.adapter.internal.diff.PropertyObserver
 import com.fusion.adapter.internal.diff.PropertyObserver1
 import com.fusion.adapter.internal.diff.PropertyObserver2
@@ -83,48 +83,48 @@ abstract class FusionDelegate<T : Any, VH : RecyclerView.ViewHolder> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    open fun <P> registerPropertyObserver(g1: (T) -> P, action: VH.(P) -> Unit) {
-        addObserver(PropertyObserver1(g1) { value -> (this as VH).action(value) })
+    open fun <P> registerPropertyObserver(getter1: (T) -> P, action: VH.(P) -> Unit) {
+        addObserver(PropertyObserver1(getter1) { value -> (this as VH).action(value) })
     }
 
     @Suppress("UNCHECKED_CAST")
-    open fun <P1, P2> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, action: VH.(P1, P2) -> Unit) {
-        addObserver(PropertyObserver2(g1, g2) { v1, v2 -> (this as VH).action(v1, v2) })
+    open fun <P1, P2> registerPropertyObserver(getter1: (T) -> P1, getter2: (T) -> P2, action: VH.(P1, P2) -> Unit) {
+        addObserver(PropertyObserver2(getter1, getter2) { v1, v2 -> (this as VH).action(v1, v2) })
     }
 
     @Suppress("UNCHECKED_CAST")
-    open fun <P1, P2, P3> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, action: VH.(P1, P2, P3) -> Unit) {
-        addObserver(PropertyObserver3(g1, g2, g3) { v1, v2, v3 -> (this as VH).action(v1, v2, v3) })
+    open fun <P1, P2, P3> registerPropertyObserver(getter1: (T) -> P1, getter2: (T) -> P2, getter3: (T) -> P3, action: VH.(P1, P2, P3) -> Unit) {
+        addObserver(PropertyObserver3(getter1, getter2, getter3) { v1, v2, v3 -> (this as VH).action(v1, v2, v3) })
     }
 
     @Suppress("UNCHECKED_CAST")
-    open fun <P1, P2, P3, P4> registerPropertyObserver(g1: (T) -> P1, g2: (T) -> P2, g3: (T) -> P3, g4: (T) -> P4, action: VH.(P1, P2, P3, P4) -> Unit) {
-        addObserver(PropertyObserver4(g1, g2, g3, g4) { v1, v2, v3, v4 -> (this as VH).action(v1, v2, v3, v4) })
+    open fun <P1, P2, P3, P4> registerPropertyObserver(getter1: (T) -> P1, getter2: (T) -> P2, getter3: (T) -> P3, getter4: (T) -> P4, action: VH.(P1, P2, P3, P4) -> Unit) {
+        addObserver(PropertyObserver4(getter1, getter2, getter3, getter4) { v1, v2, v3, v4 -> (this as VH).action(v1, v2, v3, v4) })
     }
 
     @Suppress("UNCHECKED_CAST")
     open fun <P1, P2, P3, P4, P5> registerPropertyObserver(
-        g1: (T) -> P1,
-        g2: (T) -> P2,
-        g3: (T) -> P3,
-        g4: (T) -> P4,
-        g5: (T) -> P5,
+        getter1: (T) -> P1,
+        getter2: (T) -> P2,
+        getter3: (T) -> P3,
+        getter4: (T) -> P4,
+        getter5: (T) -> P5,
         action: VH.(P1, P2, P3, P4, P5) -> Unit
     ) {
-        addObserver(PropertyObserver5(g1, g2, g3, g4, g5) { v1, v2, v3, v4, v5 -> (this as VH).action(v1, v2, v3, v4, v5) })
+        addObserver(PropertyObserver5(getter1, getter2, getter3, getter4, getter5) { v1, v2, v3, v4, v5 -> (this as VH).action(v1, v2, v3, v4, v5) })
     }
 
     @Suppress("UNCHECKED_CAST")
     open fun <P1, P2, P3, P4, P5, P6> registerPropertyObserver(
-        g1: (T) -> P1,
-        g2: (T) -> P2,
-        g3: (T) -> P3,
-        g4: (T) -> P4,
-        g5: (T) -> P5,
-        g6: (T) -> P6,
+        getter1: (T) -> P1,
+        getter2: (T) -> P2,
+        getter3: (T) -> P3,
+        getter4: (T) -> P4,
+        getter5: (T) -> P5,
+        getter6: (T) -> P6,
         action: VH.(P1, P2, P3, P4, P5, P6) -> Unit
     ) {
-        addObserver(PropertyObserver6(g1, g2, g3, g4, g5, g6) { v1, v2, v3, v4, v5, v6 -> (this as VH).action(v1, v2, v3, v4, v5, v6) })
+        addObserver(PropertyObserver6(getter1, getter2, getter3, getter4, getter5, getter6) { v1, v2, v3, v4, v5, v6 -> (this as VH).action(v1, v2, v3, v4, v5, v6) })
     }
 
     open fun onViewRecycled(holder: VH) {}

@@ -1,7 +1,7 @@
 package com.fusion.adapter.delegate
 
 import com.fusion.adapter.dsl.ItemConfiguration
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 
 /**
  * [DslLayoutDelegate]

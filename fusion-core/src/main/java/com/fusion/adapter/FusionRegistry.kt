@@ -1,7 +1,7 @@
 package com.fusion.adapter
 
 import com.fusion.adapter.delegate.FusionDelegate
-import com.fusion.adapter.internal.registry.TypeRouter
+import com.fusion.adapter.router.TypeRouter
 
 /**
  * [FusionRegistry]

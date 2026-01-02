@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.fusion.adapter.FusionListAdapter;
-import com.fusion.adapter.internal.registry.TypeRouter;
+import com.fusion.adapter.router.TypeRouter;
 import com.fusion.example.R;
 import com.fusion.example.databinding.ActivityBaseFixedBinding;
 import com.fusion.example.feature.lab.delegate.LabAppPromotedDelegate;

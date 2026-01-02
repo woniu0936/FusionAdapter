@@ -7,8 +7,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.extensions.getItem
 import com.fusion.adapter.extensions.setItem
 import com.fusion.adapter.internal.FusionInternalTags
-import com.fusion.adapter.internal.GlobalTypeKey
-import com.fusion.adapter.internal.ViewTypeKey
+import com.fusion.adapter.core.GlobalTypeKey
+import com.fusion.adapter.core.ViewTypeKey
 
 /**
  * [LayoutDelegate]

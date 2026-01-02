@@ -6,7 +6,7 @@ import androidx.viewbinding.ViewBinding
 import com.fusion.adapter.ItemKeyProvider
 import com.fusion.adapter.internal.registry.RouterConfiguration
 import com.fusion.adapter.internal.registry.DslAdapterFactory
-import com.fusion.adapter.internal.registry.TypeRouter
+import com.fusion.adapter.router.TypeRouter
 
 /**
  * [RouterScope]

@@ -12,7 +12,7 @@ import com.fusion.adapter.extensions.setupGridSupport
 import com.fusion.adapter.extensions.setupStaggeredSupport
 import com.fusion.adapter.internal.engine.FusionCore
 import com.fusion.adapter.internal.engine.FusionExecutor
-import com.fusion.adapter.internal.registry.TypeRouter
+import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.placeholder.FusionPlaceholderDelegate
 import com.fusion.adapter.placeholder.PlaceholderConfigurator
 import com.fusion.adapter.placeholder.PlaceholderDefinitionScope
