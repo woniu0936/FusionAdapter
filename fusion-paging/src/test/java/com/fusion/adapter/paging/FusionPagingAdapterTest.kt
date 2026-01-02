@@ -5,13 +5,12 @@ import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.internal.GlobalTypeKey
 import com.fusion.adapter.internal.registry.ViewTypeRegistry
-import org.junit.Assert.assertEquals
+import com.google.common.truth.Truth.assertThat
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -26,24 +25,25 @@ class FusionPagingAdapterTest {
     }
 
     @Test
-    fun testRegistryDelegation() {
-        val mockDelegate = mock<FusionDelegate<String, *>>()
-        whenever(mockDelegate.viewTypeKey) doReturn GlobalTypeKey(String::class.java, "string")
+    fun givenDelegateRegistered_whenViewTypeQueried_thenItShouldResolveViaRegistry() {
+        // Arrange
+        val mockDelegate = mockk<FusionDelegate<String, *>>()
+        every { mockDelegate.viewTypeKey } returns GlobalTypeKey(String::class.java, "string")
         
         adapter.register(String::class.java, mockDelegate)
         
-        // 验证 Registry 是否正确传递给了 core
-        assertEquals(mockDelegate, adapter.core.viewTypeRegistry.getDelegateOrNull(adapter.core.getItemViewType("test")))
+        // Act
+        val viewType = adapter.core.getItemViewType("test")
+        val resolvedDelegate = adapter.core.viewTypeRegistry.getDelegateOrNull(viewType)
+
+        // Assert: Verify Registry correctly passed to core
+        assertThat(resolvedDelegate).isEqualTo(mockDelegate)
     }
 
     @Test
-    fun testPlaceholderViewType() {
-        // Paging 规范中，如果 peek 返回 null，说明是占位符
-        // FusionPagingAdapter 应该返回 TYPE_PLACEHOLDER
-        
-        // 由于我们无法轻易 mock 内部的 helperAdapter.peek（它是 final 的 PagingDataAdapter）
-        // 但我们可以验证 core 是否能处理 TYPE_PLACEHOLDER
-        
-        assertEquals(-2049, ViewTypeRegistry.TYPE_PLACEHOLDER)
+    fun givenPlaceholderViewTypeConstant_whenChecked_thenItShouldMatchExpectedValue() {
+        // Act & Assert
+        // Paging spec implies placeholder handling, verifying the constant is correct
+        assertThat(ViewTypeRegistry.TYPE_PLACEHOLDER).isEqualTo(-2049)
     }
 }

@@ -25,6 +25,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 dependencies {
@@ -33,9 +38,13 @@ dependencies {
     api(libs.androidx.paging.common.ktx)
     api(libs.androidx.paging.runtime.ktx)
 
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockk)
+    testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.android)

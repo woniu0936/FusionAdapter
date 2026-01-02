@@ -1,16 +1,18 @@
 package com.fusion.adapter.internal.engine
 
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.Fusion
 import com.fusion.adapter.FusionConfig
 import com.fusion.adapter.delegate.FusionDelegate
 import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.internal.GlobalTypeKey
 import com.fusion.adapter.internal.ViewTypeKey
-import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
-import org.junit.Before
-import org.junit.Test
-import org.mockito.kotlin.mock
+import com.google.common.truth.Truth.assertThat
+import io.mockk.mockk
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class FusionCoreIntegrationTest {
 
@@ -19,36 +21,40 @@ class FusionCoreIntegrationTest {
     class TestDelegate : FusionDelegate<String, RecyclerView.ViewHolder>() {
         override val viewTypeKey: ViewTypeKey = GlobalTypeKey(String::class.java, "string")
         override fun getStableId(item: String): Any = item
-        override fun onCreateViewHolder(parent: ViewGroup): RecyclerView.ViewHolder = mock()
+        override fun onCreateViewHolder(parent: ViewGroup): RecyclerView.ViewHolder = mockk()
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: String, position: Int, payloads: MutableList<Any>) {}
     }
 
-    @Before
+    @BeforeEach
     fun setup() {
         core = FusionCore()
-        // 初始化配置为非 Debug 模式，避免测试直接抛出异常，而是检查逻辑
+        // Initialize config as non-Debug mode to avoid crash during logical checks unless intended
         Fusion.initialize(FusionConfig.Builder().setDebug(false).build())
     }
 
     @Test
-    fun testItemFiltering() {
-        // 注册 String 类型的代理
+    fun `given registered delegate, when filtering list, then unregistered items should be removed`() {
+        // Arrange
         core.register(String::class.java, TestDelegate())
-
         val input = listOf("Valid", 123, "Also Valid")
+
+        // Act
         val filtered = core.filter(input)
 
-        // 验证：Int(123) 应该被剔除，因为没有注册对应的 Delegate
-        assert(filtered.size == 2)
-        assert(filtered.all { it is String })
+        // Assert: Int(123) should be removed because no Delegate is registered for it
+        assertThat(filtered).hasSize(2)
+        assertThat(filtered).containsExactly("Valid", "Also Valid").inOrder()
+        assertThat(filtered.all { it is String }).isTrue()
     }
 
-    @Test(expected = UnregisteredTypeException::class)
-    fun testDebugModeCrash() {
-        // 开启 Debug 模式
+    @Test
+    fun `given debug mode enabled, when filtering unregistered items, then it should throw UnregisteredTypeException`() {
+        // Arrange
         Fusion.initialize(FusionConfig.Builder().setDebug(true).build())
         
-        // 传入未注册的类型，应该直接抛出异常
-        core.filter(listOf(1.23f))
+        // Act & Assert
+        assertThrows<UnregisteredTypeException> {
+            core.filter(listOf(1.23f))
+        }
     }
 }
