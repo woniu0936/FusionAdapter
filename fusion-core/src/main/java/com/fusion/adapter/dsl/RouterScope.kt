@@ -13,10 +13,8 @@ import com.fusion.adapter.router.TypeRouter
  * Scope for configuring one-to-many routing.
  */
 @FusionDsl
-class RouterScope<T : Any>(
-    // 1. 修改：加上 @PublishedApi internal
-    // 作用：让下面的 inline 函数能读取 clazz，但在 Java/Kotlin 调用方看来它依然不可见
-    @PublishedApi internal val clazz: Class<T>
+class RouterScope<T : Any> @PublishedApi internal constructor(
+    @PublishedApi internal val modelClass: Class<T>
 ) {
 
     // 2. 保持：这个必须是 @PublishedApi，因为 inline 函数用到了 config
@@ -50,7 +48,7 @@ class RouterScope<T : Any>(
         // 4. 修复：直接使用 VB::class.java
         // 由于 reified 的存在，这里获取的是真实的 Binding 类，不再有 Unchecked cast
         val delegate = DslAdapterFactory.createDelegate(
-            clazz,          // 现在合法访问
+            modelClass,          // 现在合法访问
             VB::class.java, // 类型安全
             inflate,
             scope.config

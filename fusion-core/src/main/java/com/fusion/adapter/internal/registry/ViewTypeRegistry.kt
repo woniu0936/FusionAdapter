@@ -3,6 +3,8 @@ package com.fusion.adapter.internal.registry
 import androidx.annotation.RestrictTo
 import androidx.recyclerview.widget.RecyclerView
 import com.fusion.adapter.delegate.FusionDelegate
+import com.fusion.adapter.exception.DispatchException
+import com.fusion.adapter.exception.UnregisteredTypeException
 import com.fusion.adapter.router.TypeRouter
 import com.fusion.adapter.internal.diff.ViewTypeStorage
 import com.fusion.adapter.placeholder.FusionPlaceholder
@@ -84,20 +86,16 @@ class ViewTypeRegistry {
         }
 
         if (router == null) {
-            throw IllegalStateException("Fusion: Critical - Item ${clazz.simpleName} has no registered Router.")
+            throw UnregisteredTypeException(item)
         }
 
         val delegate = router.select(item)
-            ?: throw IllegalStateException("Fusion: 分发失败 (Key 未映射) -> ${clazz.simpleName}")
+            ?: throw DispatchException(clazz, item)
 
         return ViewTypeStorage.getViewType(delegate.viewTypeKey)
     }
 
     private fun findRouterForInheritanceCached(clazz: Class<*>): TypeRouter<Any>? {
-        // ConcurrentHashMap does not support null values, so we use containsKey
-        // and only put if the router is not null.
-        // For null results (not supported), we could use a sentinel value if we want to cache negative results,
-        // but for now let's just avoid putting null.
         if (inheritanceCache.containsKey(clazz)) {
             return inheritanceCache[clazz]
         }

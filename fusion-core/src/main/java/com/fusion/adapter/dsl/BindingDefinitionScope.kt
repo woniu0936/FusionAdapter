@@ -5,4 +5,5 @@ import androidx.viewbinding.ViewBinding
 /**
  * [BindingDefinitionScope]
  */
-open class BindingDefinitionScope<T : Any, VB : ViewBinding> : ItemDefinitionScope<T, VB>()
+@FusionDsl
+class BindingDefinitionScope<T : Any, VB : ViewBinding> @PublishedApi internal constructor() : ItemDefinitionScope<T, VB>()

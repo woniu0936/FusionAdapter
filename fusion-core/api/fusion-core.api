@@ -245,7 +245,7 @@ public class com/fusion/adapter/delegate/LayoutHolder : androidx/recyclerview/wi
 	public final fun findView (I)Landroid/view/View;
 }
 
-public class com/fusion/adapter/dsl/BindingDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
+public final class com/fusion/adapter/dsl/BindingDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
 	public fun <init> ()V
 }
 
@@ -302,26 +302,34 @@ public final class com/fusion/adapter/dsl/LayoutDefinitionScope : com/fusion/ada
 public final class com/fusion/adapter/dsl/RouterScope {
 	public fun <init> (Ljava/lang/Class;)V
 	public final fun build ()Lcom/fusion/adapter/router/TypeRouter;
-	public final fun getClazz ()Ljava/lang/Class;
 	public final fun getConfig ()Lcom/fusion/adapter/internal/registry/RouterConfiguration;
+	public final fun getModelClass ()Ljava/lang/Class;
 	public final fun match (Lkotlin/jvm/functions/Function1;)V
 	public final fun stableId (Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class com/fusion/adapter/dsl/SpanSizeScope {
-	public fun <init> (I)V
 	public final fun getTotalSpans ()I
+}
+
+public final class com/fusion/adapter/exception/DispatchException : com/fusion/adapter/exception/FusionException {
+	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
 }
 
 public abstract interface class com/fusion/adapter/exception/ErrorListener {
 	public abstract fun onError (Ljava/lang/Object;Ljava/lang/Exception;)V
 }
 
-public final class com/fusion/adapter/exception/MissingUniqueKeyException : java/lang/RuntimeException {
+public class com/fusion/adapter/exception/FusionException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/fusion/adapter/exception/MissingUniqueKeyException : com/fusion/adapter/exception/FusionException {
 	public fun <init> (Ljava/lang/Class;Ljava/lang/Class;)V
 }
 
-public final class com/fusion/adapter/exception/UnregisteredTypeException : java/lang/RuntimeException {
+public final class com/fusion/adapter/exception/UnregisteredTypeException : com/fusion/adapter/exception/FusionException {
 	public fun <init> (Ljava/lang/Object;)V
 }
 
@@ -486,10 +494,8 @@ public abstract interface class com/fusion/adapter/placeholder/PlaceholderConfig
 	public abstract fun configure (Lcom/fusion/adapter/placeholder/PlaceholderDefinitionScope;)V
 }
 
-public final class com/fusion/adapter/placeholder/PlaceholderDefinitionScope : com/fusion/adapter/dsl/BindingDefinitionScope {
+public final class com/fusion/adapter/placeholder/PlaceholderDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
 	public fun <init> ()V
-	public final fun onBind (Lcom/fusion/adapter/placeholder/PlaceholderBinder;)V
-	public final fun onBind (Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract interface class com/fusion/adapter/placeholder/PlaceholderRegistry {

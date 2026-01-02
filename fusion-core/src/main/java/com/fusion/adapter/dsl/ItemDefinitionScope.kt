@@ -8,7 +8,7 @@ import kotlin.reflect.KProperty1
  * [ItemDefinitionScope]
  */
 @FusionDsl
-abstract class ItemDefinitionScope<T : Any, V : Any> {
+abstract class ItemDefinitionScope<T : Any, V : Any> @PublishedApi internal constructor() {
     @PublishedApi internal val config = ItemConfiguration<T, V>()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
