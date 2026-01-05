@@ -237,28 +237,7 @@ register<Post>(ItemPostBinding::inflate) {
 }
 ```
 
-### 2. 级联 Stable ID：解决动画冲突的终极方案
-
-在处理 **"同一个数据对象渲染为多个列表项"** (例如：IM 消息被拆分为时间线和气泡) 时，普通的 ID 会导致 RecyclerView 动画错乱。Fusion 提供级联 ID 策略：
-
-```kotlin
-register<Message> {
-    // [Level 1] Router 级：默认所有子项使用 ID 字段
-    stableId { it.id } 
-
-    map(TYPE_TEXT, ItemTextBinding::inflate) {
-        onBind { ... } // 继承 Level 1 的 ID
-    }
-
-    map(TYPE_TIMELINE, ItemTimeBinding::inflate) {
-        // [Level 2] Delegate 级：覆盖 Router 级，防止 ID 冲突
-        stableId { "${it.id}_time" } 
-        onBind { ... }
-    }
-}
-```
-
-### 3. 手动骨架屏控制 (Skeleton API)
+### 2. 手动骨架屏控制 (Skeleton API)
 
 非 Paging 模式下，您可以像操作普通数据一样操作占位符：
 
