@@ -206,6 +206,15 @@ open class FusionPagingAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.View
         core.onViewDetachedFromWindow(holder)
     }
 
+    /**
+     * [Diagnostics]
+     * Prints a performance report to Logcat (INFO level).
+     */
+    fun dump() {
+        val diag = core.getDiagnostics(itemCount)
+        com.fusion.adapter.diagnostics.DiagnosticsPrinter.print("Dump", diag)
+    }
+
     private inner class PagingHelperAdapter : PagingDataAdapter<T, RecyclerView.ViewHolder>(
         object : DiffUtil.ItemCallback<T>() {
             override fun areItemsTheSame(old: T, new: T) = core.areItemsTheSame(old, new)

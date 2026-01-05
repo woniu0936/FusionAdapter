@@ -309,6 +309,45 @@ Fusion.initialize {
 
 ---
 
+## 🔍 Diagnostics & Performance Monitoring
+
+FusionAdapter includes a powerful built-in **Diagnostics System** to help you inspect registration status and identify performance bottlenecks (e.g., slow `onCreateViewHolder`).
+
+### 1. Enable Debug Mode
+Ensure debug mode is enabled in your configuration (metrics are only collected in debug mode to avoid overhead in release).
+
+```kotlin
+Fusion.initialize {
+    setDebug(true)
+}
+```
+
+### 2. Dump Report
+Call `dump()` on any Fusion adapter instance to print a formatted report to Logcat.
+
+```kotlin
+// Dump stats to Logcat
+adapter.dump()
+```
+
+### 3. Output Example
+```text
+====================================================================================================
+                                      FUSION ADAPTER DIAGNOSTICS                                     
+====================================================================================================
+ Debug Mode: true
+ Total Items: 100
+ Registered Delegates: 2
+----------------------------------------------------------------------------------------------------
+ViewType   | Key                            | Delegate             | Create | Bind   | Avg Create
+----------------------------------------------------------------------------------------------------
+10001      | User:Fusion:BindingDelegate    | UserDelegate         | 12     | 150    | 0.450 ms  
+10002      | Ad:Fusion:JavaDelegate         | AdDelegate           | 5      | 5      | 2.100 ms  
+----------------------------------------------------------------------------------------------------
+```
+
+---
+
 ## 📄 License
 
 ```

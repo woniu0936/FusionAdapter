@@ -128,4 +128,9 @@ class ViewTypeRegistry {
     fun getDelegateOrNull(viewType: Int): FusionDelegate<Any, RecyclerView.ViewHolder>? {
         return viewTypeToDelegate[viewType]
     }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun getAllDelegates(): Map<Int, FusionDelegate<Any, RecyclerView.ViewHolder>> {
+        return HashMap(viewTypeToDelegate)
+    }
 }

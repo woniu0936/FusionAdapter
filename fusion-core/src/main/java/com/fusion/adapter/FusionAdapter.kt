@@ -143,4 +143,13 @@ open class FusionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Fusi
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) = core.onViewRecycled(holder)
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) = core.onViewAttachedToWindow(holder)
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) = core.onViewDetachedFromWindow(holder)
+
+    /**
+     * [Diagnostics]
+     * Prints a performance report to Logcat (INFO level).
+     */
+    fun dump() {
+        val diag = core.getDiagnostics(itemCount)
+        com.fusion.adapter.diagnostics.DiagnosticsPrinter.print("Dump", diag)
+    }
 }

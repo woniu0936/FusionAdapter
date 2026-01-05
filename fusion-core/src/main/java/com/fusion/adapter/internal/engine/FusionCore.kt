@@ -33,6 +33,7 @@ class FusionCore {
     val viewTypeRegistry = ViewTypeRegistry()
 
     private val scopeId: Long = System.identityHashCode(this).toLong() shl 32
+    private val monitor = com.fusion.adapter.internal.diagnostics.PerformanceMonitor()
 
     fun filter(safeList: List<Any>): List<Any> {
         val start = System.currentTimeMillis()
@@ -172,15 +173,19 @@ class FusionCore {
             return viewTypeRegistry.getPlaceholderDelegate()?.onCreateViewHolder(parent)
                 ?: FusionPlaceholderViewHolder(parent)
         }
-        // Performance log for creation (potentially heavy)
+        
         val start = System.nanoTime()
         val delegate = viewTypeRegistry.getDelegate(viewType)
         val holder = delegate.onCreateViewHolder(parent)
-        val duration = (System.nanoTime() - start) / 1000 // micros
-
-        // Log if creation takes > 2ms (frame drop risk)
-        if (duration > 2000) {
-            FusionLogger.w("Perf") { "onCreateViewHolder took ${duration}us for ViewType $viewType" }
+        val duration = System.nanoTime() - start
+        
+        if (Fusion.getConfig().isDebug) {
+            monitor.recordCreate(viewType, duration)
+        }
+        
+        val durationMicros = duration / 1000
+        if (durationMicros > 2000) {
+            FusionLogger.w("Perf") { "onCreateViewHolder took ${durationMicros}us for ViewType $viewType" }
         }
         return holder
     }
@@ -188,6 +193,10 @@ class FusionCore {
     fun onBindViewHolder(holder: RecyclerView.ViewHolder, item: Any, position: Int, payloads: MutableList<Any> = Collections.emptyList()) {
         val viewType = viewTypeRegistry.getItemViewType(item)
         val delegate = viewTypeRegistry.getDelegateOrNull(viewType)
+
+        if (Fusion.getConfig().isDebug) {
+            monitor.recordBind(viewType)
+        }
 
         if (delegate != null) {
             delegate.onBindViewHolder(holder, item, position, payloads)
@@ -261,5 +270,34 @@ class FusionCore {
         viewTypeRegistry.getDelegateOrNull(holder.itemViewType)?.onViewDetachedFromWindow(holder)
     }
 
+    fun getDiagnostics(totalItems: Int): com.fusion.adapter.diagnostics.FusionDiagnostics {
+        val allDelegates = viewTypeRegistry.getAllDelegates()
+        val delegateDiagnostics = allDelegates.map { (viewType, delegate) ->
+            val stats = monitor.getStats(viewType)
+            val key = delegate.viewTypeKey
+            val keyString = if (key is com.fusion.adapter.core.GlobalTypeKey) {
+                "${key.primary.simpleName}:${key.secondary}"
+            } else {
+                key.toString()
+            }
+            
+            com.fusion.adapter.diagnostics.DelegateDiagnostic(
+                viewType = viewType,
+                viewTypeKey = keyString,
+                delegateClass = delegate.javaClass.simpleName,
+                createCount = stats.createCount,
+                bindCount = stats.bindCount,
+                avgCreateTimeMs = stats.avgCreateTimeNs / 1_000_000.0,
+                totalCreateTimeMs = stats.totalCreateTimeNs / 1_000_000.0
+            )
+        }.sortedByDescending { it.totalCreateTimeMs } // Sort by most expensive
+        
+        return com.fusion.adapter.diagnostics.FusionDiagnostics(
+            isDebug = Fusion.getConfig().isDebug,
+            totalItems = totalItems,
+            registeredDelegatesCount = allDelegates.size,
+            delegates = delegateDiagnostics
+        )
+    }
 }
 

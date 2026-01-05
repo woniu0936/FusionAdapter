@@ -6,6 +6,7 @@ public final class com/fusion/adapter/Fusion {
 
 public class com/fusion/adapter/FusionAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/FusionRegistry, com/fusion/adapter/placeholder/PlaceholderRegistry {
 	public fun <init> ()V
+	public final fun dump ()V
 	public final fun getCore ()Lcom/fusion/adapter/internal/engine/FusionCore;
 	public final fun getCurrentItems ()Ljava/util/List;
 	public fun getItemCount ()I
@@ -68,6 +69,7 @@ public final class com/fusion/adapter/FusionKt {
 
 public class com/fusion/adapter/FusionListAdapter : androidx/recyclerview/widget/RecyclerView$Adapter, com/fusion/adapter/FusionRegistry, com/fusion/adapter/placeholder/PlaceholderRegistry {
 	public fun <init> ()V
+	public final fun dump ()V
 	public final fun getCore ()Lcom/fusion/adapter/internal/engine/FusionCore;
 	public final fun getCurrentList ()Ljava/util/List;
 	public fun getItemCount ()I
@@ -245,6 +247,54 @@ public class com/fusion/adapter/delegate/LayoutHolder : androidx/recyclerview/wi
 	public final fun findView (I)Landroid/view/View;
 }
 
+public final class com/fusion/adapter/diagnostics/DelegateDiagnostic {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;JJDD)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()D
+	public final fun component7 ()D
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;JJDD)Lcom/fusion/adapter/diagnostics/DelegateDiagnostic;
+	public static synthetic fun copy$default (Lcom/fusion/adapter/diagnostics/DelegateDiagnostic;ILjava/lang/String;Ljava/lang/String;JJDDILjava/lang/Object;)Lcom/fusion/adapter/diagnostics/DelegateDiagnostic;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvgCreateTimeMs ()D
+	public final fun getBindCount ()J
+	public final fun getCreateCount ()J
+	public final fun getDelegateClass ()Ljava/lang/String;
+	public final fun getTotalCreateTimeMs ()D
+	public final fun getViewType ()I
+	public final fun getViewTypeKey ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fusion/adapter/diagnostics/DiagnosticsPrinter {
+	public static final field INSTANCE Lcom/fusion/adapter/diagnostics/DiagnosticsPrinter;
+	public final fun print (Ljava/lang/String;Lcom/fusion/adapter/diagnostics/FusionDiagnostics;)V
+}
+
+public final class com/fusion/adapter/diagnostics/FusionDiagnostics {
+	public fun <init> (JZIILjava/util/List;)V
+	public synthetic fun <init> (JZIILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Z
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (JZIILjava/util/List;)Lcom/fusion/adapter/diagnostics/FusionDiagnostics;
+	public static synthetic fun copy$default (Lcom/fusion/adapter/diagnostics/FusionDiagnostics;JZIILjava/util/List;ILjava/lang/Object;)Lcom/fusion/adapter/diagnostics/FusionDiagnostics;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelegates ()Ljava/util/List;
+	public final fun getRegisteredDelegatesCount ()I
+	public final fun getTimestamp ()J
+	public final fun getTotalItems ()I
+	public fun hashCode ()I
+	public final fun isDebug ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/fusion/adapter/dsl/BindingDefinitionScope : com/fusion/adapter/dsl/ItemDefinitionScope {
 	public fun <init> ()V
 }
@@ -395,6 +445,7 @@ public final class com/fusion/adapter/internal/engine/FusionCore {
 	public final fun filter (Ljava/util/List;)Ljava/util/List;
 	public final fun getChangePayload (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun getDelegate (Ljava/lang/Object;)Lcom/fusion/adapter/delegate/FusionDelegate;
+	public final fun getDiagnostics (I)Lcom/fusion/adapter/diagnostics/FusionDiagnostics;
 	public final fun getItemId (Ljava/lang/Object;I)J
 	public final fun getItemViewType (Ljava/lang/Object;)I
 	public final fun getPlaceholderDelegate ()Lcom/fusion/adapter/placeholder/FusionPlaceholderDelegate;
@@ -433,6 +484,7 @@ public final class com/fusion/adapter/internal/registry/ViewTypeRegistry {
 	public static final field Companion Lcom/fusion/adapter/internal/registry/ViewTypeRegistry$Companion;
 	public static final field TYPE_PLACEHOLDER I
 	public fun <init> ()V
+	public final fun getAllDelegates ()Ljava/util/Map;
 	public final fun getDelegate (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getDelegateOrNull (I)Lcom/fusion/adapter/delegate/FusionDelegate;
 	public final fun getItemViewType (Ljava/lang/Object;)I
